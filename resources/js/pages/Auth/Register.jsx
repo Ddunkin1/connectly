@@ -4,6 +4,7 @@ import { useForm } from 'react-hook-form';
 import { useRegister } from '../../hooks/useAuth';
 import { validateUsername } from '../../utils/validateForm';
 import toast from 'react-hot-toast';
+import LoadingSpinner from '../../components/common/LoadingSpinner';
 
 const Register = () => {
     const navigate = useNavigate();
@@ -12,6 +13,7 @@ const Register = () => {
     const [profilePicture, setProfilePicture] = useState(null);
     const [profilePreview, setProfilePreview] = useState(null);
     const [showPassword, setShowPassword] = useState(false);
+    const [isNavigating, setIsNavigating] = useState(false);
     const fileInputRef = useRef(null);
     
     const {
@@ -122,7 +124,11 @@ const Register = () => {
 
             // Basic validation - react-hook-form will show errors
             if (name && email && password && emailRegex.test(email) && strength.strength >= 3) {
-                setCurrentStep(2);
+                setIsNavigating(true);
+                setTimeout(() => {
+                    setCurrentStep(2);
+                    setIsNavigating(false);
+                }, 300);
             }
         } else if (currentStep === 2) {
             // Validate step 2 fields
@@ -164,7 +170,11 @@ const Register = () => {
             }
             
             // Proceed to next step
-            setCurrentStep(3);
+            setIsNavigating(true);
+            setTimeout(() => {
+                setCurrentStep(3);
+                setIsNavigating(false);
+            }, 300);
         }
     };
 
@@ -578,15 +588,24 @@ const Register = () => {
                             </button>
                             <button
                                 type="submit"
-                                disabled={!watch('username') || watch('username')?.trim() === ''}
+                                disabled={!watch('username') || watch('username')?.trim() === '' || isNavigating}
                                 className={`font-semibold py-3 px-6 rounded-lg transition-colors flex items-center space-x-2 ${
-                                    !watch('username') || watch('username')?.trim() === ''
+                                    !watch('username') || watch('username')?.trim() === '' || isNavigating
                                         ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                                         : 'bg-[#359EFF] hover:bg-[#2a8eef] text-white'
                                 }`}
                             >
-                                <span>Next Step</span>
-                                <span className="material-symbols-outlined">arrow_forward</span>
+                                {isNavigating ? (
+                                    <>
+                                        <LoadingSpinner size="sm" />
+                                        <span>Loading...</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <span>Next Step</span>
+                                        <span className="material-symbols-outlined">arrow_forward</span>
+                                    </>
+                                )}
                             </button>
                         </div>
                     </form>
@@ -653,12 +672,16 @@ const Register = () => {
                             </button>
                             <button
                                 type="submit"
-                                className="bg-[#359EFF] hover:bg-[#2a8eef] text-white font-semibold py-3 px-6 rounded-lg transition-colors flex items-center space-x-2"
+                                className={`font-semibold py-3 px-6 rounded-lg transition-colors flex items-center space-x-2 ${
+                                    registerMutation.isPending
+                                        ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                                        : 'bg-[#359EFF] hover:bg-[#2a8eef] text-white'
+                                }`}
                                 disabled={registerMutation.isPending}
                             >
                                 {registerMutation.isPending ? (
                                     <>
-                                        <span className="animate-spin">⏳</span>
+                                        <LoadingSpinner size="sm" />
                                         <span>Creating Account...</span>
                                     </>
                                 ) : (
