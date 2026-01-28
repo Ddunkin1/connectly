@@ -30,30 +30,23 @@ const PostInput = ({ onPostCreated }) => {
                 <div className="flex items-start space-x-3">
                     <Avatar src={user?.profile_picture} alt={user?.name} size="md" />
                     <div className="flex-1">
-                        <textarea
-                            {...register('content', { required: 'Content is required', maxLength: 5000 })}
-                            placeholder="What's on your mind?"
-                            rows={isExpanded ? 4 : 2}
-                            onFocus={() => setIsExpanded(true)}
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#359EFF] focus:border-transparent resize-none"
-                        />
-                        <div className="flex items-center justify-between mt-3">
-                            <div className="flex items-center space-x-2">
-                                <button
-                                    type="button"
-                                    className="text-gray-500 hover:text-[#359EFF] transition-colors"
-                                    title="Add image"
-                                >
-                                    <span className="material-symbols-outlined">image</span>
-                                </button>
-                                <button
-                                    type="button"
-                                    className="text-gray-500 hover:text-[#359EFF] transition-colors"
-                                    title="Add video"
-                                >
-                                    <span className="material-symbols-outlined">videocam</span>
-                                </button>
-                            </div>
+                        <div className="flex items-center space-x-3">
+                            <textarea
+                                {...register('content', { required: 'Content is required', maxLength: 5000 })}
+                                placeholder="What's happening in your community?"
+                                rows={isExpanded ? 4 : 2}
+                                onFocus={() => setIsExpanded(true)}
+                                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#359EFF] focus:border-transparent resize-none"
+                            />
+                            <button
+                                type="button"
+                                className="text-[#359EFF] hover:text-[#2a8eef] transition-colors flex-shrink-0"
+                                title="Add image"
+                            >
+                                <span className="material-symbols-outlined text-2xl">image</span>
+                            </button>
+                        </div>
+                        <div className="flex items-center justify-end mt-3">
                             <div className="flex items-center space-x-2">
                                 {content.length > 0 && (
                                     <span className="text-xs text-gray-500">

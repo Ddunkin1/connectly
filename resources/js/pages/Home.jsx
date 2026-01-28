@@ -1,10 +1,11 @@
-import React, { useRef, useCallback } from 'react';
+import React, { useRef, useCallback, useState } from 'react';
 import { useFeed } from '../hooks/usePosts';
 import PostInput from '../components/posts/PostInput';
 import PostCard from '../components/posts/PostCard';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 
 const Home = () => {
+    const [activeTab, setActiveTab] = useState('for-you');
     const {
         data,
         fetchNextPage,
@@ -49,6 +50,42 @@ const Home = () => {
 
     return (
         <div className="max-w-2xl mx-auto">
+            {/* Feed Tabs */}
+            <div className="bg-white rounded-lg border border-gray-200 mb-4">
+                <div className="flex border-b border-gray-200">
+                    <button
+                        onClick={() => setActiveTab('for-you')}
+                        className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${
+                            activeTab === 'for-you'
+                                ? 'bg-blue-50 text-[#359EFF] border-b-2 border-[#359EFF]'
+                                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                        }`}
+                    >
+                        For You
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('following')}
+                        className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${
+                            activeTab === 'following'
+                                ? 'bg-blue-50 text-[#359EFF] border-b-2 border-[#359EFF]'
+                                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                        }`}
+                    >
+                        Following
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('recent')}
+                        className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${
+                            activeTab === 'recent'
+                                ? 'bg-blue-50 text-[#359EFF] border-b-2 border-[#359EFF]'
+                                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                        }`}
+                    >
+                        Recent
+                    </button>
+                </div>
+            </div>
+
             <PostInput />
             <div className="space-y-4">
                 {posts.length === 0 ? (
