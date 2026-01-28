@@ -1,0 +1,90 @@
+import axios from 'axios';
+
+const API_URL = import.meta.env.VITE_API_URL || '/api';
+
+// Create axios instance
+const api = axios.create({
+    baseURL: API_URL,
+    headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+    },
+});
+
+// Request interceptor - Add auth token to requests
+api.interceptors.request.use(
+    (config) => {
+        const token = localStorage.getItem('auth_token');
+        if (token) {
+            config.headers.Authorization = `Bearer ${token}`;
+        }
+        return config;
+    },
+    (error) => {
+        return Promise.reject(error);
+    }
+);
+
+// Response interceptor - Handle errors
+api.interceptors.response.use(
+    (response) => response,
+    (error) => {
+        if (error.response?.status === 401) {
+            // Unauthorized - clear token and redirect to login
+            localStorage.removeItem('auth_token');
+            localStorage.removeItem('user');
+            window.location.href = '/login';
+        }
+        return Promise.reject(error);
+    }
+);
+
+// Auth API
+export const authAPI = {
+    register: (data) => {
+        // If data is FormData, use multipart/form-data headers
+        const config = data instanceof FormData
+            ? { headers: { 'Content-Type': 'multipart/form-data' } }
+            : {};
+        return api.post('/register', data, config);
+    },
+    login: (data) => api.post('/login', data),
+    logout: () => api.post('/logout'),
+    getUser: () => api.get('/user'),
+};
+
+// User API
+export const userAPI = {
+    getProfile: (userId) => api.get(`/users/${userId}/profile`),
+    getUserPosts: (userId, page = 1) => api.get(`/users/${userId}/posts`, { params: { page } }),
+    updateProfile: (data) => api.put('/user/profile', data),
+    uploadProfilePicture: (formData) => api.post('/user/profile-picture', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+    }),
+};
+
+// Posts API
+export const postsAPI = {
+    getFeed: (page = 1) => api.get('/posts', { params: { page } }),
+    getPost: (postId) => api.get(`/posts/${postId}`),
+    createPost: (data) => api.post('/posts', data),
+    updatePost: (postId, data) => api.put(`/posts/${postId}`, data),
+    deletePost: (postId) => api.delete(`/posts/${postId}`),
+    likePost: (postId) => api.post(`/posts/${postId}/like`),
+    unlikePost: (postId) => api.delete(`/posts/${postId}/unlike`),
+};
+
+// Comments API
+export const commentsAPI = {
+    getComments: (postId, page = 1) => api.get(`/posts/${postId}/comments`, { params: { page } }),
+    createComment: (postId, data) => api.post(`/posts/${postId}/comments`, data),
+    deleteComment: (commentId) => api.delete(`/comments/${commentId}`),
+};
+
+// Follow API
+export const followAPI = {
+    follow: (userId) => api.post(`/users/${userId}/follow`),
+    unfollow: (userId) => api.delete(`/users/${userId}/unfollow`),
+};
+
+export default api;
