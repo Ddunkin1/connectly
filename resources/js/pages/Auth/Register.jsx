@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { useRegister } from '../../hooks/useAuth';
 import { validateUsername } from '../../utils/validateForm';
+import toast from 'react-hot-toast';
 
 const Register = () => {
     const navigate = useNavigate();
@@ -50,6 +51,33 @@ const Register = () => {
 
     const passwordStrength = getPasswordStrength(password);
 
+    // Helper function to check if step 1 is valid
+    const isStep1Valid = () => {
+        const name = watch('name');
+        const email = watch('email');
+        const password = watch('password');
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        const passwordStrength = password ? getPasswordStrength(password) : { strength: 0 };
+        
+        return name && email && password && emailRegex.test(email) && password.length >= 8 && passwordStrength.strength >= 3;
+    };
+
+    // Helper function to get missing fields for step 1
+    const getMissingFieldsStep1 = () => {
+        const name = watch('name');
+        const email = watch('email');
+        const password = watch('password');
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        const passwordStrength = password ? getPasswordStrength(password) : { strength: 0 };
+        const missingFields = [];
+        
+        if (!name || name.trim() === '') missingFields.push('Full Name');
+        if (!email || email.trim() === '' || !emailRegex.test(email)) missingFields.push('Email Address');
+        if (!password || password.length < 8 || passwordStrength.strength < 3) missingFields.push('Strong Password');
+        
+        return missingFields;
+    };
+
     const handleFileChange = (e) => {
         const file = e.target.files[0];
         if (file) {
@@ -66,6 +94,7 @@ const Register = () => {
         }
     };
 
+
     const handleNext = () => {
         if (currentStep === 1) {
             // Validate step 1 fields
@@ -79,11 +108,62 @@ const Register = () => {
             // Check password strength (must be at least medium/strong)
             const strength = getPasswordStrength(password);
 
+            // Get missing fields for toast message
+            const missingFields = getMissingFieldsStep1();
+
+            // Show toast if validation fails
+            if (missingFields.length > 0) {
+                toast.error(`Please fill in: ${missingFields.join(', ')}`, {
+                    duration: 4000,
+                    position: 'top-center',
+                });
+                return;
+            }
+
             // Basic validation - react-hook-form will show errors
             if (name && email && password && emailRegex.test(email) && strength.strength >= 3) {
                 setCurrentStep(2);
             }
         } else if (currentStep === 2) {
+            // Validate step 2 fields
+            const username = watch('username');
+            
+            // Check if username is filled
+            if (!username || username.trim() === '') {
+                toast.error('Please fill in your username before proceeding.', {
+                    duration: 4000,
+                    position: 'top-center',
+                });
+                return;
+            }
+            
+            // Validate username format
+            if (!validateUsername(username)) {
+                toast.error('Username can only contain letters, numbers, and underscores.', {
+                    duration: 4000,
+                    position: 'top-center',
+                });
+                return;
+            }
+            
+            // Check username length
+            if (username.length < 3) {
+                toast.error('Username must be at least 3 characters.', {
+                    duration: 4000,
+                    position: 'top-center',
+                });
+                return;
+            }
+            
+            if (username.length > 30) {
+                toast.error('Username must be less than 30 characters.', {
+                    duration: 4000,
+                    position: 'top-center',
+                });
+                return;
+            }
+            
+            // Proceed to next step
             setCurrentStep(3);
         }
     };
@@ -142,8 +222,8 @@ const Register = () => {
                     </div>
 
                     <form onSubmit={(e) => { e.preventDefault(); handleNext(); }} className="space-y-5">
-                        <div>
-                            <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
+                        <div className="space-y-2">
+                            <label htmlFor="name" className="block text-sm font-medium text-gray-700">
                                 Full Name
                             </label>
                             <input
@@ -153,13 +233,15 @@ const Register = () => {
                                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#359EFF] focus:border-transparent transition-colors"
                                 placeholder="Enter your full name"
                             />
-                            {errors.name && (
-                                <p className="mt-1 text-sm text-red-600">{errors.name.message}</p>
-                            )}
+                            <div className="h-5">
+                                {errors.name && (
+                                    <p className="text-sm text-red-600">{errors.name.message}</p>
+                                )}
+                            </div>
                         </div>
 
-                        <div>
-                            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+                        <div className="space-y-2">
+                            <label htmlFor="email" className="block text-sm font-medium text-gray-700">
                                 Email Address
                             </label>
                             <input
@@ -175,13 +257,15 @@ const Register = () => {
                                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#359EFF] focus:border-transparent transition-colors"
                                 placeholder="name@company.com"
                             />
-                            {errors.email && (
-                                <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>
-                            )}
+                            <div className="h-5">
+                                {errors.email && (
+                                    <p className="text-sm text-red-600">{errors.email.message}</p>
+                                )}
+                            </div>
                         </div>
 
-                        <div>
-                            <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+                        <div className="space-y-2">
+                            <label htmlFor="password" className="block text-sm font-medium text-gray-700">
                                 Create Password
                             </label>
                             <div className="relative">
@@ -224,87 +308,96 @@ const Register = () => {
                                 </button>
                             </div>
                             
-                            {/* Password Strength Indicator */}
-                            {password && (
-                                <div className="mt-2">
-                                    <div className="flex items-center space-x-2 mb-1">
-                                        <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
-                                            <div
-                                                className={`h-full transition-all duration-300 ${
+                            {/* Password Strength Indicator - Fixed Height Container */}
+                            <div className="mt-2 min-h-[120px]">
+                                {password && (
+                                    <div>
+                                        <div className="flex items-center space-x-2 mb-1">
+                                            <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+                                                <div
+                                                    className={`h-full transition-all duration-300 ${
+                                                        passwordStrength.color === 'green'
+                                                            ? 'bg-green-500'
+                                                            : passwordStrength.color === 'yellow'
+                                                            ? 'bg-yellow-500'
+                                                            : 'bg-red-500'
+                                                    }`}
+                                                    style={{ width: `${(passwordStrength.strength / 5) * 100}%` }}
+                                                />
+                                            </div>
+                                            <span
+                                                className={`text-xs font-medium ${
                                                     passwordStrength.color === 'green'
-                                                        ? 'bg-green-500'
+                                                        ? 'text-green-600'
                                                         : passwordStrength.color === 'yellow'
-                                                        ? 'bg-yellow-500'
-                                                        : 'bg-red-500'
+                                                        ? 'text-yellow-600'
+                                                        : 'text-red-600'
                                                 }`}
-                                                style={{ width: `${(passwordStrength.strength / 5) * 100}%` }}
-                                            />
-                                        </div>
-                                        <span
-                                            className={`text-xs font-medium ${
-                                                passwordStrength.color === 'green'
-                                                    ? 'text-green-600'
-                                                    : passwordStrength.color === 'yellow'
-                                                    ? 'text-yellow-600'
-                                                    : 'text-red-600'
-                                            }`}
-                                        >
-                                            {passwordStrength.label}
-                                        </span>
-                                    </div>
-                                    <div className="grid grid-cols-2 gap-2 mt-2 text-xs">
-                                        <div className={`flex items-center space-x-1 ${
-                                            password.length >= 8 ? 'text-green-600' : 'text-gray-400'
-                                        }`}>
-                                            <span className="material-symbols-outlined text-sm">
-                                                {password.length >= 8 ? 'check_circle' : 'radio_button_unchecked'}
+                                            >
+                                                {passwordStrength.label}
                                             </span>
-                                            <span>8+ characters</span>
                                         </div>
-                                        <div className={`flex items-center space-x-1 ${
-                                            /[a-z]/.test(password) ? 'text-green-600' : 'text-gray-400'
-                                        }`}>
-                                            <span className="material-symbols-outlined text-sm">
-                                                {/[a-z]/.test(password) ? 'check_circle' : 'radio_button_unchecked'}
-                                            </span>
-                                            <span>Lowercase</span>
-                                        </div>
-                                        <div className={`flex items-center space-x-1 ${
-                                            /[A-Z]/.test(password) ? 'text-green-600' : 'text-gray-400'
-                                        }`}>
-                                            <span className="material-symbols-outlined text-sm">
-                                                {/[A-Z]/.test(password) ? 'check_circle' : 'radio_button_unchecked'}
-                                            </span>
-                                            <span>Uppercase</span>
-                                        </div>
-                                        <div className={`flex items-center space-x-1 ${
-                                            /[0-9]/.test(password) ? 'text-green-600' : 'text-gray-400'
-                                        }`}>
-                                            <span className="material-symbols-outlined text-sm">
-                                                {/[0-9]/.test(password) ? 'check_circle' : 'radio_button_unchecked'}
-                                            </span>
-                                            <span>Number</span>
-                                        </div>
-                                        <div className={`flex items-center space-x-1 col-span-2 ${
-                                            /[^a-zA-Z0-9]/.test(password) ? 'text-green-600' : 'text-gray-400'
-                                        }`}>
-                                            <span className="material-symbols-outlined text-sm">
-                                                {/[^a-zA-Z0-9]/.test(password) ? 'check_circle' : 'radio_button_unchecked'}
-                                            </span>
-                                            <span>Special character</span>
+                                        <div className="grid grid-cols-2 gap-2 mt-2 text-xs">
+                                            <div className={`flex items-center space-x-1 ${
+                                                password.length >= 8 ? 'text-green-600' : 'text-gray-400'
+                                            }`}>
+                                                <span className="material-symbols-outlined text-sm">
+                                                    {password.length >= 8 ? 'check_circle' : 'radio_button_unchecked'}
+                                                </span>
+                                                <span>8+ characters</span>
+                                            </div>
+                                            <div className={`flex items-center space-x-1 ${
+                                                /[a-z]/.test(password) ? 'text-green-600' : 'text-gray-400'
+                                            }`}>
+                                                <span className="material-symbols-outlined text-sm">
+                                                    {/[a-z]/.test(password) ? 'check_circle' : 'radio_button_unchecked'}
+                                                </span>
+                                                <span>Lowercase</span>
+                                            </div>
+                                            <div className={`flex items-center space-x-1 ${
+                                                /[A-Z]/.test(password) ? 'text-green-600' : 'text-gray-400'
+                                            }`}>
+                                                <span className="material-symbols-outlined text-sm">
+                                                    {/[A-Z]/.test(password) ? 'check_circle' : 'radio_button_unchecked'}
+                                                </span>
+                                                <span>Uppercase</span>
+                                            </div>
+                                            <div className={`flex items-center space-x-1 ${
+                                                /[0-9]/.test(password) ? 'text-green-600' : 'text-gray-400'
+                                            }`}>
+                                                <span className="material-symbols-outlined text-sm">
+                                                    {/[0-9]/.test(password) ? 'check_circle' : 'radio_button_unchecked'}
+                                                </span>
+                                                <span>Number</span>
+                                            </div>
+                                            <div className={`flex items-center space-x-1 col-span-2 ${
+                                                /[^a-zA-Z0-9]/.test(password) ? 'text-green-600' : 'text-gray-400'
+                                            }`}>
+                                                <span className="material-symbols-outlined text-sm">
+                                                    {/[^a-zA-Z0-9]/.test(password) ? 'check_circle' : 'radio_button_unchecked'}
+                                                </span>
+                                                <span>Special character</span>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                            )}
+                                )}
+                            </div>
                             
-                            {errors.password && (
-                                <p className="mt-1 text-sm text-red-600">{errors.password.message}</p>
-                            )}
+                            <div className="mt-1 min-h-[20px]">
+                                {errors.password && (
+                                    <p className="text-sm text-red-600">{errors.password.message}</p>
+                                )}
+                            </div>
                         </div>
 
                         <button
                             type="submit"
-                            className="w-full bg-[#359EFF] hover:bg-[#2a8eef] text-white font-semibold py-3 px-6 rounded-lg transition-colors flex items-center justify-center space-x-2"
+                            disabled={!isStep1Valid()}
+                            className={`w-full font-semibold py-3 px-6 rounded-lg transition-colors flex items-center justify-center space-x-2 ${
+                                !isStep1Valid()
+                                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                                    : 'bg-[#359EFF] hover:bg-[#2a8eef] text-white'
+                            }`}
                         >
                             <span>Next</span>
                             <span className="material-symbols-outlined text-xl">arrow_forward</span>
@@ -372,7 +465,7 @@ const Register = () => {
                         <p className="text-gray-600">Create your identity on Connectly.</p>
                     </div>
 
-                    <form onSubmit={(e) => { e.preventDefault(); setCurrentStep(3); }} className="space-y-6">
+                    <form onSubmit={(e) => { e.preventDefault(); handleNext(); }} className="space-y-6">
                         {/* Profile Picture Upload */}
                         <div className="flex flex-col items-center">
                             <div className="relative">
@@ -431,11 +524,16 @@ const Register = () => {
                                     id="username"
                                     className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#359EFF] focus:border-transparent transition-colors"
                                     placeholder="janesmith"
+                                    onChange={(e) => {
+                                        setValue('username', e.target.value);
+                                    }}
                                 />
                             </div>
-                            {errors.username && (
-                                <p className="mt-1 text-sm text-red-600">{errors.username.message}</p>
-                            )}
+                            <div className="h-5">
+                                {errors.username && (
+                                    <p className="text-sm text-red-600">{errors.username.message}</p>
+                                )}
+                            </div>
                             <p className="mt-1 text-sm text-gray-500">This will be your unique handle on the platform.</p>
                         </div>
 
@@ -460,9 +558,11 @@ const Register = () => {
                                 placeholder="Share a bit about who you are..."
                                 maxLength={160}
                             />
-                            {errors.bio && (
-                                <p className="mt-1 text-sm text-red-600">{errors.bio.message}</p>
-                            )}
+                            <div className="h-5">
+                                {errors.bio && (
+                                    <p className="text-sm text-red-600">{errors.bio.message}</p>
+                                )}
+                            </div>
                             <p className="mt-1 text-sm text-gray-500">A short introduction for your profile.</p>
                         </div>
 
@@ -478,7 +578,12 @@ const Register = () => {
                             </button>
                             <button
                                 type="submit"
-                                className="bg-[#359EFF] hover:bg-[#2a8eef] text-white font-semibold py-3 px-6 rounded-lg transition-colors flex items-center space-x-2"
+                                disabled={!watch('username') || watch('username')?.trim() === ''}
+                                className={`font-semibold py-3 px-6 rounded-lg transition-colors flex items-center space-x-2 ${
+                                    !watch('username') || watch('username')?.trim() === ''
+                                        ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                                        : 'bg-[#359EFF] hover:bg-[#2a8eef] text-white'
+                                }`}
                             >
                                 <span>Next Step</span>
                                 <span className="material-symbols-outlined">arrow_forward</span>
