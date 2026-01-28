@@ -47,7 +47,14 @@ class PostController extends Controller
      */
     public function store(StorePostRequest $request): JsonResponse
     {
-        $post = $this->postService->createPost($request->user(), $request->validated());
+        $data = $request->validated();
+        
+        // Add the media file to the data array if it exists
+        if ($request->hasFile('media')) {
+            $data['media'] = $request->file('media');
+        }
+        
+        $post = $this->postService->createPost($request->user(), $data);
 
         return response()->json([
             'message' => 'Post created successfully',

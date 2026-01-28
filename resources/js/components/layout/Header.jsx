@@ -20,8 +20,7 @@ const Header = () => {
     const handleSearch = (e) => {
         e.preventDefault();
         if (searchQuery.trim()) {
-            // TODO: Implement search
-            console.log('Search:', searchQuery);
+            navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
         }
     };
 

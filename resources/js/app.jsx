@@ -15,6 +15,7 @@ import Home from './pages/Home';
 import Profile from './pages/Profile';
 import PostDetail from './pages/PostDetail';
 import Communities from './pages/Communities';
+import Search from './pages/Search';
 import useAuthStore from './store/authStore';
 
 const queryClient = new QueryClient({
@@ -140,6 +141,14 @@ function AppContent() {
                             element={
                                 <ProtectedRoute>
                                     <Communities />
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/search"
+                            element={
+                                <ProtectedRoute>
+                                    <Search />
                                 </ProtectedRoute>
                             }
                         />

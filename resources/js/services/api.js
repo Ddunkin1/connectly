@@ -87,4 +87,9 @@ export const followAPI = {
     unfollow: (userId) => api.delete(`/users/${userId}/unfollow`),
 };
 
+// Search API
+export const searchAPI = {
+    search: (query, type = 'all') => api.get('/search', { params: { q: query, type } }),
+};
+
 export default api;

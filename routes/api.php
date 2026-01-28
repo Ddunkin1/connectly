@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\CommentController;
 use App\Http\Controllers\Api\FollowController;
 use App\Http\Controllers\Api\LikeController;
 use App\Http\Controllers\Api\PostController;
+use App\Http\Controllers\Api\SearchController;
 use App\Http\Controllers\Api\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -56,4 +57,7 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function () {
     // Follow/Unfollow
     Route::post('/users/{user}/follow', [FollowController::class, 'follow']);
     Route::delete('/users/{user}/unfollow', [FollowController::class, 'unfollow']);
+
+    // Search
+    Route::get('/search', [SearchController::class, 'search']);
 });
