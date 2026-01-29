@@ -1,4 +1,3 @@
-import '../css/app.css';
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
@@ -270,18 +269,16 @@ class ErrorBoundary extends React.Component {
     }
 }
 
-// Mount React app to DOM
-const rootElement = document.getElementById('app');
-
-console.log('app.jsx loaded');
-console.log('Root element:', rootElement);
-
-if (!rootElement) {
-    console.error('Root element #app not found!');
-    document.body.innerHTML = '<div style="padding: 20px;"><h1>Error: Root element #app not found!</h1><p>Make sure the Blade template has &lt;div id="app"&gt;&lt;/div&gt;</p></div>';
-} else {
+/**
+ * Mount the React app. Called from main.jsx after successful import.
+ */
+export function mountApp() {
+    const rootElement = document.getElementById('app');
+    if (!rootElement) {
+        document.body.innerHTML = '<div style="padding: 20px;"><h1>Error: Root element #app not found!</h1></div>';
+        return;
+    }
     try {
-        console.log('Attempting to render React app...');
         const root = ReactDOM.createRoot(rootElement);
         root.render(
             <React.StrictMode>
@@ -290,9 +287,8 @@ if (!rootElement) {
                 </ErrorBoundary>
             </React.StrictMode>
         );
-        console.log('React app rendered successfully!');
     } catch (error) {
-        console.error('Failed to render React app:', error);
-        rootElement.innerHTML = `<div style="padding: 20px; font-family: sans-serif;"><h1>React Render Error</h1><pre style="background: #f5f5f5; padding: 10px; border-radius: 4px;">${error.toString()}</pre><p>Check the browser console for more details.</p></div>`;
+        console.error('React render error:', error);
+        rootElement.innerHTML = `<div style="padding: 20px; font-family: sans-serif;"><h1>React Render Error</h1><pre style="background: #f5f5f5; padding: 10px;">${error.toString()}</pre></div>`;
     }
 }

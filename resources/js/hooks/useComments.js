@@ -21,7 +21,7 @@ export const useCreateComment = () => {
             const postId = variables.postId;
             const commentsCount = response?.data?.comments_count;
 
-            // Update post's comments_count everywhere so the number increments for every user who interacts
+            // Update post's comments_count everywhere so the number increments smoothly (no refetch = no flicker)
             if (typeof commentsCount === 'number') {
                 updatePostInCaches(queryClient, postId, (post) => ({
                     ...post,
@@ -34,10 +34,8 @@ export const useCreateComment = () => {
                 }));
             }
 
+            // Only refetch comments list so the new comment appears; don't invalidate post/posts/user-posts (we already updated counts)
             queryClient.invalidateQueries({ queryKey: ['comments', postId] });
-            queryClient.invalidateQueries({ queryKey: ['post', postId] });
-            queryClient.invalidateQueries({ queryKey: ['posts'] });
-            queryClient.invalidateQueries({ queryKey: ['user-posts'] });
             toast.success('Comment added successfully');
         },
         onError: (error) => {

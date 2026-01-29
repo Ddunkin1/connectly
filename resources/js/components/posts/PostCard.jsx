@@ -11,6 +11,7 @@ const PostCard = ({ post }) => {
     const likeMutation = useLikePost();
     const unlikeMutation = useUnlikePost();
     const shareMutation = useSharePost();
+    const [shareOpen, setShareOpen] = useState(false);
 
     const handleLike = () => {
         if (post.is_liked) {
@@ -96,9 +97,11 @@ const PostCard = ({ post }) => {
                 <div className="flex items-center space-x-6">
                     <button
                         onClick={handleLike}
-                        className={`flex items-center space-x-2 ${
-                            post.is_liked ? 'text-red-500' : 'text-gray-500'
-                        } hover:text-red-500 transition-colors`}
+                        className={`flex items-center space-x-2 transition-colors ${
+                            post.is_liked
+                                ? 'text-red-500 hover:text-red-600'
+                                : 'text-gray-500 hover:text-gray-700'
+                        }`}
                     >
                         <span className="material-symbols-outlined">
                             {post.is_liked ? 'favorite' : 'favorite_border'}
@@ -114,23 +117,64 @@ const PostCard = ({ post }) => {
                         <span className="text-sm">{post.comments_count || 0}</span>
                     </Link>
 
-                    <button
-                        type="button"
-                        onClick={(e) => {
-                            e.preventDefault();
-                            const url = `${window.location.origin}/post/${post.id}`;
-                            navigator.clipboard.writeText(url).then(() => {
-                                toast.success('Link copied to clipboard');
-                            }).catch(() => {
-                                toast.error('Could not copy link');
-                            });
-                            shareMutation.mutate(post.id);
-                        }}
-                        className="flex items-center space-x-2 text-gray-500 hover:text-[#359EFF] transition-colors"
-                    >
-                        <span className="material-symbols-outlined">share</span>
-                        <span className="text-sm">{post.shares_count ?? 0}</span>
-                    </button>
+                    <div className="relative">
+                        <button
+                            type="button"
+                            onClick={(e) => {
+                                e.preventDefault();
+                                setShareOpen((open) => !open);
+                            }}
+                            className="flex items-center space-x-2 text-gray-500 hover:text-[#359EFF] transition-colors"
+                        >
+                            <span className="material-symbols-outlined">share</span>
+                            <span className="text-sm">{post.shares_count ?? 0}</span>
+                        </button>
+                        {shareOpen && (
+                            <>
+                                <div
+                                    className="fixed inset-0 z-10"
+                                    aria-hidden="true"
+                                    onClick={() => setShareOpen(false)}
+                                />
+                                <div className="absolute left-0 top-full mt-1 z-20 py-1 w-44 bg-white rounded-lg border border-gray-200 shadow-lg">
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            const url = `${window.location.origin}/post/${post.id}`;
+                                            navigator.clipboard.writeText(url).then(() => {
+                                                toast.success('Shared with friends');
+                                            }).catch(() => {
+                                                toast.error('Could not share');
+                                            });
+                                            shareMutation.mutate(post.id);
+                                            setShareOpen(false);
+                                        }}
+                                        className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                                    >
+                                        <span className="material-symbols-outlined text-lg">group</span>
+                                        Friends
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            const url = `${window.location.origin}/post/${post.id}`;
+                                            navigator.clipboard.writeText(url).then(() => {
+                                                toast.success('Shared with public');
+                                            }).catch(() => {
+                                                toast.error('Could not share');
+                                            });
+                                            shareMutation.mutate(post.id);
+                                            setShareOpen(false);
+                                        }}
+                                        className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                                    >
+                                        <span className="material-symbols-outlined text-lg">public</span>
+                                        Public
+                                    </button>
+                                </div>
+                            </>
+                        )}
+                    </div>
 
                     <button className="flex items-center space-x-2 text-gray-500 hover:text-[#359EFF] transition-colors">
                         <span className="material-symbols-outlined">bookmark_border</span>

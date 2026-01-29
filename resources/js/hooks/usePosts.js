@@ -220,16 +220,19 @@ export const useDeletePost = () => {
 
 // Export so useComments can update post counts when a comment is added
 export function updatePostInCaches(queryClient, postId, updater) {
-    // Single post
+    // Single post (cache may be raw response { data: { post } } or just the post from usePost's select)
     queryClient.setQueryData(['post', postId], (old) => {
-        if (!old?.data?.post) return old;
-        return {
-            ...old,
-            data: {
-                ...old.data,
-                post: updater(old.data.post),
-            },
-        };
+        if (!old) return old;
+        if (old?.data?.post) {
+            return {
+                ...old,
+                data: { ...old.data, post: updater(old.data.post) },
+            };
+        }
+        if (String(old?.id) === String(postId)) {
+            return updater(old);
+        }
+        return old;
     });
 
     // Feed (infinite query: pages[].data.posts or pages[].data.posts.data)
@@ -299,11 +302,7 @@ export const useLikePost = () => {
             context?.previousUserPosts?.forEach(([key, data]) => queryClient.setQueryData(key, data));
             toast.error('Failed to like post');
         },
-        onSettled: (postId) => {
-            queryClient.invalidateQueries({ queryKey: ['post', postId] });
-            queryClient.invalidateQueries({ queryKey: ['posts'] });
-            queryClient.invalidateQueries({ queryKey: ['user-posts'] });
-        },
+        // Don't invalidate on success: we already updated cache with server count. Refetch would overwrite with stale data and cause flicker (1 → 2 → 0).
     });
 };
 
@@ -345,11 +344,7 @@ export const useUnlikePost = () => {
             context?.previousUserPosts?.forEach(([key, data]) => queryClient.setQueryData(key, data));
             toast.error('Failed to unlike post');
         },
-        onSettled: (postId) => {
-            queryClient.invalidateQueries({ queryKey: ['post', postId] });
-            queryClient.invalidateQueries({ queryKey: ['posts'] });
-            queryClient.invalidateQueries({ queryKey: ['user-posts'] });
-        },
+        // Don't invalidate on success: we already updated cache with server count. Refetch would overwrite and cause flicker.
     });
 };
 

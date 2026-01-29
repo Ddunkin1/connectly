@@ -1,5 +1,9 @@
-const fs = require('fs');
-const path = require('path');
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Read manifest to get actual asset paths
 const manifestPath = path.join(__dirname, '..', 'public', 'build', 'manifest.json');
@@ -8,11 +12,14 @@ let jsPath = '';
 
 if (fs.existsSync(manifestPath)) {
     const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
-    
+
     if (manifest['resources/css/app.css']) {
         cssPath = `/build/${manifest['resources/css/app.css'].file}`;
     }
-    if (manifest['resources/js/app.jsx']) {
+    // Entry is now main.jsx
+    if (manifest['resources/js/main.jsx']) {
+        jsPath = `/build/${manifest['resources/js/main.jsx'].file}`;
+    } else if (manifest['resources/js/app.jsx']) {
         jsPath = `/build/${manifest['resources/js/app.jsx'].file}`;
     }
 }
