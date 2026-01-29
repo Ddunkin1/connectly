@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient, useInfiniteQuery } from '@tanstack/react-query';
 import { postsAPI } from '../services/api';
 import toast from 'react-hot-toast';
+import useAuthStore from '../store/authStore';
 
 export const useFeed = () => {
     return useInfiniteQuery({
@@ -27,14 +28,85 @@ export const usePost = (postId) => {
 
 export const useCreatePost = () => {
     const queryClient = useQueryClient();
+    const user = useAuthStore((state) => state.user);
 
     return useMutation({
         mutationFn: (data) => postsAPI.createPost(data),
-        onSuccess: () => {
+        onMutate: async (newPostData) => {
+            // Cancel outgoing refetches
+            await queryClient.cancelQueries({ queryKey: ['posts', 'feed'] });
+            await queryClient.cancelQueries({ queryKey: ['user-posts'] });
+
+            // Snapshot previous values
+            const previousFeed = queryClient.getQueryData(['posts', 'feed']);
+            const previousUserPosts = queryClient.getQueryData(['user-posts', user?.id]);
+
+            // Create optimistic post object
+            const optimisticPost = {
+                id: `temp-${Date.now()}`,
+                content: newPostData.get('content') || '',
+                media_url: null, // Will be set when API responds
+                media_type: null,
+                visibility: newPostData.get('visibility') || 'public',
+                user: {
+                    id: user?.id,
+                    name: user?.name,
+                    username: user?.username,
+                    profile_picture: user?.profile_picture,
+                },
+                likes_count: 0,
+                comments_count: 0,
+                is_liked: false,
+                hashtags: [],
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+            };
+
+            // Optimistically add post to feed
+            queryClient.setQueryData(['posts', 'feed'], (old) => {
+                if (!old) return old;
+                return {
+                    ...old,
+                    pages: [
+                        {
+                            ...old.pages[0],
+                            data: {
+                                ...old.pages[0].data,
+                                posts: [optimisticPost, ...(old.pages[0].data.posts || [])],
+                            },
+                        },
+                        ...old.pages.slice(1),
+                    ],
+                };
+            });
+
+            // Optimistically add post to user posts if viewing own profile
+            if (user?.id) {
+                queryClient.setQueryData(['user-posts', user.id], (old) => {
+                    if (!old) return old;
+                    return {
+                        ...old,
+                        posts: [optimisticPost, ...(old.posts || [])],
+                    };
+                });
+            }
+
+            return { previousFeed, previousUserPosts };
+        },
+        onSuccess: (response) => {
+            // Invalidate both feed and user posts cache to get real data
             queryClient.invalidateQueries({ queryKey: ['posts'] });
+            queryClient.invalidateQueries({ queryKey: ['user-posts'] });
             toast.success('Post created successfully!');
         },
-        onError: (error) => {
+        onError: (error, newPostData, context) => {
+            // Rollback on error
+            if (context?.previousFeed) {
+                queryClient.setQueryData(['posts', 'feed'], context.previousFeed);
+            }
+            if (context?.previousUserPosts) {
+                queryClient.setQueryData(['user-posts', user?.id], context.previousUserPosts);
+            }
             toast.error(error.response?.data?.message || 'Failed to create post');
         },
     });

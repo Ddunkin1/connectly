@@ -21,7 +21,11 @@ class TestSupabaseController extends Controller
         try {
             $supabaseUrl = config('services.supabase.url');
             $supabaseKey = config('services.supabase.key');
-            $bucket = config('services.supabase.bucket', 'public');
+            $serviceRoleKey = config('services.supabase.service_role_key');
+            $bucket = config('services.supabase.bucket', 'publicConnectly');
+            
+            // Use service_role key if available for testing (bypasses RLS)
+            $testKey = $serviceRoleKey ?? $supabaseKey;
 
             // Check if config is loaded
             if (!$supabaseUrl || !$supabaseKey) {
@@ -44,24 +48,81 @@ class TestSupabaseController extends Controller
                 $serviceStatus = 'failed: ' . $e->getMessage();
             }
 
-            // Test API connection - try to list buckets or check bucket
+            // Test API connection - try to list buckets (works better with anon key)
             $connectionStatus = 'unknown';
             $bucketExists = false;
             $errorMessage = null;
 
             try {
-                // Try to get bucket info
+                // Try to list all buckets - use service_role key if available
                 $response = Http::withHeaders([
-                    'apikey' => $supabaseKey,
-                    'Authorization' => 'Bearer ' . $supabaseKey,
-                ])->get("{$supabaseUrl}/storage/v1/bucket/{$bucket}");
+                    'apikey' => $testKey,
+                    'Authorization' => 'Bearer ' . $testKey,
+                ])->get("{$supabaseUrl}/storage/v1/bucket");
 
                 if ($response->successful()) {
-                    $connectionStatus = 'connected';
-                    $bucketExists = true;
+                    $buckets = $response->json();
+                    // Check if our bucket exists in the list
+                    if (is_array($buckets)) {
+                        foreach ($buckets as $b) {
+                            if (isset($b['name']) && $b['name'] === $bucket) {
+                                $bucketExists = true;
+                                $connectionStatus = 'connected';
+                                break;
+                            }
+                        }
+                    }
+                    
+                    // If bucket not found in list, try direct test upload
+                    if (!$bucketExists) {
+                        // Try to upload a tiny test file to verify bucket exists and is writable
+                        $testContent = 'test';
+                        $testResponse = Http::withHeaders([
+                            'apikey' => $testKey,
+                            'Authorization' => 'Bearer ' . $testKey,
+                            'Content-Type' => 'text/plain',
+                        ])->put(
+                            "{$supabaseUrl}/storage/v1/object/{$bucket}/.test-connection",
+                            $testContent
+                        );
+                        
+                        if ($testResponse->successful() || $testResponse->status() === 200) {
+                            $bucketExists = true;
+                            $connectionStatus = 'connected';
+                            // Clean up test file
+                            Http::withHeaders([
+                                'apikey' => $testKey,
+                                'Authorization' => 'Bearer ' . $testKey,
+                            ])->delete("{$supabaseUrl}/storage/v1/object/{$bucket}/.test-connection");
+                        } else {
+                            $connectionStatus = 'failed';
+                            $errorMessage = $testResponse->body();
+                        }
+                    }
                 } else {
-                    $connectionStatus = 'failed';
-                    $errorMessage = $response->body();
+                    // If list buckets fails, try direct upload test
+                    $testContent = 'test';
+                    $testResponse = Http::withHeaders([
+                        'apikey' => $testKey,
+                        'Authorization' => 'Bearer ' . $testKey,
+                        'Content-Type' => 'text/plain',
+                    ])->put(
+                        "{$supabaseUrl}/storage/v1/object/{$bucket}/.test-connection",
+                        $testContent
+                    );
+                    
+                    if ($testResponse->successful() || $testResponse->status() === 200) {
+                        $bucketExists = true;
+                        $connectionStatus = 'connected';
+                        // Clean up test file
+                        Http::withHeaders([
+                            'apikey' => $testKey,
+                            'Authorization' => 'Bearer ' . $testKey,
+                        ])->delete("{$supabaseUrl}/storage/v1/object/{$bucket}/.test-connection");
+                    } else {
+                        $connectionStatus = 'failed';
+                        $errorMessage = $testResponse->body();
+                    }
                 }
             } catch (\Exception $e) {
                 $connectionStatus = 'error';
@@ -88,8 +149,8 @@ class TestSupabaseController extends Controller
                     if ($autoCreated) {
                         // Re-check bucket existence
                         $recheckResponse = Http::withHeaders([
-                            'apikey' => $supabaseKey,
-                            'Authorization' => 'Bearer ' . $supabaseKey,
+                            'apikey' => $testKey,
+                            'Authorization' => 'Bearer ' . $testKey,
                         ])->get("{$supabaseUrl}/storage/v1/bucket/{$bucket}");
                         
                         if ($recheckResponse->successful()) {
@@ -121,12 +182,15 @@ class TestSupabaseController extends Controller
                     'direct_link' => "https://app.supabase.com/project/" . str_replace(['https://', '.supabase.co'], '', $supabaseUrl) . "/storage/buckets",
                     'steps' => [
                         '1. Click this link: https://app.supabase.com/project/' . str_replace(['https://', '.supabase.co'], '', $supabaseUrl) . '/storage/buckets',
-                        '2. Click "New bucket" button',
-                        '3. Name: "public" (lowercase, exact)',
-                        '4. Toggle "Public bucket" to ON ✅',
-                        '5. Click "Create bucket"',
-                        '6. Refresh this page to verify',
+                        '2. Verify bucket "' . $bucket . '" exists and is PUBLIC',
+                        '3. If bucket doesn\'t exist, click "New bucket"',
+                        '4. Name: "' . $bucket . '" (exact match)',
+                        '5. Toggle "Public bucket" to ON ✅',
+                        '6. Go to Storage → Policies and ensure bucket has INSERT/SELECT policies',
+                        '7. Refresh this page to verify',
                     ],
+                    'note' => 'For Laravel backend, use SERVICE_ROLE_KEY (not anon key). Get it from: https://app.supabase.com/project/' . str_replace(['https://', '.supabase.co'], '', $supabaseUrl) . '/settings/api',
+                    'service_role_key_set' => $serviceRoleKey ? 'yes' : 'no',
                     'see_guide' => 'See CREATE_BUCKET_NOW.md for quick instructions',
                 ],
             ], $connectionStatus === 'connected' ? 200 : 200); // Return 200 so JSON is visible, not 500
@@ -136,6 +200,68 @@ class TestSupabaseController extends Controller
             return response()->json([
                 'status' => 'error',
                 'message' => 'Test failed: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Test Supabase file upload directly.
+     * Development only - remove in production.
+     *
+     * @return JsonResponse
+     */
+    public function testUpload(): JsonResponse
+    {
+        try {
+            $supabaseUrl = config('services.supabase.url');
+            $serviceRoleKey = config('services.supabase.service_role_key');
+            $anonKey = config('services.supabase.key');
+            $bucket = config('services.supabase.bucket', 'publicConnectly');
+            
+            $testKey = $serviceRoleKey ?? $anonKey;
+            
+            // Create a small test file
+            $testContent = 'test upload ' . time();
+            $testPath = 'test/.test-' . time() . '.txt';
+            
+            $response = Http::withHeaders([
+                'apikey' => $testKey,
+                'Authorization' => 'Bearer ' . $testKey,
+                'Content-Type' => 'text/plain',
+            ])->put(
+                "{$supabaseUrl}/storage/v1/object/{$bucket}/{$testPath}",
+                $testContent
+            );
+            
+            $success = $response->successful();
+            $status = $response->status();
+            $body = $response->body();
+            
+            // Try to delete the test file if upload succeeded
+            if ($success) {
+                Http::withHeaders([
+                    'apikey' => $testKey,
+                    'Authorization' => 'Bearer ' . $testKey,
+                ])->delete("{$supabaseUrl}/storage/v1/object/{$bucket}/{$testPath}");
+            }
+            
+            return response()->json([
+                'status' => $success ? 'success' : 'error',
+                'message' => $success ? 'Upload test successful' : 'Upload test failed',
+                'details' => [
+                    'bucket' => $bucket,
+                    'http_status' => $status,
+                    'response_body' => $body,
+                    'using_key_type' => $serviceRoleKey ? 'service_role' : 'anon',
+                    'test_path' => $testPath,
+                ],
+            ], $success ? 200 : 200);
+            
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Upload test exception: ' . $e->getMessage(),
+                'trace' => config('app.debug') ? $e->getTraceAsString() : null,
             ], 500);
         }
     }

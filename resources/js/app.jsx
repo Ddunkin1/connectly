@@ -18,6 +18,7 @@ import Communities from './pages/Communities';
 import CommunityDetail from './pages/CommunityDetail';
 import EditProfile from './pages/EditProfile';
 import Search from './pages/Search';
+import Messages from './pages/Messages';
 import TestUpload from './pages/TestUpload';
 import useAuthStore from './store/authStore';
 
@@ -168,6 +169,14 @@ function AppContent() {
                             element={
                                 <ProtectedRoute>
                                     <Search />
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/messages/:username?"
+                            element={
+                                <ProtectedRoute>
+                                    <Messages />
                                 </ProtectedRoute>
                             }
                         />

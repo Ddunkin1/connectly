@@ -3,8 +3,10 @@
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CommentController;
 use App\Http\Controllers\Api\CommunityController;
+use App\Http\Controllers\Api\ConversationController;
 use App\Http\Controllers\Api\FollowController;
 use App\Http\Controllers\Api\LikeController;
+use App\Http\Controllers\Api\MessageController;
 use App\Http\Controllers\Api\PostController;
 use App\Http\Controllers\Api\SearchController;
 use App\Http\Controllers\Api\TestSupabaseController;
@@ -29,6 +31,7 @@ Route::middleware('throttle:60,1')->group(function () {
     
     // Test Supabase connection (development only - remove in production)
     Route::get('/test/supabase', [TestSupabaseController::class, 'testConnection']);
+    Route::get('/test/supabase/upload', [TestSupabaseController::class, 'testUpload']);
 });
 
 // Protected routes (with rate limiting)
@@ -76,5 +79,15 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function () {
     Route::post('/communities/{community}/join', [CommunityController::class, 'join']);
     Route::delete('/communities/{community}/leave', [CommunityController::class, 'leave']);
     Route::get('/communities/{community}/posts', [CommunityController::class, 'posts']);
+
+    // Conversations
+    Route::get('/conversations', [ConversationController::class, 'index']);
+    Route::get('/conversations/by-username/{username}', [ConversationController::class, 'getByUsername']);
+    Route::get('/conversations/{conversation}', [ConversationController::class, 'show']);
+
+    // Messages
+    Route::post('/messages', [MessageController::class, 'store']);
+    Route::get('/conversations/{conversation}/messages', [MessageController::class, 'index']);
+    Route::post('/conversations/{conversation}/read', [MessageController::class, 'markAsRead']);
 
 });

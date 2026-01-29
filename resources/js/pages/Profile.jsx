@@ -125,10 +125,13 @@ const Profile = () => {
                                         </span>
                                         <span>{isFollowing ? 'Connected' : 'Connect'}</span>
                                     </button>
-                                    <button className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 font-medium text-gray-700 transition-colors flex items-center space-x-2">
+                                    <Link
+                                        to={`/messages/${username}`}
+                                        className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 font-medium text-gray-700 transition-colors flex items-center space-x-2"
+                                    >
                                         <span className="material-symbols-outlined text-lg">mail</span>
                                         <span>Message</span>
-                                    </button>
+                                    </Link>
                                 </>
                             )}
                         </div>

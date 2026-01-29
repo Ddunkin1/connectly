@@ -80,14 +80,21 @@ class PostService
         $mediaUrl = null;
         $mediaType = null;
 
-        // Handle file upload if media is provided
+            // Handle file upload if media is provided
         if (isset($data['media']) && $data['media']) {
             $mediaUrl = $this->supabaseService->uploadFile($data['media'], 'posts');
             if (!$mediaUrl) {
                 // Upload failed - throw exception if this was the only content
                 $content = trim($data['content'] ?? '');
                 if (empty($content)) {
-                    throw new \Exception('Failed to upload media file. The Supabase storage bucket may not exist. Please check your Supabase configuration or try again later.');
+                    // Get more details from SupabaseService logs
+                    \Log::error('Media upload failed - no content provided', [
+                        'user_id' => $user->id,
+                        'file_name' => $data['media']->getClientOriginalName(),
+                        'file_size' => $data['media']->getSize(),
+                        'mime_type' => $data['media']->getMimeType(),
+                    ]);
+                    throw new \Exception('Failed to upload media file. Check Laravel logs for details. Ensure SUPABASE_SERVICE_ROLE_KEY is set and bucket "publicConnectly" exists in Supabase.');
                 }
                 // If content exists, continue without media (media upload failed but we have content)
                 \Log::warning('Media upload failed but post will be created with content only', [

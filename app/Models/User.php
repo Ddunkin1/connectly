@@ -9,6 +9,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use App\Models\Conversation;
+use App\Models\Message;
 
 class User extends Authenticatable implements MustVerifyEmail
 {
@@ -137,6 +139,56 @@ class User extends Authenticatable implements MustVerifyEmail
     public function followingCount(): int
     {
         return $this->following()->count();
+    }
+
+    /**
+     * Get conversations where user is user_one.
+     */
+    public function conversationsAsUserOne(): HasMany
+    {
+        return $this->hasMany(Conversation::class, 'user_one_id');
+    }
+
+    /**
+     * Get conversations where user is user_two.
+     */
+    public function conversationsAsUserTwo(): HasMany
+    {
+        return $this->hasMany(Conversation::class, 'user_two_id');
+    }
+
+    /**
+     * Get all conversations for this user (merged user_one and user_two).
+     */
+    public function conversations()
+    {
+        return Conversation::forUser($this);
+    }
+
+    /**
+     * Get all messages sent by this user.
+     */
+    public function sentMessages(): HasMany
+    {
+        return $this->hasMany(Message::class, 'sender_id');
+    }
+
+    /**
+     * Get all messages received by this user.
+     */
+    public function receivedMessages(): HasMany
+    {
+        return $this->hasMany(Message::class, 'receiver_id');
+    }
+
+    /**
+     * Get count of unread messages for this user.
+     */
+    public function unreadMessagesCount(): int
+    {
+        return Message::where('receiver_id', $this->id)
+            ->where('is_read', false)
+            ->count();
     }
 
     /**

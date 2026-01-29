@@ -39,7 +39,7 @@ return [
         'url' => env('SUPABASE_URL'),
         'key' => env('SUPABASE_KEY'),
         'service_role_key' => env('SUPABASE_SERVICE_ROLE_KEY'), // Optional: for bucket creation
-        'bucket' => env('SUPABASE_BUCKET', 'public'),
+        'bucket' => env('SUPABASE_BUCKET', 'publicConnectly'),
     ],
 
 ];

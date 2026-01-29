@@ -115,4 +115,18 @@ export const communityAPI = {
     getPosts: (id, params = {}) => api.get(`/communities/${id}/posts`, { params }),
 };
 
+// Conversations API
+export const conversationsAPI = {
+    getConversations: (page = 1) => api.get('/conversations', { params: { page } }),
+    getConversation: (conversationId) => api.get(`/conversations/${conversationId}`),
+    getConversationByUsername: (username) => api.get(`/conversations/by-username/${username}`),
+};
+
+// Messages API
+export const messagesAPI = {
+    sendMessage: (data) => api.post('/messages', data),
+    getMessages: (conversationId, page = 1) => api.get(`/conversations/${conversationId}/messages`, { params: { page } }),
+    markAsRead: (conversationId) => api.post(`/conversations/${conversationId}/read`),
+};
+
 export default api;

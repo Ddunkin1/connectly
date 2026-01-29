@@ -13,13 +13,27 @@ class SupabaseService
     private string $bucket;
 
     private ?string $serviceRoleKey = null;
+    private string $activeKey; // The key to use for operations
 
     public function __construct()
     {
         $this->supabaseUrl = config('services.supabase.url');
         $this->supabaseKey = config('services.supabase.key');
         $this->serviceRoleKey = config('services.supabase.service_role_key');
-        $this->bucket = config('services.supabase.bucket', 'public');
+        $this->bucket = config('services.supabase.bucket', 'publicConnectly');
+        
+        // Use service_role key if available (bypasses RLS), otherwise fall back to anon key
+        // Check if service_role_key is set and not empty
+        $this->activeKey = (!empty($this->serviceRoleKey)) ? $this->serviceRoleKey : $this->supabaseKey;
+        
+        // Log which key is being used (for debugging)
+        if (config('app.debug')) {
+            \Log::debug('SupabaseService initialized', [
+                'bucket' => $this->bucket,
+                'using_key_type' => (!empty($this->serviceRoleKey)) ? 'service_role' : 'anon',
+                'has_service_role_key' => !empty($this->serviceRoleKey),
+            ]);
+        }
     }
 
     /**
@@ -35,59 +49,63 @@ class SupabaseService
             $fileName = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
             $path = $folder . '/' . $fileName;
 
-            // Read file contents
+            // Read file contents as binary
             $fileContents = file_get_contents($file->getRealPath());
 
             // Upload to Supabase Storage
+            // Use service_role key if available (bypasses RLS), otherwise use anon key
+            // Use withBody() to send raw binary data instead of JSON encoding
             $response = Http::withHeaders([
-                'apikey' => $this->supabaseKey,
-                'Authorization' => 'Bearer ' . $this->supabaseKey,
+                'apikey' => $this->activeKey,
+                'Authorization' => 'Bearer ' . $this->activeKey,
                 'Content-Type' => $file->getMimeType(),
-            ])->put(
-                "{$this->supabaseUrl}/storage/v1/object/{$this->bucket}/{$path}",
-                $fileContents
-            );
+            ])->withBody($fileContents, $file->getMimeType())
+              ->put("{$this->supabaseUrl}/storage/v1/object/{$this->bucket}/{$path}");
 
             if ($response->successful()) {
                 // Return public URL
                 return "{$this->supabaseUrl}/storage/v1/object/public/{$this->bucket}/{$path}";
             }
 
+            $errorBody = $response->body();
+            $errorData = null;
+            try {
+                $errorData = json_decode($errorBody, true);
+            } catch (\Exception $e) {
+                // Keep as string if not JSON
+            }
+
             Log::error('Supabase upload failed', [
                 'status' => $response->status(),
-                'body' => $response->body(),
+                'body' => $errorBody,
+                'error_data' => $errorData,
                 'url' => "{$this->supabaseUrl}/storage/v1/object/{$this->bucket}/{$path}",
                 'bucket' => $this->bucket,
+                'using_key_type' => $this->serviceRoleKey ? 'service_role' : 'anon',
+                'file_size' => strlen($fileContents),
+                'file_name' => $fileName,
             ]);
 
-            // If bucket doesn't exist, try to create it automatically
+            // Handle different error statuses
             if ($response->status() === 404) {
-                Log::warning('Supabase bucket not found. Attempting to create...', [
+                $errorMsg = 'Bucket "' . $this->bucket . '" not found in Supabase. ';
+                $errorMsg .= 'Please verify the bucket exists at: https://app.supabase.com/project/' . str_replace(['https://', '.supabase.co'], '', $this->supabaseUrl) . '/storage/buckets';
+                Log::error($errorMsg, [
                     'bucket' => $this->bucket,
                     'supabase_url' => $this->supabaseUrl,
+                    'using_key_type' => $this->serviceRoleKey ? 'service_role' : 'anon',
                 ]);
-                
-                // Try to auto-create the bucket
-                if ($this->createBucket($this->bucket, true)) {
-                    // Retry upload after bucket creation
-                    $retryResponse = Http::withHeaders([
-                        'apikey' => $this->supabaseKey,
-                        'Authorization' => 'Bearer ' . $this->supabaseKey,
-                        'Content-Type' => $file->getMimeType(),
-                    ])->put(
-                        "{$this->supabaseUrl}/storage/v1/object/{$this->bucket}/{$path}",
-                        $fileContents
-                    );
-                    
-                    if ($retryResponse->successful()) {
-                        return "{$this->supabaseUrl}/storage/v1/object/public/{$this->bucket}/{$path}";
-                    }
-                }
-                
-                Log::error('Supabase bucket not found and auto-creation failed. Please create the bucket manually in Supabase dashboard.', [
-                    'bucket' => $this->bucket,
-                    'supabase_url' => $this->supabaseUrl,
-                    'dashboard_link' => 'https://app.supabase.com/project/' . str_replace(['https://', '.supabase.co'], '', $this->supabaseUrl) . '/storage/buckets',
+            } elseif ($response->status() === 401 || $response->status() === 403) {
+                $errorMsg = 'Supabase authentication failed. ';
+                $errorMsg .= $this->serviceRoleKey ? 'Service role key may be invalid.' : 'Anon key may not have permissions. Consider using SUPABASE_SERVICE_ROLE_KEY.';
+                Log::error($errorMsg, [
+                    'status' => $response->status(),
+                    'using_key_type' => $this->serviceRoleKey ? 'service_role' : 'anon',
+                ]);
+            } else {
+                Log::error('Supabase upload failed with status ' . $response->status(), [
+                    'status' => $response->status(),
+                    'error_body' => $errorBody,
                 ]);
             }
 
@@ -163,8 +181,8 @@ class SupabaseService
             }
 
             $response = Http::withHeaders([
-                'apikey' => $this->supabaseKey,
-                'Authorization' => 'Bearer ' . $this->supabaseKey,
+                'apikey' => $this->activeKey,
+                'Authorization' => 'Bearer ' . $this->activeKey,
             ])->delete(
                 "{$this->supabaseUrl}/storage/v1/object/{$this->bucket}/{$path}"
             );
