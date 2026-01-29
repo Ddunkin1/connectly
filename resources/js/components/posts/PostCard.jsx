@@ -233,19 +233,6 @@ const PostCard = ({ post, onDeleted, onCommentClick }) => {
                                             <span className="material-symbols-outlined text-lg">campaign</span>
                                             Share to my timeline
                                         </button>
-                                        <button
-                                            type="button"
-                                            onClick={() => {
-                                                const url = `${window.location.origin}/post/${post.shared_post.id}`;
-                                                navigator.clipboard.writeText(url).then(() => toast.success('Link copied')).catch(() => {});
-                                                shareMutation.mutate(post.shared_post.id);
-                                                setShareOpenInner(false);
-                                            }}
-                                            className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2 cursor-pointer"
-                                        >
-                                            <span className="material-symbols-outlined text-sm">link</span>
-                                            Copy link
-                                        </button>
                                     </div>
                                 </>
                             )}
@@ -350,40 +337,6 @@ const PostCard = ({ post, onDeleted, onCommentClick }) => {
                                     >
                                         <span className="material-symbols-outlined text-lg">campaign</span>
                                         Share to my timeline
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            const url = `${window.location.origin}/post/${post.id}`;
-                                            navigator.clipboard.writeText(url).then(() => {
-                                                toast.success('Shared with friends');
-                                            }).catch(() => {
-                                                toast.error('Could not share');
-                                            });
-                                            shareMutation.mutate(post.id);
-                                            setShareOpen(false);
-                                        }}
-                                        className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2 cursor-pointer"
-                                    >
-                                        <span className="material-symbols-outlined text-sm">group</span>
-                                        Copy link · Friends
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            const url = `${window.location.origin}/post/${post.id}`;
-                                            navigator.clipboard.writeText(url).then(() => {
-                                                toast.success('Shared with public');
-                                            }).catch(() => {
-                                                toast.error('Could not share');
-                                            });
-                                            shareMutation.mutate(post.id);
-                                            setShareOpen(false);
-                                        }}
-                                        className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2 cursor-pointer"
-                                    >
-                                        <span className="material-symbols-outlined text-sm">public</span>
-                                        Copy link · Public
                                     </button>
                                 </div>
                             </>

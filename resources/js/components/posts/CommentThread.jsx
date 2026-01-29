@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { commentsAPI } from '../../services/api';
+import { useQueryClient } from '@tanstack/react-query';
 import { useCreateComment } from '../../hooks/useComments';
 import Avatar from '../common/Avatar';
 import Button from '../common/Button';
@@ -16,13 +15,10 @@ const CommentThread = ({ postId, comment, level = 0 }) => {
     const { register, handleSubmit, reset } = useForm();
     const createCommentMutation = useCreateComment();
 
-    const repliesQuery = useQuery({
-        queryKey: ['comment-replies', comment.id],
-        queryFn: () => commentsAPI.getComments(postId),
-        enabled: showReplies && comment.replies_count > 0,
-        select: (data) =>
-            data.data.comments.filter((c) => c.parent_comment_id === comment.id),
-    });
+    // Use embedded replies from API (backend returns top-level comments with nested replies)
+    const replies = (comment.replies && Array.isArray(comment.replies) ? comment.replies : [])
+        .slice()
+        .sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
 
     const onSubmit = (data) => {
         createCommentMutation.mutate(
@@ -32,7 +28,8 @@ const CommentThread = ({ postId, comment, level = 0 }) => {
             },
             {
                 onSuccess: () => {
-                    queryClient.invalidateQueries({ queryKey: ['comment-replies', comment.id] });
+                    queryClient.invalidateQueries({ queryKey: ['comments', postId] });
+                    queryClient.refetchQueries({ queryKey: ['comments', postId] });
                     reset();
                     setIsReplying(false);
                     setShowReplies(true);
@@ -65,12 +62,12 @@ const CommentThread = ({ postId, comment, level = 0 }) => {
                         >
                             Reply
                         </button>
-                        {comment.replies_count > 0 && (
+                        {(comment.replies_count > 0 || replies.length > 0) && (
                             <button
                                 onClick={() => setShowReplies(!showReplies)}
                                 className="text-xs text-gray-500 hover:text-[#359EFF]"
                             >
-                                {showReplies ? 'Hide' : 'Show'} {comment.replies_count} replies
+                                {showReplies ? 'Hide' : 'Show'} {Math.max(comment.replies_count ?? 0, replies.length)} replies
                             </button>
                         )}
                     </div>
@@ -109,9 +106,9 @@ const CommentThread = ({ postId, comment, level = 0 }) => {
                         </form>
                     )}
 
-                    {showReplies && repliesQuery.data && (
+                    {showReplies && replies.length > 0 && (
                         <div className="mt-3">
-                            {repliesQuery.data.map((reply) => (
+                            {replies.map((reply) => (
                                 <CommentThread
                                     key={reply.id}
                                     postId={postId}
