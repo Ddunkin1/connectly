@@ -221,9 +221,10 @@ export const useDeletePost = () => {
 
     return useMutation({
         mutationFn: (postId) => postsAPI.deletePost(postId),
-        onSuccess: () => {
+        onSuccess: (_, postId) => {
             queryClient.invalidateQueries({ queryKey: ['posts'] });
             queryClient.invalidateQueries({ queryKey: ['user-posts'] });
+            queryClient.removeQueries({ queryKey: ['post', String(postId)] });
             toast.success('Post deleted successfully!');
         },
         onError: (error) => {

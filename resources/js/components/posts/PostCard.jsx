@@ -2,19 +2,33 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import Avatar from '../common/Avatar';
 import { formatDate } from '../../utils/formatDate';
-import { useLikePost, useUnlikePost, useSharePost, useCreatePost } from '../../hooks/usePosts';
+import { useLikePost, useUnlikePost, useSharePost, useCreatePost, useDeletePost } from '../../hooks/usePosts';
 import useAuthStore from '../../store/authStore';
 import toast from 'react-hot-toast';
 import ShareToTimelineModal from './ShareToTimelineModal';
 
-const PostCard = ({ post }) => {
+const PostCard = ({ post, onDeleted }) => {
     const user = useAuthStore((state) => state.user);
     const likeMutation = useLikePost();
     const unlikeMutation = useUnlikePost();
     const shareMutation = useSharePost();
     const createPostMutation = useCreatePost();
+    const deleteMutation = useDeletePost();
     const [shareOpen, setShareOpen] = useState(false);
     const [shareToTimelineOpen, setShareToTimelineOpen] = useState(false);
+    const [moreOpen, setMoreOpen] = useState(false);
+
+    const isAuthor = user?.id === post.user?.id;
+
+    const handleDeleteClick = () => {
+        setMoreOpen(false);
+        if (!window.confirm('Delete this post? This cannot be undone.')) return;
+        deleteMutation.mutate(post.id, {
+            onSuccess: () => {
+                onDeleted?.();
+            },
+        });
+    };
 
     const handleLike = () => {
         if (post.is_liked) {
@@ -82,6 +96,41 @@ const PostCard = ({ post }) => {
                         @{post.user?.username}
                     </Link>
                 </div>
+                {isAuthor && (
+                    <div className="relative flex-shrink-0">
+                        <button
+                            type="button"
+                            onClick={(e) => {
+                                e.preventDefault();
+                                setMoreOpen((open) => !open);
+                            }}
+                            className="p-1 rounded-full text-gray-500 hover:bg-gray-100 hover:text-gray-700"
+                            aria-label="More options"
+                        >
+                            <span className="material-symbols-outlined">more_horiz</span>
+                        </button>
+                        {moreOpen && (
+                            <>
+                                <div
+                                    className="fixed inset-0 z-10"
+                                    aria-hidden="true"
+                                    onClick={() => setMoreOpen(false)}
+                                />
+                                <div className="absolute right-0 top-full mt-1 z-20 py-1 w-44 bg-white rounded-lg border border-gray-200 shadow-lg">
+                                    <button
+                                        type="button"
+                                        onClick={handleDeleteClick}
+                                        disabled={deleteMutation.isPending}
+                                        className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
+                                    >
+                                        <span className="material-symbols-outlined text-lg">delete</span>
+                                        Delete post
+                                    </button>
+                                </div>
+                            </>
+                        )}
+                    </div>
+                )}
             </div>
 
             {/* Sharer's text (when this post is a share) */}

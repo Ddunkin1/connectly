@@ -1,5 +1,5 @@
 import React from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { useQuery } from '@tanstack/react-query';
 import { usePost } from '../hooks/usePosts';
@@ -14,6 +14,7 @@ import useAuthStore from '../store/authStore';
 
 const PostDetail = () => {
     const { id } = useParams();
+    const navigate = useNavigate();
     const { data: post, isLoading } = usePost(id);
     const user = useAuthStore((state) => state.user);
     const { register, handleSubmit, reset } = useForm();
@@ -55,7 +56,7 @@ const PostDetail = () => {
 
     return (
         <div className="max-w-3xl mx-auto">
-            <PostCard post={post} />
+            <PostCard post={post} onDeleted={() => navigate('/home', { replace: true })} />
 
             {/* Comment Input */}
             <div className="bg-white rounded-lg border border-gray-200 p-4 mt-4">

@@ -8,7 +8,9 @@ import Button from '../common/Button';
 
 const PostInput = ({ onPostCreated }) => {
     const user = useAuthStore((state) => state.user);
-    const { register, handleSubmit, reset, watch, setValue } = useForm();
+    const { register, handleSubmit, reset, watch, setValue } = useForm({
+        defaultValues: { visibility: 'public' },
+    });
     const createPostMutation = useCreatePost();
     const [isExpanded, setIsExpanded] = useState(false);
     const [mediaPreview, setMediaPreview] = useState(null);
@@ -141,7 +143,30 @@ const PostInput = ({ onPostCreated }) => {
                                 </button>
                             </div>
                         )}
-                        <div className="flex items-center justify-end mt-3">
+                        <div className="flex items-center justify-between mt-3 gap-2 flex-wrap">
+                            <div className="flex items-center gap-4">
+                                <span className="text-sm text-gray-600">Who can see this?</span>
+                                <label className="flex items-center gap-1.5 cursor-pointer">
+                                    <input
+                                        type="radio"
+                                        value="public"
+                                        {...register('visibility')}
+                                        className="text-[#359EFF]"
+                                    />
+                                    <span className="material-symbols-outlined text-base text-gray-500">public</span>
+                                    <span className="text-sm">Public</span>
+                                </label>
+                                <label className="flex items-center gap-1.5 cursor-pointer">
+                                    <input
+                                        type="radio"
+                                        value="followers"
+                                        {...register('visibility')}
+                                        className="text-[#359EFF]"
+                                    />
+                                    <span className="material-symbols-outlined text-base text-gray-500">group</span>
+                                    <span className="text-sm">Friends only</span>
+                                </label>
+                            </div>
                             <div className="flex items-center space-x-2">
                                 {content.length > 0 && (
                                     <span className="text-xs text-gray-500">
