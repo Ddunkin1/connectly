@@ -44,35 +44,47 @@ class UserController extends Controller
      */
     public function posts(Request $request, User $user): JsonResponse
     {
-        $posts = $user->posts()
-            ->with(['user', 'hashtags', 'likes'])
-            ->withCount(['likes', 'allComments as comments_count'])
-            ->latest()
-            ->paginate(15);
+        try {
+            $posts = $user->posts()
+                ->with(['user', 'hashtags', 'likes'])
+                ->withCount(['likes', 'allComments as comments_count'])
+                ->latest()
+                ->paginate(15);
 
-        // Check if current user liked each post
-        if ($request->user()) {
-            $likedPostIds = $request->user()
-                ->likes()
-                ->whereIn('post_id', $posts->pluck('id'))
-                ->pluck('post_id')
-                ->toArray();
+            // Check if current user liked each post
+            if ($request->user()) {
+                $likedPostIds = $request->user()
+                    ->likes()
+                    ->whereIn('post_id', $posts->pluck('id'))
+                    ->pluck('post_id')
+                    ->toArray();
 
-            $posts->getCollection()->transform(function ($post) use ($likedPostIds) {
-                $post->is_liked = in_array($post->id, $likedPostIds);
-                return $post;
-            });
+                $posts->getCollection()->transform(function ($post) use ($likedPostIds) {
+                    $post->is_liked = in_array($post->id, $likedPostIds);
+                    return $post;
+                });
+            }
+
+            return response()->json([
+                'posts' => PostResource::collection($posts->items()),
+                'pagination' => [
+                    'current_page' => $posts->currentPage(),
+                    'last_page' => $posts->lastPage(),
+                    'per_page' => $posts->perPage(),
+                    'total' => $posts->total(),
+                ],
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('User posts fetch failed: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString(),
+                'user_id' => $user->id,
+            ]);
+
+            return response()->json([
+                'message' => 'Failed to fetch user posts',
+                'error' => config('app.debug') ? $e->getMessage() : 'An error occurred',
+            ], 500);
         }
-
-        return response()->json([
-            'posts' => PostResource::collection($posts->items()),
-            'pagination' => [
-                'current_page' => $posts->currentPage(),
-                'last_page' => $posts->lastPage(),
-                'per_page' => $posts->perPage(),
-                'total' => $posts->total(),
-            ],
-        ]);
     }
 
     /**
@@ -85,11 +97,30 @@ class UserController extends Controller
     {
         $user = $request->user();
         $data = $request->validated();
+        $supabaseService = app(\App\Services\SupabaseService::class);
         
-        // Handle cover_image_url separately if provided
-        if (isset($data['cover_image_url'])) {
-            $user->cover_image = $data['cover_image_url'];
-            unset($data['cover_image_url']);
+        // Handle profile picture upload
+        if ($request->hasFile('profile_picture')) {
+            // Delete old profile picture if exists
+            if ($user->profile_picture) {
+                $supabaseService->deleteFile($user->profile_picture);
+            }
+            $profilePictureUrl = $supabaseService->uploadFile($request->file('profile_picture'), 'profile-pictures');
+            if ($profilePictureUrl) {
+                $data['profile_picture'] = $profilePictureUrl;
+            }
+        }
+        
+        // Handle cover image upload
+        if ($request->hasFile('cover_image')) {
+            // Delete old cover image if exists
+            if ($user->cover_image) {
+                $supabaseService->deleteFile($user->cover_image);
+            }
+            $coverImageUrl = $supabaseService->uploadFile($request->file('cover_image'), 'cover-images');
+            if ($coverImageUrl) {
+                $data['cover_image'] = $coverImageUrl;
+            }
         }
         
         $user->update($data);
@@ -109,9 +140,23 @@ class UserController extends Controller
     public function uploadProfilePicture(UploadProfilePictureRequest $request): JsonResponse
     {
         $user = $request->user();
+        $supabaseService = app(\App\Services\SupabaseService::class);
 
-        // Save EdgeStore URL directly
-        $user->update(['profile_picture' => $request->profile_picture_url]);
+        // Delete old profile picture if exists
+        if ($user->profile_picture) {
+            $supabaseService->deleteFile($user->profile_picture);
+        }
+
+        // Upload new profile picture
+        $profilePictureUrl = $supabaseService->uploadFile($request->file('profile_picture'), 'profile-pictures');
+        
+        if (!$profilePictureUrl) {
+            return response()->json([
+                'message' => 'Failed to upload profile picture',
+            ], 500);
+        }
+
+        $user->update(['profile_picture' => $profilePictureUrl]);
 
         return response()->json([
             'message' => 'Profile picture uploaded successfully',

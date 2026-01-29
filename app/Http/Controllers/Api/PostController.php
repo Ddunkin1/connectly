@@ -47,14 +47,37 @@ class PostController extends Controller
      */
     public function store(StorePostRequest $request): JsonResponse
     {
-        $data = $request->validated();
-        
-        $post = $this->postService->createPost($request->user(), $data);
+        try {
+            $data = $request->validated();
+            
+            // Include file if uploaded
+            if ($request->hasFile('media')) {
+                $data['media'] = $request->file('media');
+            }
+            
+            // Ensure content is set (can be empty string if media exists)
+            if (!isset($data['content'])) {
+                $data['content'] = '';
+            }
+            
+            $post = $this->postService->createPost($request->user(), $data);
 
-        return response()->json([
-            'message' => 'Post created successfully',
-            'post' => new PostResource($post),
-        ], 201);
+            return response()->json([
+                'message' => 'Post created successfully',
+                'post' => new PostResource($post),
+            ], 201);
+        } catch (\Exception $e) {
+            \Log::error('Post creation failed: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString(),
+                'data' => $request->all(),
+            ]);
+
+            return response()->json([
+                'message' => 'Failed to create post',
+                'error' => config('app.debug') ? $e->getMessage() : 'An error occurred while creating the post',
+                'hint' => config('app.debug') ? 'Check if database migration was run and Supabase bucket exists' : null,
+            ], 500);
+        }
     }
 
     /**

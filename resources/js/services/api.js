@@ -11,13 +11,19 @@ const api = axios.create({
     },
 });
 
-// Request interceptor - Add auth token to requests
+// Request interceptor - Add auth token to requests and handle FormData
 api.interceptors.request.use(
     (config) => {
         const token = localStorage.getItem('auth_token');
         if (token) {
             config.headers.Authorization = `Bearer ${token}`;
         }
+        
+        // If FormData, remove Content-Type to let browser set it with boundary
+        if (config.data instanceof FormData) {
+            delete config.headers['Content-Type'];
+        }
+        
         return config;
     },
     (error) => {
@@ -41,13 +47,7 @@ api.interceptors.response.use(
 
 // Auth API
 export const authAPI = {
-    register: (data) => {
-        // If data is FormData, use multipart/form-data headers
-        const config = data instanceof FormData
-            ? { headers: { 'Content-Type': 'multipart/form-data' } }
-            : {};
-        return api.post('/register', data, config);
-    },
+    register: (data) => api.post('/register', data),
     login: (data) => api.post('/login', data),
     logout: () => api.post('/logout'),
     getUser: () => api.get('/user'),
@@ -57,11 +57,17 @@ export const authAPI = {
 export const userAPI = {
     getProfile: (userId) => api.get(`/users/${userId}/profile`),
     getUserPosts: (userId, page = 1) => api.get(`/users/${userId}/posts`, { params: { page } }),
-    updateProfile: (data) => api.put('/user/profile', data),
-    uploadProfilePicture: (data) => {
-        // Accept either FormData (for file) or object (for URL)
+    updateProfile: (data) => {
+        // Handle FormData - don't set Content-Type, let browser set it with boundary
         const config = data instanceof FormData
-            ? { headers: { 'Content-Type': 'multipart/form-data' } }
+            ? { headers: { 'Content-Type': undefined } }
+            : {};
+        return api.put('/user/profile', data, config);
+    },
+    uploadProfilePicture: (data) => {
+        // Handle FormData - don't set Content-Type, let browser set it with boundary
+        const config = data instanceof FormData
+            ? { headers: { 'Content-Type': undefined } }
             : {};
         return api.post('/user/profile-picture', data, config);
     },

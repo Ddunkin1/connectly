@@ -16,8 +16,8 @@ class PostResource extends JsonResource
     {
         return [
             'id' => $this->id,
-            'content' => $this->content,
-            'media_url' => $this->media_url, // EdgeStore URLs are already full URLs
+            'content' => $this->content ?? '', // Handle NULL content (for media-only posts)
+            'media_url' => $this->media_url, // Supabase URLs are already full URLs
             'media_type' => $this->media_type,
             'visibility' => $this->visibility,
             'user' => new UserResource($this->whenLoaded('user')),

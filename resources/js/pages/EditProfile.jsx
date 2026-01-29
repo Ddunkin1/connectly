@@ -2,7 +2,6 @@ import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { useUpdateProfile } from '../hooks/useUsers';
-import { useEdgeStore } from '../lib/edgestoreClient.jsx';
 import useAuthStore from '../store/authStore';
 import toast from 'react-hot-toast';
 import Avatar from '../components/common/Avatar';
@@ -13,14 +12,11 @@ const EditProfile = () => {
     const navigate = useNavigate();
     const user = useAuthStore((state) => state.user);
     const updateMutation = useUpdateProfile();
-    const { edgestore } = useEdgeStore();
     
-    const [profilePictureUrl, setProfilePictureUrl] = useState(user?.profile_picture || null);
+    const [profilePicture, setProfilePicture] = useState(null);
     const [profilePreview, setProfilePreview] = useState(user?.profile_picture || null);
-    const [coverImageUrl, setCoverImageUrl] = useState(user?.cover_image || null);
+    const [coverImage, setCoverImage] = useState(null);
     const [coverPreview, setCoverPreview] = useState(user?.cover_image || null);
-    const [isUploadingProfile, setIsUploadingProfile] = useState(false);
-    const [isUploadingCover, setIsUploadingCover] = useState(false);
     
     const profileFileInputRef = useRef(null);
     const coverFileInputRef = useRef(null);
@@ -38,7 +34,7 @@ const EditProfile = () => {
 
     const bio = watch('bio', '');
 
-    const handleProfilePictureChange = async (e) => {
+    const handleProfilePictureChange = (e) => {
         const file = e.target.files[0];
         if (!file) return;
 
@@ -52,26 +48,10 @@ const EditProfile = () => {
             setProfilePreview(reader.result);
         };
         reader.readAsDataURL(file);
-
-        setIsUploadingProfile(true);
-        try {
-            const res = await edgestore.profilePictures.upload({
-                file: file,
-                options: { temporary: false },
-                input: { userId: user?.id?.toString() },
-            });
-            setProfilePictureUrl(res.url);
-            toast.success('Profile picture uploaded successfully');
-        } catch (error) {
-            console.error('Upload error:', error);
-            toast.error('Failed to upload profile picture');
-            setProfilePreview(user?.profile_picture || null);
-        } finally {
-            setIsUploadingProfile(false);
-        }
+        setProfilePicture(file);
     };
 
-    const handleCoverImageChange = async (e) => {
+    const handleCoverImageChange = (e) => {
         const file = e.target.files[0];
         if (!file) return;
 
@@ -85,32 +65,29 @@ const EditProfile = () => {
             setCoverPreview(reader.result);
         };
         reader.readAsDataURL(file);
-
-        setIsUploadingCover(true);
-        try {
-            const res = await edgestore.coverImages.upload({
-                file: file,
-                options: { temporary: false },
-                input: { userId: user?.id?.toString() },
-            });
-            setCoverImageUrl(res.url);
-            toast.success('Cover image uploaded successfully');
-        } catch (error) {
-            console.error('Upload error:', error);
-            toast.error('Failed to upload cover image');
-            setCoverPreview(user?.cover_image || null);
-        } finally {
-            setIsUploadingCover(false);
-        }
+        setCoverImage(file);
     };
 
     const onSubmit = async (data) => {
         try {
-            const updateData = {
-                ...data,
-                cover_image_url: coverImageUrl,
-            };
-            await updateMutation.mutateAsync(updateData);
+            // Create FormData for file uploads
+            const formData = new FormData();
+            formData.append('name', data.name);
+            formData.append('username', data.username);
+            formData.append('bio', data.bio || '');
+            formData.append('location', data.location || '');
+            formData.append('website', data.website || '');
+            formData.append('privacy_settings', data.privacy_settings);
+            
+            if (profilePicture) {
+                formData.append('profile_picture', profilePicture);
+            }
+            
+            if (coverImage) {
+                formData.append('cover_image', coverImage);
+            }
+
+            await updateMutation.mutateAsync(formData);
             navigate(`/profile/${data.username}`);
         } catch (error) {
             // Error handled by mutation
@@ -138,11 +115,6 @@ const EditProfile = () => {
                             }}
                             onClick={() => coverFileInputRef.current?.click()}
                         >
-                            {isUploadingCover && (
-                                <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 rounded-lg">
-                                    <LoadingSpinner size="md" />
-                                </div>
-                            )}
                         </div>
                         <input
                             ref={coverFileInputRef}
@@ -163,13 +135,7 @@ const EditProfile = () => {
                             className="w-32 h-32 rounded-full border-4 border-white shadow-lg cursor-pointer hover:opacity-90 transition-opacity"
                             onClick={() => profileFileInputRef.current?.click()}
                         >
-                            {isUploadingProfile ? (
-                                <div className="w-full h-full rounded-full flex items-center justify-center bg-gray-100">
-                                    <LoadingSpinner size="md" />
-                                </div>
-                            ) : (
-                                <Avatar src={profilePreview} alt={user?.name} size="2xl" className="w-full h-full" />
-                            )}
+                            <Avatar src={profilePreview} alt={user?.name} size="2xl" className="w-full h-full" />
                         </div>
                         <input
                             ref={profileFileInputRef}

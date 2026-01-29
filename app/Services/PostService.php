@@ -4,15 +4,16 @@ namespace App\Services;
 
 use App\Models\Post;
 use App\Models\User;
+use App\Services\SupabaseService;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 
 class PostService
 {
     public function __construct(
-        private HashtagService $hashtagService
+        private HashtagService $hashtagService,
+        private SupabaseService $supabaseService
     ) {
     }
 
@@ -76,15 +77,40 @@ class PostService
      */
     public function createPost(User $user, array $data): Post
     {
+        $mediaUrl = null;
+        $mediaType = null;
+
+        // Handle file upload if media is provided
+        if (isset($data['media']) && $data['media']) {
+            $mediaUrl = $this->supabaseService->uploadFile($data['media'], 'posts');
+            if (!$mediaUrl) {
+                // Upload failed - throw exception if this was the only content
+                $content = trim($data['content'] ?? '');
+                if (empty($content)) {
+                    throw new \Exception('Failed to upload media file. The Supabase storage bucket may not exist. Please check your Supabase configuration or try again later.');
+                }
+                // If content exists, continue without media (media upload failed but we have content)
+                \Log::warning('Media upload failed but post will be created with content only', [
+                    'user_id' => $user->id,
+                    'file_name' => $data['media']->getClientOriginalName(),
+                ]);
+            } else {
+                $mimeType = $data['media']->getMimeType();
+                $mediaType = str_starts_with($mimeType, 'image/') ? 'image' : 'video';
+            }
+        }
+
         $post = $user->posts()->create([
-            'content' => $data['content'],
-            'media_url' => $data['media_url'] ?? null,
-            'media_type' => $data['media_type'] ?? null,
+            'content' => $data['content'] ?? '',
+            'media_url' => $mediaUrl,
+            'media_type' => $mediaType,
             'visibility' => $data['visibility'] ?? 'public',
         ]);
 
-        // Sync hashtags
-        $this->hashtagService->syncHashtags($post, $data['content']);
+        // Sync hashtags (only if content exists)
+        if (!empty($data['content'])) {
+            $this->hashtagService->syncHashtags($post, $data['content']);
+        }
 
         return $post->load(['user', 'hashtags']);
     }

@@ -22,10 +22,28 @@ class StorePostRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'content' => ['required', 'string', 'max:5000'],
-            'media_url' => ['nullable', 'string', 'url', 'max:500'],
-            'media_type' => ['nullable', 'in:image,video'],
+            'content' => ['nullable', 'string', 'max:5000'],
+            'media' => ['nullable', 'file', 'mimes:jpeg,jpg,png,gif,webp,mp4,mov,avi', 'max:10240'], // 10MB max
             'visibility' => ['nullable', 'in:public,followers'],
         ];
+    }
+
+    /**
+     * Configure the validator instance.
+     *
+     * @param  \Illuminate\Validation\Validator  $validator
+     * @return void
+     */
+    public function withValidator($validator)
+    {
+        $validator->after(function ($validator) {
+            $content = $this->input('content');
+            $hasMedia = $this->hasFile('media');
+            
+            // Either content or media must be present
+            if (empty(trim($content ?? '')) && !$hasMedia) {
+                $validator->errors()->add('content', 'Either content or media file is required.');
+            }
+        });
     }
 }

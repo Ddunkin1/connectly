@@ -23,7 +23,7 @@ class UploadProfilePictureRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'profile_picture_url' => ['required', 'string', 'url', 'max:500'],
+            'profile_picture' => ['required', 'file', 'mimes:jpeg,jpg,png,webp', 'max:5120'], // 5MB max
         ];
     }
 }

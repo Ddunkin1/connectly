@@ -4,7 +4,6 @@ import ReactDOM from 'react-dom/client';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'react-hot-toast';
-import { EdgeStoreProviderWrapper } from './lib/edgestoreClient.jsx';
 import Header from './components/layout/Header';
 import LeftSidebar from './components/layout/LeftSidebar';
 import RightSidebar from './components/layout/RightSidebar';
@@ -19,6 +18,7 @@ import Communities from './pages/Communities';
 import CommunityDetail from './pages/CommunityDetail';
 import EditProfile from './pages/EditProfile';
 import Search from './pages/Search';
+import TestUpload from './pages/TestUpload';
 import useAuthStore from './store/authStore';
 
 const queryClient = new QueryClient({
@@ -171,6 +171,14 @@ function AppContent() {
                                 </ProtectedRoute>
                             }
                         />
+                        <Route
+                            path="/test-upload"
+                            element={
+                                <ProtectedRoute>
+                                    <TestUpload />
+                                </ProtectedRoute>
+                            }
+                        />
                         <Route path="*" element={<Navigate to="/home" replace />} />
                     </Routes>
                 </main>
@@ -208,11 +216,9 @@ function AppContent() {
 function App() {
     return (
         <QueryClientProvider client={queryClient}>
-            <EdgeStoreProviderWrapper>
-                <Router>
-                    <AppContent />
-                </Router>
-            </EdgeStoreProviderWrapper>
+            <Router>
+                <AppContent />
+            </Router>
         </QueryClientProvider>
     );
 }

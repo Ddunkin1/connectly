@@ -30,9 +30,13 @@ class AuthController extends Controller
             'bio' => $request->bio ?? null,
         ];
 
-        // Handle profile picture URL from EdgeStore
-        if ($request->has('profile_picture_url') && $request->profile_picture_url) {
-            $data['profile_picture'] = $request->profile_picture_url;
+        // Handle profile picture upload
+        if ($request->hasFile('profile_picture')) {
+            $supabaseService = app(\App\Services\SupabaseService::class);
+            $profilePictureUrl = $supabaseService->uploadFile($request->file('profile_picture'), 'profile-pictures');
+            if ($profilePictureUrl) {
+                $data['profile_picture'] = $profilePictureUrl;
+            }
         }
 
         $user = User::create($data);

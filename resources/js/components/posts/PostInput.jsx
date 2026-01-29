@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useCreatePost } from '../../hooks/usePosts';
 import useAuthStore from '../../store/authStore';
-import { useEdgeStore } from '../../lib/edgestoreClient.jsx';
 import toast from 'react-hot-toast';
 import Avatar from '../common/Avatar';
 import Button from '../common/Button';
@@ -13,15 +12,23 @@ const PostInput = ({ onPostCreated }) => {
     const createPostMutation = useCreatePost();
     const [isExpanded, setIsExpanded] = useState(false);
     const [mediaPreview, setMediaPreview] = useState(null);
+    const [mediaFile, setMediaFile] = useState(null);
     const [mediaType, setMediaType] = useState(null);
-    const { edgestore } = useEdgeStore();
 
     const content = watch('content', '');
-    const mediaUrl = watch('media_url', '');
 
-    const handleFileChange = async (event) => {
+    // Check if form is valid (either content or media must exist)
+    const isFormValid = content.trim().length > 0 || mediaFile !== null;
+
+    const handleFileChange = (event) => {
         const file = event.target.files?.[0];
         if (!file) return;
+
+        // Validate file size (10MB max)
+        if (file.size > 10 * 1024 * 1024) {
+            toast.error('File size must be less than 10MB');
+            return;
+        }
 
         // Create preview
         const reader = new FileReader();
@@ -31,52 +38,36 @@ const PostInput = ({ onPostCreated }) => {
             setMediaType(isImage ? 'image' : 'video');
         };
         reader.readAsDataURL(file);
-
-        try {
-            // Upload to EdgeStore using postMedia bucket
-            const isImage = file.type.startsWith('image/');
-            const res = await edgestore.postMedia.upload({
-                file: file,
-                options: {
-                    temporary: false,
-                },
-                input: {
-                    mediaType: isImage ? 'image' : 'video',
-                },
-            });
-
-            // Set the URL in the form
-            setValue('media_url', res.url);
-            setValue('media_type', isImage ? 'image' : 'video');
-            toast.success('Media uploaded successfully');
-        } catch (error) {
-            console.error('Upload error:', error);
-            toast.error('Failed to upload media. Please try again.');
-            setMediaPreview(null);
-            setMediaType(null);
-        }
+        setMediaFile(file);
     };
 
     const removeMedia = () => {
         setMediaPreview(null);
+        setMediaFile(null);
         setMediaType(null);
-        setValue('media_url', '');
-        setValue('media_type', '');
     };
 
     const onSubmit = async (data) => {
-        try {
-            // Prepare data for API
-            const postData = {
-                content: data.content,
-                media_url: data.media_url || null,
-                media_type: data.media_type || null,
-                visibility: data.visibility || 'public',
-            };
+        // Validate: either content or media must exist
+        if (!data.content.trim() && !mediaFile) {
+            toast.error('Please add content or select a media file');
+            return;
+        }
 
-            await createPostMutation.mutateAsync(postData);
+        try {
+            // Create FormData for file upload
+            const formData = new FormData();
+            formData.append('content', data.content || '');
+            formData.append('visibility', data.visibility || 'public');
+            
+            if (mediaFile) {
+                formData.append('media', mediaFile);
+            }
+
+            await createPostMutation.mutateAsync(formData);
             reset();
             setMediaPreview(null);
+            setMediaFile(null);
             setMediaType(null);
             setIsExpanded(false);
             if (onPostCreated) onPostCreated();
@@ -93,7 +84,16 @@ const PostInput = ({ onPostCreated }) => {
                     <div className="flex-1">
                         <div className="flex items-center space-x-3">
                             <textarea
-                                {...register('content', { required: 'Content is required', maxLength: 5000 })}
+                                {...register('content', { 
+                                    required: !mediaFile ? 'Content or media is required' : false,
+                                    maxLength: 5000,
+                                    validate: (value) => {
+                                        if (!value.trim() && !mediaFile) {
+                                            return 'Please add content or select a media file';
+                                        }
+                                        return true;
+                                    }
+                                })}
                                 placeholder="What's happening in your community?"
                                 rows={isExpanded ? 4 : 2}
                                 onFocus={() => setIsExpanded(true)}
@@ -164,7 +164,7 @@ const PostInput = ({ onPostCreated }) => {
                                 <Button
                                     type="submit"
                                     size="sm"
-                                    disabled={!content.trim() || createPostMutation.isPending}
+                                    disabled={!isFormValid || createPostMutation.isPending}
                                     loading={createPostMutation.isPending}
                                 >
                                     Post

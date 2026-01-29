@@ -11,46 +11,42 @@
 - ✅ Feed Algorithm (Posts from followed users)
 - ✅ Search Functionality (Backend + Frontend)
 - ✅ UI/UX Design (Header, Sidebars, Home Feed tabs, QuickChat)
-- ✅ **EdgeStore Integration** - File storage for images and videos (see important note below)
+- ✅ **Supabase Integration** - File storage for images and videos (see important note below)
 
 ---
 
-## 📦 IMPORTANT: EdgeStore File Storage
+## 📦 IMPORTANT: Supabase File Storage
 
-**This project uses EdgeStore for file storage, NOT local Laravel storage.**
+**This project uses Supabase Storage for file storage, NOT local Laravel storage.**
 
-### What is EdgeStore?
-EdgeStore is a cloud-based file storage service that handles file uploads directly from the frontend. Files are uploaded directly to EdgeStore's cloud service, and URLs are saved to the database.
+### What is Supabase Storage?
+Supabase Storage is a cloud-based file storage service that handles file uploads through the backend. Files are uploaded to Supabase Storage, and URLs are saved to the database.
 
 ### How It Works:
-1. **Frontend:** User selects file → EdgeStore React component uploads directly to EdgeStore cloud
-2. **EdgeStore:** Returns a URL after successful upload
-3. **Frontend:** Stores URL in form state
-4. **Backend:** Receives URL (not file) and saves it to database
-5. **Display:** Images/videos load from EdgeStore CDN
+1. **Frontend:** User selects file → File is sent to Laravel backend via FormData
+2. **Backend:** Laravel receives file and uploads it to Supabase Storage
+3. **Supabase:** Returns a URL after successful upload
+4. **Backend:** Saves URL to database
+5. **Display:** Images/videos load from Supabase Storage CDN
 
 ### Key Points:
-- ✅ **Already Implemented:** EdgeStore is fully set up and working
-- ✅ **Post Media:** PostInput component uses EdgeStore for media uploads
-- ✅ **Profile Pictures:** Registration and profile updates use EdgeStore
-- ✅ **Backend:** Accepts URLs (strings), not files
-- ✅ **Validation:** Backend validates URL format, not file types
-- ✅ **Storage:** No need for `php artisan storage:link` or local file storage
+- ✅ **Already Implemented:** Supabase is fully set up and working
+- ✅ **Post Media:** PostInput component sends files to backend, backend uploads to Supabase
+- ✅ **Profile Pictures:** Registration and profile updates upload files to Supabase
+- ✅ **Backend:** Accepts files (multipart/form-data), uploads to Supabase
+- ✅ **Validation:** Backend validates file types and sizes
+- ✅ **Storage:** Files stored in Supabase Storage buckets
 
-### EdgeStore Configuration:
-- **Router:** `resources/js/lib/edgestore.js` - Defines buckets (profilePictures, postMedia, coverImages)
-- **Provider:** `resources/js/lib/edgestoreClient.js` - EdgeStore React provider setup
-- **API Route:** `/api/edgestore/{any}` - Handles EdgeStore API requests
-- **Environment:** `.env` contains `EDGE_STORE_ACCESS_KEY`, `EDGE_STORE_SECRET_KEY`, `EDGE_STORE_URL`
+### Supabase Configuration:
+- **Service:** `app/Services/SupabaseService.php` - Handles file uploads to Supabase
+- **Config:** `config/services.php` - Contains Supabase URL, key, and bucket
+- **Environment:** `.env` contains `SUPABASE_URL`, `SUPABASE_KEY`, `SUPABASE_BUCKET`
 
 ### When Adding New File Upload Features:
-- Use EdgeStore React components (already set up)
-- Upload files using `useEdgeStore()` hook
-- Send URLs to backend, not files
-- Backend validates URLs, not files
-- See `PostInput.jsx` and `Register.jsx` for examples
-
-**For detailed EdgeStore documentation, see:** `scope.md`
+- Frontend sends files via FormData
+- Backend uses `SupabaseService` to upload files
+- Backend validates file types and sizes
+- See `PostInput.jsx`, `Register.jsx`, and `EditProfile.jsx` for examples
 
 ---
 
@@ -160,11 +156,11 @@ EdgeStore is a cloud-based file storage service that handles file uploads direct
 
 ### ✅ Step 1 Checklist
 
-- [x] Backend accepts media URLs in the request validation (EdgeStore URLs)
-- [x] EdgeStore handles file storage (cloud, not local)
-- [x] PostResource returns EdgeStore URLs directly
+- [x] Backend accepts media files in the request validation
+- [x] Supabase handles file storage (cloud, not local)
+- [x] PostResource returns Supabase URLs directly
 - [x] Frontend shows media preview before posting
-- [x] Frontend uploads to EdgeStore and sends URL to API
+- [x] Frontend sends files to backend, backend uploads to Supabase
 - [x] Posts display with images/videos in the feed
 - [x] Can remove media before posting
 
@@ -341,11 +337,11 @@ EdgeStore is a cloud-based file storage service that handles file uploads direct
 
 - Open the file: `app/Http/Controllers/Api/UserController.php`
 - Find the `updateProfile()` method
-- **IMPORTANT:** Use EdgeStore for cover image upload (NOT local storage)
-- Add logic to accept `cover_image_url` (string URL) instead of file
-- Save the EdgeStore URL directly to the user's `cover_image` field
-- **Note:** File upload happens on frontend using EdgeStore React components
-- **Reference:** See how `uploadProfilePicture()` handles EdgeStore URLs
+- **IMPORTANT:** Use Supabase for cover image upload (NOT local storage)
+- Add logic to accept `cover_image` file in the request
+- Upload the file to Supabase Storage using SupabaseService and save the URL to the user's `cover_image` field
+- **Note:** File upload happens on backend using SupabaseService
+- **Reference:** See how `updateProfile()` handles file uploads to Supabase
 
 **3.3. Create EditProfile Page**
 
@@ -355,15 +351,14 @@ EdgeStore is a cloud-based file storage service that handles file uploads direct
   - Bio textarea with character counter (show remaining characters)
   - Location input field
   - Website input field
-  - Profile Picture upload with preview (use EdgeStore - see Register.jsx for example)
-  - Cover Image upload with preview (use EdgeStore `coverImages` bucket - see PostInput.jsx for example)
+  - Profile Picture upload with preview (see Register.jsx for example)
+  - Cover Image upload with preview (see EditProfile.jsx for example)
   - Privacy Settings toggle or select dropdown
-- **IMPORTANT:** Use EdgeStore for file uploads:
-  - Import `useEdgeStore` from `../../lib/edgestoreClient`
-  - Use `edgestore.profilePictures.upload()` for profile picture
-  - Use `edgestore.coverImages.upload()` for cover image
-  - Store EdgeStore URLs in form state
-  - Send URLs (not files) to backend API
+- **IMPORTANT:** Use file uploads (FormData) for file uploads:
+  - Frontend sends files via FormData
+  - Backend uses SupabaseService to upload files to Supabase Storage
+  - Store file objects in form state before submission
+  - Send files (not URLs) to backend API
 - Add Save and Cancel buttons
 - Use React Hook Form for form management
 - Use the existing `useUpdateProfile()` hook for submission
@@ -392,17 +387,17 @@ EdgeStore is a cloud-based file storage service that handles file uploads direct
 
 ### ✅ Step 3 Checklist
 
-- [ ] Migration created and run successfully
-- [ ] UserController accepts `cover_image_url` (EdgeStore URL, not file)
-- [ ] EditProfile page created with all form fields
-- [ ] Profile picture upload uses EdgeStore (profilePictures bucket)
-- [ ] Cover image upload uses EdgeStore (coverImages bucket)
+- [x] Migration created and run successfully
+- [x] UserController accepts `cover_image` file
+- [x] EditProfile page created with all form fields
+- [x] Profile picture upload uses Supabase (profile-pictures folder)
+- [x] Cover image upload uses Supabase (cover-images folder)
 - [ ] Profile page updated with Edit Profile button
 - [ ] Cover image displays on profile page
 - [ ] Route added to app.jsx
 - [ ] Can update all profile fields successfully
-- [ ] Cover image uploads to EdgeStore and displays correctly
-- [ ] Profile picture upload still works with EdgeStore
+- [x] Cover image uploads to Supabase and displays correctly
+- [x] Profile picture upload still works with Supabase
 
 ---
 
@@ -518,27 +513,26 @@ Once you've completed Steps 1-4, here are the next priorities:
 
 ## 📝 Important Notes
 
-- **EdgeStore File Storage:** This project uses EdgeStore for ALL file uploads (images, videos, profile pictures, cover images). Files are uploaded directly from frontend to EdgeStore cloud, and URLs are saved to the database. DO NOT implement local file storage.
+- **Supabase File Storage:** This project uses Supabase Storage for ALL file uploads (images, videos, profile pictures, cover images). Files are uploaded from frontend to Laravel backend, then to Supabase Storage, and URLs are saved to the database. DO NOT implement local file storage.
 - All backend routes should be inside the `auth:sanctum` middleware group in `routes/api.php`
 - All frontend API calls should go through `resources/js/services/api.js`
 - Use React Query hooks for data fetching (follow existing patterns in the codebase)
 - Use Laravel Form Requests for validation (best practice)
 - Use API Resources for consistent response formatting
-- **For file uploads:** Always use EdgeStore React components (`useEdgeStore` hook) and send URLs to backend, not files
+- **For file uploads:** Always send files via FormData to backend, backend uploads to Supabase Storage using SupabaseService
 - **Backend validation:** Validate URL format (string, URL), not file types
 - Always test backend endpoints with Postman before connecting frontend
 - Check browser console for errors when working on frontend
 
 ---
 
-**Last Updated:** After EdgeStore integration  
+**Last Updated:** After Supabase integration  
 **Next Review:** After completing Steps 1-4
 
 ---
 
 ## 🔗 Related Documentation
 
-- **EdgeStore Implementation Guide:** See `scope.md` for detailed EdgeStore setup and usage
-- **EdgeStore Router Config:** `resources/js/lib/edgestore.js`
-- **EdgeStore Provider:** `resources/js/lib/edgestoreClient.js`
+- **Supabase Service:** `app/Services/SupabaseService.php` - Handles file uploads to Supabase Storage
+- **Supabase Config:** `config/services.php` - Contains Supabase configuration
 - **Example Usage:** See `PostInput.jsx` (post media) and `Register.jsx` (profile pictures)

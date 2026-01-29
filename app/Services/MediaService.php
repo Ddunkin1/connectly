@@ -12,10 +12,10 @@ class MediaService
     /**
      * Store uploaded profile picture.
      * 
-     * NOTE: This method is deprecated. Profile pictures are now uploaded via EdgeStore
+     * NOTE: This method is deprecated. Profile pictures are now uploaded via Supabase
      * and URLs are saved directly. Kept for backward compatibility.
      * 
-     * @deprecated Use EdgeStore React components for uploads
+     * @deprecated Use SupabaseService for uploads
      */
     public function storeProfilePicture(UploadedFile $file, int $userId): string
     {
@@ -26,9 +26,9 @@ class MediaService
     }
 
     /**
-     * Delete profile picture from EdgeStore.
+     * Delete profile picture from Supabase.
      * 
-     * If the path is an EdgeStore URL, delete it via EdgeStore API.
+     * If the path is a Supabase URL, delete it via Supabase API.
      * Otherwise, delete from local storage (for backward compatibility).
      */
     public function deleteProfilePicture(?string $path): bool
@@ -37,11 +37,11 @@ class MediaService
             return false;
         }
 
-        // Check if it's an EdgeStore URL
-        if (filter_var($path, FILTER_VALIDATE_URL) && str_contains($path, 'edgestore')) {
-            // TODO: Implement EdgeStore delete API call if needed
-            // For now, EdgeStore handles file lifecycle
-            return true;
+        // Check if it's a Supabase URL
+        if (filter_var($path, FILTER_VALIDATE_URL) && str_contains($path, 'supabase')) {
+            // Use SupabaseService to delete file
+            $supabaseService = app(\App\Services\SupabaseService::class);
+            return $supabaseService->deleteFile($path);
         }
 
         // Delete from local storage (backward compatibility)
@@ -67,9 +67,9 @@ class MediaService
     }
 
     /**
-     * Delete post media from EdgeStore.
+     * Delete post media from Supabase.
      * 
-     * If the path is an EdgeStore URL, delete it via EdgeStore API.
+     * If the path is a Supabase URL, delete it via Supabase API.
      * Otherwise, delete from local storage (for backward compatibility).
      */
     public function deletePostMedia(?string $path): bool
@@ -78,11 +78,11 @@ class MediaService
             return false;
         }
 
-        // Check if it's an EdgeStore URL
-        if (filter_var($path, FILTER_VALIDATE_URL) && str_contains($path, 'edgestore')) {
-            // TODO: Implement EdgeStore delete API call if needed
-            // For now, EdgeStore handles file lifecycle
-            return true;
+        // Check if it's a Supabase URL
+        if (filter_var($path, FILTER_VALIDATE_URL) && str_contains($path, 'supabase')) {
+            // Use SupabaseService to delete file
+            $supabaseService = app(\App\Services\SupabaseService::class);
+            return $supabaseService->deleteFile($path);
         }
 
         // Delete from local storage (backward compatibility)

@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\FollowController;
 use App\Http\Controllers\Api\LikeController;
 use App\Http\Controllers\Api\PostController;
 use App\Http\Controllers\Api\SearchController;
+use App\Http\Controllers\Api\TestSupabaseController;
 use App\Http\Controllers\Api\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -25,6 +26,9 @@ use Illuminate\Support\Facades\Route;
 Route::middleware('throttle:60,1')->group(function () {
     Route::post('/register', [AuthController::class, 'register']);
     Route::post('/login', [AuthController::class, 'login']);
+    
+    // Test Supabase connection (development only - remove in production)
+    Route::get('/test/supabase', [TestSupabaseController::class, 'testConnection']);
 });
 
 // Protected routes (with rate limiting)
@@ -73,7 +77,4 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function () {
     Route::delete('/communities/{community}/leave', [CommunityController::class, 'leave']);
     Route::get('/communities/{community}/posts', [CommunityController::class, 'posts']);
 
-    // EdgeStore API Handler
-    Route::match(['get', 'post'], '/edgestore/{any?}', [\App\Http\Controllers\Api\EdgeStoreController::class, 'handle'])
-        ->where('any', '.*');
 });

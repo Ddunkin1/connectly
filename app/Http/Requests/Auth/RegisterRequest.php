@@ -4,6 +4,7 @@ namespace App\Http\Requests\Auth;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rules\Password;
+use Illuminate\Validation\Rules\File;
 
 class RegisterRequest extends FormRequest
 {
@@ -28,7 +29,7 @@ class RegisterRequest extends FormRequest
             'username' => ['required', 'string', 'max:255', 'unique:users', 'regex:/^[a-zA-Z0-9_]+$/'],
             'password' => ['required', Password::defaults()],
             'bio' => ['nullable', 'string', 'max:160'],
-            'profile_picture_url' => ['nullable', 'string', 'url', 'max:500'],
+            'profile_picture' => ['nullable', 'file', 'mimes:jpeg,jpg,png,webp', 'max:5120'], // 5MB max
         ];
     }
 
