@@ -153,7 +153,7 @@ const PostInput = ({ onPostCreated }) => {
                                         {...register('visibility')}
                                         className="text-[#359EFF]"
                                     />
-                                    <span className="material-symbols-outlined text-base text-gray-500">public</span>
+                                    <span className="material-symbols-outlined text-sm text-gray-500">public</span>
                                     <span className="text-sm">Public</span>
                                 </label>
                                 <label className="flex items-center gap-1.5 cursor-pointer">
@@ -163,7 +163,7 @@ const PostInput = ({ onPostCreated }) => {
                                         {...register('visibility')}
                                         className="text-[#359EFF]"
                                     />
-                                    <span className="material-symbols-outlined text-base text-gray-500">group</span>
+                                    <span className="material-symbols-outlined text-sm text-gray-500">group</span>
                                     <span className="text-sm">Friends only</span>
                                 </label>
                             </div>

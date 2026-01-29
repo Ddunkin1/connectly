@@ -76,14 +76,14 @@ const PostCard = ({ post, onDeleted }) => {
                                 className="inline-flex items-center text-gray-500"
                                 title="Friends only"
                             >
-                                <span className="material-symbols-outlined text-base">group</span>
+                                <span className="material-symbols-outlined text-sm">group</span>
                             </span>
                         ) : (
                             <span
                                 className="inline-flex items-center text-gray-500"
                                 title="Public"
                             >
-                                <span className="material-symbols-outlined text-base">public</span>
+                                <span className="material-symbols-outlined text-sm">public</span>
                             </span>
                         )}
                         <span className="text-gray-500">·</span>
@@ -104,7 +104,7 @@ const PostCard = ({ post, onDeleted }) => {
                                 e.preventDefault();
                                 setMoreOpen((open) => !open);
                             }}
-                            className="p-1 rounded-full text-gray-500 hover:bg-gray-100 hover:text-gray-700"
+                            className="p-1 rounded-full text-gray-500 hover:bg-gray-100 hover:text-gray-700 cursor-pointer"
                             aria-label="More options"
                         >
                             <span className="material-symbols-outlined">more_horiz</span>
@@ -121,7 +121,7 @@ const PostCard = ({ post, onDeleted }) => {
                                         type="button"
                                         onClick={handleDeleteClick}
                                         disabled={deleteMutation.isPending}
-                                        className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
+                                        className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2 cursor-pointer"
                                     >
                                         <span className="material-symbols-outlined text-lg">delete</span>
                                         Delete post
@@ -198,7 +198,7 @@ const PostCard = ({ post, onDeleted }) => {
                 <div className="flex items-center space-x-6">
                     <button
                         onClick={handleLike}
-                        className={`flex items-center space-x-2 transition-colors ${
+                        className={`flex items-center space-x-2 transition-colors cursor-pointer ${
                             post.is_liked
                                 ? 'text-red-500 hover:text-red-600'
                                 : 'text-gray-500 hover:text-gray-700'
@@ -225,7 +225,7 @@ const PostCard = ({ post, onDeleted }) => {
                                 e.preventDefault();
                                 setShareOpen((open) => !open);
                             }}
-                            className="flex items-center space-x-2 text-gray-500 hover:text-[#359EFF] transition-colors"
+                            className="flex items-center space-x-2 text-gray-500 hover:text-[#359EFF] transition-colors cursor-pointer"
                         >
                             <span className="material-symbols-outlined">share</span>
                             <span className="text-sm">{post.shares_count ?? 0}</span>
@@ -244,7 +244,7 @@ const PostCard = ({ post, onDeleted }) => {
                                             setShareOpen(false);
                                             setShareToTimelineOpen(true);
                                         }}
-                                        className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                                        className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2 cursor-pointer"
                                     >
                                         <span className="material-symbols-outlined text-lg">campaign</span>
                                         Share to my timeline
@@ -261,9 +261,9 @@ const PostCard = ({ post, onDeleted }) => {
                                             shareMutation.mutate(post.id);
                                             setShareOpen(false);
                                         }}
-                                        className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                                        className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2 cursor-pointer"
                                     >
-                                        <span className="material-symbols-outlined text-lg">group</span>
+                                        <span className="material-symbols-outlined text-sm">group</span>
                                         Copy link · Friends
                                     </button>
                                     <button
@@ -278,9 +278,9 @@ const PostCard = ({ post, onDeleted }) => {
                                             shareMutation.mutate(post.id);
                                             setShareOpen(false);
                                         }}
-                                        className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                                        className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2 cursor-pointer"
                                     >
-                                        <span className="material-symbols-outlined text-lg">public</span>
+                                        <span className="material-symbols-outlined text-sm">public</span>
                                         Copy link · Public
                                     </button>
                                 </div>
@@ -310,7 +310,7 @@ const PostCard = ({ post, onDeleted }) => {
                         />
                     )}
 
-                    <button className="flex items-center space-x-2 text-gray-500 hover:text-[#359EFF] transition-colors">
+                    <button className="flex items-center space-x-2 text-gray-500 hover:text-[#359EFF] transition-colors cursor-pointer">
                         <span className="material-symbols-outlined">bookmark_border</span>
                     </button>
                 </div>
