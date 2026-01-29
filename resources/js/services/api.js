@@ -65,6 +65,7 @@ export const userAPI = {
             : {};
         return api.post('/user/profile-picture', data, config);
     },
+    getSuggested: () => api.get('/users/suggested'),
 };
 
 // Posts API
@@ -94,6 +95,18 @@ export const followAPI = {
 // Search API
 export const searchAPI = {
     search: (query, type = 'all') => api.get('/search', { params: { q: query, type } }),
+};
+
+// Communities API
+export const communityAPI = {
+    getAll: (params = {}) => api.get('/communities', { params }),
+    getById: (id) => api.get(`/communities/${id}`),
+    create: (data) => api.post('/communities', data),
+    update: (id, data) => api.put(`/communities/${id}`, data),
+    delete: (id) => api.delete(`/communities/${id}`),
+    join: (id) => api.post(`/communities/${id}/join`),
+    leave: (id) => api.delete(`/communities/${id}/leave`),
+    getPosts: (id, params = {}) => api.get(`/communities/${id}/posts`, { params }),
 };
 
 export default api;

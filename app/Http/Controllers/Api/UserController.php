@@ -46,7 +46,7 @@ class UserController extends Controller
     {
         $posts = $user->posts()
             ->with(['user', 'hashtags', 'likes'])
-            ->withCount(['likes', 'comments'])
+            ->withCount(['likes', 'allComments as comments_count'])
             ->latest()
             ->paginate(15);
 
@@ -84,7 +84,15 @@ class UserController extends Controller
     public function updateProfile(UpdateProfileRequest $request): JsonResponse
     {
         $user = $request->user();
-        $user->update($request->validated());
+        $data = $request->validated();
+        
+        // Handle cover_image_url separately if provided
+        if (isset($data['cover_image_url'])) {
+            $user->cover_image = $data['cover_image_url'];
+            unset($data['cover_image_url']);
+        }
+        
+        $user->update($data);
 
         return response()->json([
             'message' => 'Profile updated successfully',
@@ -108,6 +116,31 @@ class UserController extends Controller
         return response()->json([
             'message' => 'Profile picture uploaded successfully',
             'user' => new UserResource($user->fresh()),
+        ]);
+    }
+
+    /**
+     * Get suggested users (users not followed by current user).
+     *
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function suggested(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        // Get IDs of users the current user is following
+        $followingIds = $user->following()->pluck('following_id')->toArray();
+        $followingIds[] = $user->id; // Exclude current user
+
+        // Get users not in the following list
+        $suggestedUsers = User::whereNotIn('id', $followingIds)
+            ->withCount(['followers', 'following'])
+            ->limit(10)
+            ->get();
+
+        return response()->json([
+            'users' => UserResource::collection($suggestedUsers),
         ]);
     }
 }

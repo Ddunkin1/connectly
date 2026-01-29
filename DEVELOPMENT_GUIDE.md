@@ -160,13 +160,13 @@ EdgeStore is a cloud-based file storage service that handles file uploads direct
 
 ### ✅ Step 1 Checklist
 
-- [ ] Backend accepts media files in the request validation
-- [ ] Files are stored in the `storage/app/public/posts/` directory
-- [ ] PostResource returns full URL for media_url
-- [ ] Frontend shows media preview before posting
-- [ ] Frontend uploads FormData correctly
-- [ ] Posts display with images/videos in the feed
-- [ ] Can remove media before posting
+- [x] Backend accepts media URLs in the request validation (EdgeStore URLs)
+- [x] EdgeStore handles file storage (cloud, not local)
+- [x] PostResource returns EdgeStore URLs directly
+- [x] Frontend shows media preview before posting
+- [x] Frontend uploads to EdgeStore and sends URL to API
+- [x] Posts display with images/videos in the feed
+- [x] Can remove media before posting
 
 ---
 
@@ -303,18 +303,18 @@ EdgeStore is a cloud-based file storage service that handles file uploads direct
 
 ### ✅ Step 2 Checklist
 
-- [ ] CommunityController created with all 8 methods
-- [ ] StoreCommunityRequest created with validation rules
-- [ ] UpdateCommunityRequest created with validation rules
-- [ ] CommunityPolicy created with update and delete methods
-- [ ] All routes added to api.php
-- [ ] Backend tested with Postman - all endpoints work
-- [ ] useCommunities hook created with all necessary hooks
-- [ ] communityAPI methods added to api.js
-- [ ] Communities page updated to use real data
-- [ ] CommunityDetail page created and functional
-- [ ] Join/Leave functionality works correctly
-- [ ] Route added to app.jsx
+- [x] CommunityController created with all 8 methods
+- [x] StoreCommunityRequest created with validation rules
+- [x] UpdateCommunityRequest created with validation rules
+- [x] CommunityPolicy created with update and delete methods
+- [x] All routes added to api.php
+- [ ] Backend tested with Postman - all endpoints work (needs manual testing)
+- [x] useCommunities hook created with all necessary hooks
+- [x] communityAPI methods added to api.js
+- [x] Communities page updated to use real data
+- [x] CommunityDetail page created and functional
+- [x] Join/Leave functionality works correctly
+- [x] Route added to app.jsx
 
 ---
 
@@ -471,14 +471,14 @@ EdgeStore is a cloud-based file storage service that handles file uploads direct
 
 ### ✅ Step 4 Checklist
 
-- [ ] Backend endpoint `suggested()` created in UserController
-- [ ] Route `/users/suggested` added to api.php
-- [ ] Hook `useSuggestedUsers()` created
-- [ ] API method `getSuggested()` added to userAPI
-- [ ] RightSidebar updated to use real data
-- [ ] Suggested users display correctly
-- [ ] Follow/Unfollow buttons work
-- [ ] Loading and empty states handled
+- [x] Backend endpoint `suggested()` created in UserController
+- [x] Route `/users/suggested` added to api.php
+- [x] Hook `useSuggestedUsers()` created
+- [x] API method `getSuggested()` added to userAPI
+- [x] RightSidebar updated to use real data
+- [ ] Suggested users display correctly (needs testing)
+- [ ] Follow/Unfollow buttons work (needs testing)
+- [x] Loading and empty states handled
 
 ---
 

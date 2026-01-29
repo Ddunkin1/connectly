@@ -1,7 +1,7 @@
 import { initEdgeStore } from '@edgestore/server';
 import { z } from 'zod';
 
-const es = initEdgeStore.context();
+const es = initEdgeStore.create();
 
 /**
  * EdgeStore Router Configuration

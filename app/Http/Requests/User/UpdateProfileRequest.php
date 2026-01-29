@@ -30,6 +30,7 @@ class UpdateProfileRequest extends FormRequest
             'location' => ['nullable', 'string', 'max:255'],
             'website' => ['nullable', 'url', 'max:255'],
             'privacy_settings' => ['sometimes', 'in:public,private'],
+            'cover_image_url' => ['nullable', 'string', 'url', 'max:500'],
         ];
     }
 }

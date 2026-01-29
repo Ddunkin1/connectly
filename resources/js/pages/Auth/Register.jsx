@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { useRegister } from '../../hooks/useAuth';
 import { validateUsername } from '../../utils/validateForm';
-import { useEdgeStore } from '../../lib/edgestoreClient';
+import { useEdgeStore } from '../../lib/edgestoreClient.jsx';
 import toast from 'react-hot-toast';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 

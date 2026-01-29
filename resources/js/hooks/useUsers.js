@@ -73,3 +73,11 @@ export const useUnfollow = () => {
         },
     });
 };
+
+export const useSuggestedUsers = () => {
+    return useQuery({
+        queryKey: ['suggested-users'],
+        queryFn: () => userAPI.getSuggested(),
+        select: (data) => data.data.users,
+    });
+};

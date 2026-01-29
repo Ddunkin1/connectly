@@ -97,9 +97,12 @@ const Profile = () => {
                         </div>
                         <div className="flex items-center space-x-3 mt-4 md:mt-0">
                             {isOwnProfile ? (
-                                <button className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 font-medium text-gray-700 transition-colors">
+                                <Link 
+                                    to="/edit-profile"
+                                    className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 font-medium text-gray-700 transition-colors inline-block"
+                                >
                                     Edit Profile
-                                </button>
+                                </Link>
                             ) : (
                                 <>
                                     <button

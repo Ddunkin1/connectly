@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useCreatePost } from '../../hooks/usePosts';
 import useAuthStore from '../../store/authStore';
-import { useEdgeStore } from '../../lib/edgestoreClient';
+import { useEdgeStore } from '../../lib/edgestoreClient.jsx';
 import toast from 'react-hot-toast';
 import Avatar from '../common/Avatar';
 import Button from '../common/Button';

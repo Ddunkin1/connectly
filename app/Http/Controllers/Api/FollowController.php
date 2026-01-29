@@ -13,12 +13,13 @@ class FollowController extends Controller
      * Follow a user.
      *
      * @param Request $request
-     * @param User $user
+     * @param int $id
      * @return JsonResponse
      */
-    public function follow(Request $request, User $user): JsonResponse
+    public function follow(Request $request, int $id): JsonResponse
     {
         $follower = $request->user();
+        $user = User::findOrFail($id);
 
         if ($follower->id === $user->id) {
             return response()->json([
@@ -45,12 +46,13 @@ class FollowController extends Controller
      * Unfollow a user.
      *
      * @param Request $request
-     * @param User $user
+     * @param int $id
      * @return JsonResponse
      */
-    public function unfollow(Request $request, User $user): JsonResponse
+    public function unfollow(Request $request, int $id): JsonResponse
     {
         $follower = $request->user();
+        $user = User::findOrFail($id);
 
         if (!$follower->isFollowing($user)) {
             return response()->json([

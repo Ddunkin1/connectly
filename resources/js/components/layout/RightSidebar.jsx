@@ -1,9 +1,16 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { useSuggestedUsers } from '../../hooks/useUsers';
+import { useFollow, useUnfollow } from '../../hooks/useUsers';
 import Avatar from '../common/Avatar';
 import Button from '../common/Button';
+import LoadingSpinner from '../common/LoadingSpinner';
 
 const RightSidebar = () => {
+    const { data: suggestedUsers, isLoading } = useSuggestedUsers();
+    const followMutation = useFollow();
+    const unfollowMutation = useUnfollow();
+
     // Mock data - replace with actual API calls
     const trendingTopics = [
         { tag: '#WebDevTips', category: 'Technology', posts: '12.5k' },
@@ -15,6 +22,14 @@ const RightSidebar = () => {
         { id: 1, name: 'Photography Club', members: '4.2k', icon: 'camera_alt' },
         { id: 2, name: 'Startup Founders', members: '12.8k', icon: 'rocket_launch' },
     ];
+
+    const handleFollow = (userId, isFollowing) => {
+        if (isFollowing) {
+            unfollowMutation.mutate(userId);
+        } else {
+            followMutation.mutate(userId);
+        }
+    };
 
     return (
         <aside className="hidden xl:block w-80 bg-white border-l border-gray-200 h-[calc(100vh-4rem)] sticky top-16 overflow-y-auto">
@@ -50,6 +65,66 @@ const RightSidebar = () => {
                     >
                         Show More
                     </Link>
+                </div>
+
+                {/* Suggested Users */}
+                <div>
+                    <h3 className="text-sm font-semibold text-gray-900 mb-3">Suggested Users</h3>
+                    {isLoading ? (
+                        <div className="flex justify-center py-4">
+                            <LoadingSpinner size="sm" />
+                        </div>
+                    ) : suggestedUsers && suggestedUsers.length > 0 ? (
+                        <>
+                            <div className="space-y-3">
+                                {suggestedUsers.slice(0, 5).map((user) => {
+                                    const isFollowing = user.is_following || false;
+                                    const isPending = (followMutation.isPending && followMutation.variables === user.id) ||
+                                                     (unfollowMutation.isPending && unfollowMutation.variables === user.id);
+                                    
+                                    return (
+                                        <div
+                                            key={user.id}
+                                            className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 transition-colors"
+                                        >
+                                            <Link
+                                                to={`/profile/${user.username}`}
+                                                className="flex items-center space-x-3 flex-1 min-w-0"
+                                            >
+                                                <Avatar src={user.profile_picture} alt={user.name} size="md" />
+                                                <div className="flex-1 min-w-0">
+                                                    <p className="text-sm font-medium text-gray-900 truncate">{user.name}</p>
+                                                    <p className="text-xs text-gray-500 truncate">@{user.username}</p>
+                                                </div>
+                                            </Link>
+                                            <Button
+                                                size="sm"
+                                                variant={isFollowing ? "outline" : "primary"}
+                                                onClick={(e) => {
+                                                    e.preventDefault();
+                                                    handleFollow(user.id, isFollowing);
+                                                }}
+                                                disabled={isPending}
+                                                loading={isPending}
+                                            >
+                                                {isFollowing ? 'Connected' : 'Connect'}
+                                            </Button>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                            <Link
+                                to="/explore"
+                                className="block mt-3 text-sm text-[#359EFF] hover:underline text-center"
+                            >
+                                View All
+                            </Link>
+                        </>
+                    ) : (
+                        <div className="text-center py-4">
+                            <p className="text-sm text-gray-500">No suggestions available</p>
+                        </div>
+                    )}
                 </div>
 
                 {/* Suggested Communities */}

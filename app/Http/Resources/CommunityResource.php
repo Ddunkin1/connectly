@@ -21,8 +21,10 @@ class CommunityResource extends JsonResource
             'description' => $this->description,
             'privacy' => $this->privacy,
             'creator' => new UserResource($this->whenLoaded('creator')),
-            'members_count' => $this->whenCounted('members'),
+            'members_count' => $this->whenCounted('members', fn() => $this->members()->count()),
+            'is_member' => $this->is_member ?? false,
             'created_at' => $this->created_at,
+            'updated_at' => $this->updated_at,
         ];
     }
 }

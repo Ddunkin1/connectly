@@ -4,7 +4,7 @@ import ReactDOM from 'react-dom/client';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'react-hot-toast';
-import { EdgeStoreProviderWrapper } from './lib/edgestoreClient';
+import { EdgeStoreProviderWrapper } from './lib/edgestoreClient.jsx';
 import Header from './components/layout/Header';
 import LeftSidebar from './components/layout/LeftSidebar';
 import RightSidebar from './components/layout/RightSidebar';
@@ -16,6 +16,8 @@ import Home from './pages/Home';
 import Profile from './pages/Profile';
 import PostDetail from './pages/PostDetail';
 import Communities from './pages/Communities';
+import CommunityDetail from './pages/CommunityDetail';
+import EditProfile from './pages/EditProfile';
 import Search from './pages/Search';
 import useAuthStore from './store/authStore';
 
@@ -142,6 +144,22 @@ function AppContent() {
                             element={
                                 <ProtectedRoute>
                                     <Communities />
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/communities/:id"
+                            element={
+                                <ProtectedRoute>
+                                    <CommunityDetail />
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/edit-profile"
+                            element={
+                                <ProtectedRoute>
+                                    <EditProfile />
                                 </ProtectedRoute>
                             }
                         />
