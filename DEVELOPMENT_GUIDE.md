@@ -11,6 +11,48 @@
 - ✅ Feed Algorithm (Posts from followed users)
 - ✅ Search Functionality (Backend + Frontend)
 - ✅ UI/UX Design (Header, Sidebars, Home Feed tabs, QuickChat)
+- ✅ **EdgeStore Integration** - File storage for images and videos (see important note below)
+
+---
+
+## 📦 IMPORTANT: EdgeStore File Storage
+
+**This project uses EdgeStore for file storage, NOT local Laravel storage.**
+
+### What is EdgeStore?
+EdgeStore is a cloud-based file storage service that handles file uploads directly from the frontend. Files are uploaded directly to EdgeStore's cloud service, and URLs are saved to the database.
+
+### How It Works:
+1. **Frontend:** User selects file → EdgeStore React component uploads directly to EdgeStore cloud
+2. **EdgeStore:** Returns a URL after successful upload
+3. **Frontend:** Stores URL in form state
+4. **Backend:** Receives URL (not file) and saves it to database
+5. **Display:** Images/videos load from EdgeStore CDN
+
+### Key Points:
+- ✅ **Already Implemented:** EdgeStore is fully set up and working
+- ✅ **Post Media:** PostInput component uses EdgeStore for media uploads
+- ✅ **Profile Pictures:** Registration and profile updates use EdgeStore
+- ✅ **Backend:** Accepts URLs (strings), not files
+- ✅ **Validation:** Backend validates URL format, not file types
+- ✅ **Storage:** No need for `php artisan storage:link` or local file storage
+
+### EdgeStore Configuration:
+- **Router:** `resources/js/lib/edgestore.js` - Defines buckets (profilePictures, postMedia, coverImages)
+- **Provider:** `resources/js/lib/edgestoreClient.js` - EdgeStore React provider setup
+- **API Route:** `/api/edgestore/{any}` - Handles EdgeStore API requests
+- **Environment:** `.env` contains `EDGE_STORE_ACCESS_KEY`, `EDGE_STORE_SECRET_KEY`, `EDGE_STORE_URL`
+
+### When Adding New File Upload Features:
+- Use EdgeStore React components (already set up)
+- Upload files using `useEdgeStore()` hook
+- Send URLs to backend, not files
+- Backend validates URLs, not files
+- See `PostInput.jsx` and `Register.jsx` for examples
+
+**For detailed EdgeStore documentation, see:** `scope.md`
+
+---
 
 ---
 
@@ -299,10 +341,11 @@
 
 - Open the file: `app/Http/Controllers/Api/UserController.php`
 - Find the `updateProfile()` method
-- Add logic to handle cover image upload similar to how profile picture is handled
-- Store the cover image file in `storage/app/public/covers/` directory
-- Save the file path to the user's `cover_image` field
-- Make sure to handle file validation (image types, max size)
+- **IMPORTANT:** Use EdgeStore for cover image upload (NOT local storage)
+- Add logic to accept `cover_image_url` (string URL) instead of file
+- Save the EdgeStore URL directly to the user's `cover_image` field
+- **Note:** File upload happens on frontend using EdgeStore React components
+- **Reference:** See how `uploadProfilePicture()` handles EdgeStore URLs
 
 **3.3. Create EditProfile Page**
 
@@ -312,13 +355,19 @@
   - Bio textarea with character counter (show remaining characters)
   - Location input field
   - Website input field
-  - Profile Picture upload with preview (use existing pattern)
-  - Cover Image upload with preview (new feature)
+  - Profile Picture upload with preview (use EdgeStore - see Register.jsx for example)
+  - Cover Image upload with preview (use EdgeStore `coverImages` bucket - see PostInput.jsx for example)
   - Privacy Settings toggle or select dropdown
+- **IMPORTANT:** Use EdgeStore for file uploads:
+  - Import `useEdgeStore` from `../../lib/edgestoreClient`
+  - Use `edgestore.profilePictures.upload()` for profile picture
+  - Use `edgestore.coverImages.upload()` for cover image
+  - Store EdgeStore URLs in form state
+  - Send URLs (not files) to backend API
 - Add Save and Cancel buttons
 - Use React Hook Form for form management
 - Use the existing `useUpdateProfile()` hook for submission
-- Show loading state while saving
+- Show loading state while saving/uploading
 - Show success/error toasts
 - Navigate back to profile page on success or cancel
 
@@ -344,14 +393,16 @@
 ### ✅ Step 3 Checklist
 
 - [ ] Migration created and run successfully
-- [ ] UserController handles cover image upload
+- [ ] UserController accepts `cover_image_url` (EdgeStore URL, not file)
 - [ ] EditProfile page created with all form fields
+- [ ] Profile picture upload uses EdgeStore (profilePictures bucket)
+- [ ] Cover image upload uses EdgeStore (coverImages bucket)
 - [ ] Profile page updated with Edit Profile button
 - [ ] Cover image displays on profile page
 - [ ] Route added to app.jsx
 - [ ] Can update all profile fields successfully
-- [ ] Cover image uploads and displays correctly
-- [ ] Profile picture upload still works
+- [ ] Cover image uploads to EdgeStore and displays correctly
+- [ ] Profile picture upload still works with EdgeStore
 
 ---
 
@@ -467,15 +518,27 @@ Once you've completed Steps 1-4, here are the next priorities:
 
 ## 📝 Important Notes
 
+- **EdgeStore File Storage:** This project uses EdgeStore for ALL file uploads (images, videos, profile pictures, cover images). Files are uploaded directly from frontend to EdgeStore cloud, and URLs are saved to the database. DO NOT implement local file storage.
 - All backend routes should be inside the `auth:sanctum` middleware group in `routes/api.php`
 - All frontend API calls should go through `resources/js/services/api.js`
 - Use React Query hooks for data fetching (follow existing patterns in the codebase)
 - Use Laravel Form Requests for validation (best practice)
 - Use API Resources for consistent response formatting
+- **For file uploads:** Always use EdgeStore React components (`useEdgeStore` hook) and send URLs to backend, not files
+- **Backend validation:** Validate URL format (string, URL), not file types
 - Always test backend endpoints with Postman before connecting frontend
 - Check browser console for errors when working on frontend
 
 ---
 
-**Last Updated:** After Search implementation  
+**Last Updated:** After EdgeStore integration  
 **Next Review:** After completing Steps 1-4
+
+---
+
+## 🔗 Related Documentation
+
+- **EdgeStore Implementation Guide:** See `scope.md` for detailed EdgeStore setup and usage
+- **EdgeStore Router Config:** `resources/js/lib/edgestore.js`
+- **EdgeStore Provider:** `resources/js/lib/edgestoreClient.js`
+- **Example Usage:** See `PostInput.jsx` (post media) and `Register.jsx` (profile pictures)

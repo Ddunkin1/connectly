@@ -23,7 +23,8 @@ class StorePostRequest extends FormRequest
     {
         return [
             'content' => ['required', 'string', 'max:5000'],
-            'media' => ['nullable', 'file', 'mimes:jpeg,jpg,png,gif,mp4,webm', 'max:10240'], // 10MB max
+            'media_url' => ['nullable', 'string', 'url', 'max:500'],
+            'media_type' => ['nullable', 'in:image,video'],
             'visibility' => ['nullable', 'in:public,followers'],
         ];
     }

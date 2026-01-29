@@ -102,18 +102,8 @@ class UserController extends Controller
     {
         $user = $request->user();
 
-        // Delete old profile picture if exists
-        if ($user->profile_picture) {
-            $this->mediaService->deleteProfilePicture($user->profile_picture);
-        }
-
-        // Store new profile picture
-        $path = $this->mediaService->storeProfilePicture(
-            $request->file('profile_picture'),
-            $user->id
-        );
-
-        $user->update(['profile_picture' => $path]);
+        // Save EdgeStore URL directly
+        $user->update(['profile_picture' => $request->profile_picture_url]);
 
         return response()->json([
             'message' => 'Profile picture uploaded successfully',

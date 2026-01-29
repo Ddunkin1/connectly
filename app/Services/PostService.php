@@ -76,25 +76,10 @@ class PostService
      */
     public function createPost(User $user, array $data): Post
     {
-        $mediaUrl = null;
-        $mediaType = null;
-
-        // Handle media file upload
-        if (isset($data['media']) && $data['media']->isValid()) {
-            $file = $data['media'];
-            $path = $file->store('posts', 'public');
-            
-            // Determine media type based on MIME type
-            $mimeType = $file->getMimeType();
-            $mediaType = str_starts_with($mimeType, 'image/') ? 'image' : 'video';
-            
-            $mediaUrl = $path;
-        }
-
         $post = $user->posts()->create([
             'content' => $data['content'],
-            'media_url' => $mediaUrl,
-            'media_type' => $mediaType,
+            'media_url' => $data['media_url'] ?? null,
+            'media_type' => $data['media_type'] ?? null,
             'visibility' => $data['visibility'] ?? 'public',
         ]);
 

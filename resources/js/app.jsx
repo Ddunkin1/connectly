@@ -4,6 +4,7 @@ import ReactDOM from 'react-dom/client';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'react-hot-toast';
+import { EdgeStoreProviderWrapper } from './lib/edgestoreClient';
 import Header from './components/layout/Header';
 import LeftSidebar from './components/layout/LeftSidebar';
 import RightSidebar from './components/layout/RightSidebar';
@@ -189,9 +190,11 @@ function AppContent() {
 function App() {
     return (
         <QueryClientProvider client={queryClient}>
-            <Router>
-                <AppContent />
-            </Router>
+            <EdgeStoreProviderWrapper>
+                <Router>
+                    <AppContent />
+                </Router>
+            </EdgeStoreProviderWrapper>
         </QueryClientProvider>
     );
 }

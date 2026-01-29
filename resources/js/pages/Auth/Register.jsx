@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { useRegister } from '../../hooks/useAuth';
 import { validateUsername } from '../../utils/validateForm';
+import { useEdgeStore } from '../../lib/edgestoreClient';
 import toast from 'react-hot-toast';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 
@@ -80,19 +81,43 @@ const Register = () => {
         return missingFields;
     };
 
-    const handleFileChange = (e) => {
+    const handleFileChange = async (e) => {
         const file = e.target.files[0];
-        if (file) {
-            if (file.size > 2 * 1024 * 1024) {
-                alert('File size must be less than 2MB');
-                return;
-            }
-            setProfilePicture(file);
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setProfilePreview(reader.result);
-            };
-            reader.readAsDataURL(file);
+        if (!file) return;
+
+        if (file.size > 5 * 1024 * 1024) {
+            toast.error('File size must be less than 5MB');
+            return;
+        }
+
+        // Create preview
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            setProfilePreview(reader.result);
+        };
+        reader.readAsDataURL(file);
+
+        // Upload to EdgeStore
+        setIsUploadingProfile(true);
+        try {
+            const res = await edgestore.profilePictures.upload({
+                file: file,
+                options: {
+                    temporary: false,
+                },
+                input: {
+                    userId: null, // Will be set after registration
+                },
+            });
+
+            setProfilePictureUrl(res.url);
+            toast.success('Profile picture uploaded successfully');
+        } catch (error) {
+            console.error('Upload error:', error);
+            toast.error('Failed to upload profile picture. Please try again.');
+            setProfilePreview(null);
+        } finally {
+            setIsUploadingProfile(false);
         }
     };
 
@@ -193,8 +218,9 @@ const Register = () => {
             formData.append('username', data.username);
             formData.append('bio', data.bio || '');
             
-            if (profilePicture) {
-                formData.append('profile_picture', profilePicture);
+            // Add EdgeStore URL if profile picture was uploaded
+            if (profilePictureUrl) {
+                formData.append('profile_picture_url', profilePictureUrl);
             }
 
             await registerMutation.mutateAsync(formData);
@@ -479,10 +505,14 @@ const Register = () => {
                         {/* Profile Picture Upload */}
                         <div className="flex flex-col items-center">
                             <div className="relative">
-                                <div className="w-32 h-32 rounded-full border-2 border-dashed border-gray-300 flex items-center justify-center bg-gray-50 overflow-hidden cursor-pointer hover:border-[#359EFF] transition-colors"
-                                    onClick={() => fileInputRef.current?.click()}
+                                <div className={`w-32 h-32 rounded-full border-2 border-dashed border-gray-300 flex items-center justify-center bg-gray-50 overflow-hidden transition-colors ${
+                                    isUploadingProfile ? 'cursor-wait opacity-50' : 'cursor-pointer hover:border-[#359EFF]'
+                                }`}
+                                    onClick={() => !isUploadingProfile && fileInputRef.current?.click()}
                                 >
-                                    {profilePreview ? (
+                                    {isUploadingProfile ? (
+                                        <LoadingSpinner size="md" />
+                                    ) : profilePreview ? (
                                         <img src={profilePreview} alt="Profile preview" className="w-full h-full object-cover" />
                                     ) : (
                                         <span className="material-symbols-outlined text-5xl text-gray-400">
@@ -490,22 +520,28 @@ const Register = () => {
                                         </span>
                                     )}
                                 </div>
-                                <div
-                                    className="absolute bottom-0 right-0 w-10 h-10 bg-[#359EFF] rounded-lg flex items-center justify-center cursor-pointer hover:bg-[#2a8eef] transition-colors shadow-lg"
-                                    onClick={() => fileInputRef.current?.click()}
-                                >
-                                    <span className="material-symbols-outlined text-white text-xl">camera_alt</span>
-                                </div>
+                                {!isUploadingProfile && (
+                                    <div
+                                        className="absolute bottom-0 right-0 w-10 h-10 bg-[#359EFF] rounded-lg flex items-center justify-center cursor-pointer hover:bg-[#2a8eef] transition-colors shadow-lg"
+                                        onClick={() => fileInputRef.current?.click()}
+                                    >
+                                        <span className="material-symbols-outlined text-white text-xl">camera_alt</span>
+                                    </div>
+                                )}
                                 <input
                                     ref={fileInputRef}
                                     type="file"
-                                    accept="image/jpeg,image/png,image/jpg"
+                                    accept="image/jpeg,image/png,image/jpg,image/webp"
                                     onChange={handleFileChange}
+                                    disabled={isUploadingProfile}
                                     className="hidden"
                                 />
                             </div>
                             <p className="mt-4 text-sm font-medium text-gray-700">Upload Profile Picture</p>
-                            <p className="mt-1 text-xs text-gray-500">Recommended: Square JPG or PNG, max 2MB</p>
+                            <p className="mt-1 text-xs text-gray-500">Recommended: Square JPG or PNG, max 5MB</p>
+                            {profilePictureUrl && (
+                                <p className="mt-1 text-xs text-green-600">Profile picture uploaded successfully</p>
+                            )}
                         </div>
 
                         {/* Username */}

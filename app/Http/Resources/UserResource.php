@@ -20,7 +20,7 @@ class UserResource extends JsonResource
             'username' => $this->username,
             'email' => $this->when($request->user()?->id === $this->id, $this->email),
             'bio' => $this->bio,
-            'profile_picture' => $this->profile_picture ? asset('storage/' . $this->profile_picture) : null,
+            'profile_picture' => $this->profile_picture ? (filter_var($this->profile_picture, FILTER_VALIDATE_URL) ? $this->profile_picture : asset('storage/' . $this->profile_picture)) : null,
             'location' => $this->location,
             'website' => $this->website,
             'privacy_settings' => $this->privacy_settings,

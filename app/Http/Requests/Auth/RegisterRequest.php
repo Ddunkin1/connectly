@@ -28,7 +28,7 @@ class RegisterRequest extends FormRequest
             'username' => ['required', 'string', 'max:255', 'unique:users', 'regex:/^[a-zA-Z0-9_]+$/'],
             'password' => ['required', Password::defaults()],
             'bio' => ['nullable', 'string', 'max:160'],
-            'profile_picture' => ['nullable', 'image', 'mimes:jpeg,png,jpg', 'max:2048'],
+            'profile_picture_url' => ['nullable', 'string', 'url', 'max:500'],
         ];
     }
 

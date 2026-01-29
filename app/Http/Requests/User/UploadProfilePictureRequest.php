@@ -23,12 +23,7 @@ class UploadProfilePictureRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'profile_picture' => [
-                'required',
-                File::image()
-                    ->max(5120) // 5MB
-                    ->dimensions()->maxWidth(2000)->maxHeight(2000),
-            ],
+            'profile_picture_url' => ['required', 'string', 'url', 'max:500'],
         ];
     }
 }

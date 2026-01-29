@@ -58,9 +58,13 @@ export const userAPI = {
     getProfile: (userId) => api.get(`/users/${userId}/profile`),
     getUserPosts: (userId, page = 1) => api.get(`/users/${userId}/posts`, { params: { page } }),
     updateProfile: (data) => api.put('/user/profile', data),
-    uploadProfilePicture: (formData) => api.post('/user/profile-picture', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-    }),
+    uploadProfilePicture: (data) => {
+        // Accept either FormData (for file) or object (for URL)
+        const config = data instanceof FormData
+            ? { headers: { 'Content-Type': 'multipart/form-data' } }
+            : {};
+        return api.post('/user/profile-picture', data, config);
+    },
 };
 
 // Posts API

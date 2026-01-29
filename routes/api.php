@@ -60,4 +60,8 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function () {
 
     // Search
     Route::get('/search', [SearchController::class, 'search']);
+
+    // EdgeStore API Handler
+    Route::any('/edgestore/{any}', [\App\Http\Controllers\Api\EdgeStoreController::class, 'handle'])
+        ->where('any', '.*');
 });

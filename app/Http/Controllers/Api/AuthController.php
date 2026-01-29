@@ -30,12 +30,9 @@ class AuthController extends Controller
             'bio' => $request->bio ?? null,
         ];
 
-        // Handle profile picture upload
-        if ($request->hasFile('profile_picture')) {
-            $file = $request->file('profile_picture');
-            $filename = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
-            $path = $file->storeAs('profile_pictures', $filename, 'public');
-            $data['profile_picture'] = $path;
+        // Handle profile picture URL from EdgeStore
+        if ($request->has('profile_picture_url') && $request->profile_picture_url) {
+            $data['profile_picture'] = $request->profile_picture_url;
         }
 
         $user = User::create($data);

@@ -35,4 +35,10 @@ return [
         ],
     ],
 
+    'edgestore' => [
+        'access_key' => env('EDGE_STORE_ACCESS_KEY'),
+        'secret_key' => env('EDGE_STORE_SECRET_KEY'),
+        'url' => env('EDGE_STORE_URL', 'https://api.edgestore.dev'),
+    ],
+
 ];
