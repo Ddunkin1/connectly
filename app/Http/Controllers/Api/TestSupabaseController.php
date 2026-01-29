@@ -79,31 +79,55 @@ class TestSupabaseController extends Controller
                 }
             }
 
+            // Try to auto-create bucket if it doesn't exist
+            $autoCreated = false;
+            if (!$bucketExists) {
+                try {
+                    $service = app(SupabaseService::class);
+                    $autoCreated = $service->createBucket($bucket, true);
+                    if ($autoCreated) {
+                        // Re-check bucket existence
+                        $recheckResponse = Http::withHeaders([
+                            'apikey' => $supabaseKey,
+                            'Authorization' => 'Bearer ' . $supabaseKey,
+                        ])->get("{$supabaseUrl}/storage/v1/bucket/{$bucket}");
+                        
+                        if ($recheckResponse->successful()) {
+                            $bucketExists = true;
+                            $connectionStatus = 'connected';
+                        }
+                    }
+                } catch (\Exception $e) {
+                    Log::info('Auto-bucket creation failed (may need service_role key): ' . $e->getMessage());
+                }
+            }
+
             return response()->json([
                 'status' => $connectionStatus === 'connected' ? 'success' : 'error',
                 'message' => $connectionStatus === 'connected' 
                     ? 'Supabase connection successful' 
-                    : 'Supabase connection failed - Bucket not found',
+                    : ($autoCreated ? 'Bucket creation attempted - please verify' : 'Supabase connection failed - Bucket not found'),
                 'details' => [
                     'supabase_url' => $supabaseUrl,
                     'bucket' => $bucket,
                     'service_status' => $serviceStatus,
                     'connection_status' => $connectionStatus,
                     'bucket_exists' => $bucketExists,
+                    'auto_created' => $autoCreated,
                     'error' => $parsedError,
                 ],
                 'solution' => $bucketExists ? null : [
                     'action' => 'Create the bucket in Supabase dashboard',
+                    'direct_link' => "https://app.supabase.com/project/" . str_replace(['https://', '.supabase.co'], '', $supabaseUrl) . "/storage/buckets",
                     'steps' => [
-                        '1. Go to https://app.supabase.com',
-                        '2. Select your project',
-                        '3. Navigate to Storage → Buckets',
-                        '4. Click "New bucket"',
-                        '5. Name: "public" (lowercase)',
-                        '6. Toggle "Public bucket" to ON',
-                        '7. Click "Create bucket"',
+                        '1. Click this link: https://app.supabase.com/project/' . str_replace(['https://', '.supabase.co'], '', $supabaseUrl) . '/storage/buckets',
+                        '2. Click "New bucket" button',
+                        '3. Name: "public" (lowercase, exact)',
+                        '4. Toggle "Public bucket" to ON ✅',
+                        '5. Click "Create bucket"',
+                        '6. Refresh this page to verify',
                     ],
-                    'see_guide' => 'See CREATE_BUCKET.md for detailed instructions',
+                    'see_guide' => 'See CREATE_BUCKET_NOW.md for quick instructions',
                 ],
             ], $connectionStatus === 'connected' ? 200 : 200); // Return 200 so JSON is visible, not 500
 
