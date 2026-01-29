@@ -236,7 +236,7 @@ export const useDeletePost = () => {
     });
 };
 
-// Helper: apply updater to post or to nested shared_post when postId matches
+// Apply updater to post or nested shared_post when id matches
 function applyPostUpdater(p, postId, updater) {
     if (String(p?.id) === String(postId)) return updater(p);
     if (p?.shared_post && String(p.shared_post.id) === String(postId)) {
@@ -247,33 +247,38 @@ function applyPostUpdater(p, postId, updater) {
 
 // Export so useComments can update post counts when a comment is added
 export function updatePostInCaches(queryClient, postId, updater) {
-    // Single post (cache may be raw response { data: { post } } or just the post from usePost's select)
+    // Single post cache for this post (cache may be raw response { data: { post } } or just the post)
     queryClient.setQueryData(['post', postId], (old) => {
         if (!old) return old;
         if (old?.data?.post) {
-            const post = applyPostUpdater(old.data.post, postId, updater);
-            return post === old.data.post ? old : { ...old, data: { ...old.data, post } };
+            return {
+                ...old,
+                data: { ...old.data, post: updater(old.data.post) },
+            };
         }
         if (String(old?.id) === String(postId)) {
             return updater(old);
         }
-        if (old?.shared_post && String(old.shared_post.id) === String(postId)) {
-            return { ...old, shared_post: updater(old.shared_post) };
-        }
         return old;
     });
 
-    // Also update any other single-post cache where this post is the nested shared_post (e.g. parent post page)
+    // Any other post cache that might contain this post as shared_post (e.g. viewing a share, we liked the original)
     const postCaches = queryClient.getQueriesData({ queryKey: ['post'] });
-    postCaches.forEach(([key, old]) => {
+    postCaches.forEach(([queryKey, old]) => {
         if (!old) return;
-        const post = old?.data?.post ?? (old?.id != null ? old : null);
-        if (!post || !post.shared_post || String(post.shared_post.id) !== String(postId)) return;
-        const updatedPost = { ...post, shared_post: updater(post.shared_post) };
-        const next = old?.data != null
-            ? { ...old, data: { ...old.data, post: updatedPost } }
-            : updatedPost;
-        queryClient.setQueryData(key, next);
+        const keyId = queryKey[1];
+        if (String(keyId) === String(postId)) return; // already updated above
+        let next;
+        if (old?.data?.post) {
+            next = applyPostUpdater(old.data.post, postId, updater);
+            if (next !== old.data.post) {
+                queryClient.setQueryData(queryKey, { ...old, data: { ...old.data, post: next } });
+            }
+        } else if (old?.id != null) {
+            // Cached value is the post object (from usePost select)
+            next = applyPostUpdater(old, postId, updater);
+            if (next !== old) queryClient.setQueryData(queryKey, next);
+        }
     });
 
     // Feed (infinite query: pages[].data.posts or pages[].data.posts.data)

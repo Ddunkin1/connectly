@@ -15,7 +15,7 @@ const PostCard = ({ post, onDeleted, onCommentClick }) => {
     const createPostMutation = useCreatePost();
     const deleteMutation = useDeletePost();
     const [shareOpen, setShareOpen] = useState(false);
-    const [shareEmbeddedOpen, setShareEmbeddedOpen] = useState(false);
+    const [shareOpenInner, setShareOpenInner] = useState(false);
     const [shareToTimelinePost, setShareToTimelinePost] = useState(null);
     const [moreOpen, setMoreOpen] = useState(false);
 
@@ -39,21 +39,19 @@ const PostCard = ({ post, onDeleted, onCommentClick }) => {
         }
     };
 
-    const handleLikeEmbedded = (e, sharedPost) => {
+    const handleLikeInner = (sharedPost) => (e) => {
         e.preventDefault();
         e.stopPropagation();
-        if (sharedPost?.is_liked) {
+        if (sharedPost.is_liked) {
             unlikeMutation.mutate(sharedPost.id);
         } else {
             likeMutation.mutate(sharedPost.id);
         }
     };
 
-    const handleShareEmbeddedOpen = (e, sharedPost) => {
-        e.preventDefault();
-        e.stopPropagation();
-        setShareEmbeddedOpen((open) => !open);
-    };
+    const isLikePendingFor = (postId) =>
+        (likeMutation.isPending && likeMutation.variables === postId) ||
+        (unlikeMutation.isPending && unlikeMutation.variables === postId);
 
     const highlightHashtags = (text) => {
         const parts = text.split(/(#\w+)/g);
@@ -157,10 +155,13 @@ const PostCard = ({ post, onDeleted, onCommentClick }) => {
                 </div>
             )}
 
-            {/* Original post embed (when this is a share) – with like/share actions */}
+            {/* Original post embed (when this is a share) – content clickable to post; like/comment/share on embed */}
             {post.shared_post && (
-                <div className="mb-3 rounded-lg border border-gray-200 overflow-hidden hover:border-gray-300 transition-colors bg-gray-50">
-                    <Link to={`/post/${post.shared_post.id}`} className="block p-3 hover:bg-gray-100/50 transition-colors">
+                <div className="mb-3 rounded-lg border border-gray-200 overflow-hidden bg-gray-50">
+                    <Link
+                        to={`/post/${post.shared_post.id}`}
+                        className="block p-3 hover:bg-gray-100/50 transition-colors"
+                    >
                         <div className="flex items-center gap-2 mb-2">
                             <Avatar src={post.shared_post.user?.profile_picture} alt={post.shared_post.user?.name} size="sm" />
                             <div className="flex-1 min-w-0">
@@ -179,38 +180,52 @@ const PostCard = ({ post, onDeleted, onCommentClick }) => {
                             </div>
                         )}
                     </Link>
-                    {/* Like & Share for embedded post */}
                     <div className="flex items-center gap-4 px-3 py-2 border-t border-gray-200 bg-white/50">
                         <button
                             type="button"
-                            onClick={(e) => handleLikeEmbedded(e, post.shared_post)}
-                            disabled={likeMutation.isPending || unlikeMutation.isPending}
+                            onClick={handleLikeInner(post.shared_post)}
+                            disabled={isLikePendingFor(post.shared_post.id)}
                             className={`flex items-center gap-1.5 flex-shrink-0 transition-colors cursor-pointer disabled:opacity-60 ${
                                 post.shared_post.is_liked ? 'text-red-500 hover:text-red-600' : 'text-gray-500 hover:text-gray-700'
                             }`}
                         >
-                            <span className="material-symbols-outlined text-[18px]">
+                            <span className="material-symbols-outlined text-lg">
                                 {post.shared_post.is_liked ? 'favorite' : 'favorite_border'}
                             </span>
                             <span className="text-xs tabular-nums">{post.shared_post.likes_count ?? 0}</span>
                         </button>
+                        <Link
+                            to={`/post/${post.shared_post.id}`}
+                            className="flex items-center gap-1.5 flex-shrink-0 text-gray-500 hover:text-[#359EFF] transition-colors cursor-pointer text-xs"
+                        >
+                            <span className="material-symbols-outlined text-lg">chat_bubble_outline</span>
+                            {post.shared_post.comments_count ?? 0}
+                        </Link>
                         <div className="relative flex-shrink-0">
                             <button
                                 type="button"
-                                onClick={(e) => handleShareEmbeddedOpen(e, post.shared_post)}
-                                className="flex items-center gap-1.5 text-gray-500 hover:text-[#359EFF] transition-colors cursor-pointer"
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    setShareOpenInner((open) => !open);
+                                }}
+                                className="flex items-center gap-1.5 text-gray-500 hover:text-[#359EFF] transition-colors cursor-pointer text-xs"
                             >
-                                <span className="material-symbols-outlined text-[18px]">share</span>
-                                <span className="text-xs tabular-nums">{post.shared_post.shares_count ?? 0}</span>
+                                <span className="material-symbols-outlined text-lg">share</span>
+                                {post.shared_post.shares_count ?? 0}
                             </button>
-                            {shareEmbeddedOpen && (
+                            {shareOpenInner && (
                                 <>
-                                    <div className="fixed inset-0 z-10" aria-hidden="true" onClick={() => setShareEmbeddedOpen(false)} />
+                                    <div
+                                        className="fixed inset-0 z-10"
+                                        aria-hidden="true"
+                                        onClick={() => setShareOpenInner(false)}
+                                    />
                                     <div className="absolute left-0 top-full mt-1 z-20 py-1 w-52 bg-white rounded-lg border border-gray-200 shadow-lg">
                                         <button
                                             type="button"
                                             onClick={() => {
-                                                setShareEmbeddedOpen(false);
+                                                setShareOpenInner(false);
                                                 setShareToTimelinePost(post.shared_post);
                                             }}
                                             className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2 cursor-pointer"
@@ -222,9 +237,9 @@ const PostCard = ({ post, onDeleted, onCommentClick }) => {
                                             type="button"
                                             onClick={() => {
                                                 const url = `${window.location.origin}/post/${post.shared_post.id}`;
-                                                navigator.clipboard.writeText(url).then(() => toast.success('Link copied'));
+                                                navigator.clipboard.writeText(url).then(() => toast.success('Link copied')).catch(() => {});
                                                 shareMutation.mutate(post.shared_post.id);
-                                                setShareEmbeddedOpen(false);
+                                                setShareOpenInner(false);
                                             }}
                                             className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2 cursor-pointer"
                                         >
@@ -235,12 +250,6 @@ const PostCard = ({ post, onDeleted, onCommentClick }) => {
                                 </>
                             )}
                         </div>
-                        <Link
-                            to={`/post/${post.shared_post.id}`}
-                            className="text-xs text-[#359EFF] hover:underline ml-auto flex-shrink-0"
-                        >
-                            View post
-                        </Link>
                     </div>
                 </div>
             )}
@@ -277,8 +286,10 @@ const PostCard = ({ post, onDeleted, onCommentClick }) => {
             <div className="flex items-center justify-between pt-3 border-t border-gray-100">
                 <div className="flex items-center gap-6">
                     <button
+                        type="button"
                         onClick={handleLike}
-                        className={`flex items-center gap-2 w-14 flex-shrink-0 transition-colors cursor-pointer ${
+                        disabled={isLikePendingFor(post.id)}
+                        className={`flex items-center gap-2 w-14 flex-shrink-0 transition-colors cursor-pointer disabled:opacity-60 ${
                             post.is_liked
                                 ? 'text-red-500 hover:text-red-600'
                                 : 'text-gray-500 hover:text-gray-700'
@@ -329,17 +340,17 @@ const PostCard = ({ post, onDeleted, onCommentClick }) => {
                                     onClick={() => setShareOpen(false)}
                                 />
                                 <div className="absolute left-0 top-full mt-1 z-20 py-1 w-52 bg-white rounded-lg border border-gray-200 shadow-lg">
-                                        <button
-                                            type="button"
-                                            onClick={() => {
-                                                setShareOpen(false);
-                                                setShareToTimelinePost(post);
-                                            }}
-                                            className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2 cursor-pointer"
-                                        >
-                                            <span className="material-symbols-outlined text-lg">campaign</span>
-                                            Share to my timeline
-                                        </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setShareOpen(false);
+                                            setShareToTimelinePost(post);
+                                        }}
+                                        className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2 cursor-pointer"
+                                    >
+                                        <span className="material-symbols-outlined text-lg">campaign</span>
+                                        Share to my timeline
+                                    </button>
                                     <button
                                         type="button"
                                         onClick={() => {
