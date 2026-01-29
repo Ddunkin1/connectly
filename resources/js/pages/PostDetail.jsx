@@ -56,10 +56,14 @@ const PostDetail = () => {
 
     return (
         <div className="max-w-3xl mx-auto">
-            <PostCard post={post} onDeleted={() => navigate('/home', { replace: true })} />
+            <PostCard
+                post={post}
+                onDeleted={() => navigate('/home', { replace: true })}
+                onCommentClick={() => document.getElementById('comment-section')?.scrollIntoView({ behavior: 'smooth' })}
+            />
 
             {/* Comment Input */}
-            <div className="bg-white rounded-lg border border-gray-200 p-4 mt-4">
+            <div id="comment-section" className="bg-white rounded-lg border border-gray-200 p-4 mt-4">
                 <form onSubmit={handleSubmit(onSubmit)}>
                     <div className="flex items-start space-x-3">
                         <Avatar src={user?.profile_picture} alt={user?.name} size="md" />
@@ -88,7 +92,7 @@ const PostDetail = () => {
             {/* Comments */}
             <div className="mt-4 space-y-4">
                 <h3 className="text-lg font-semibold text-gray-900">
-                    Comments ({post.comments_count || 0})
+                    Comments ({Math.max(post.comments_count ?? 0, commentsData?.length ?? 0)})
                 </h3>
                 {commentsLoading ? (
                     <div className="flex justify-center py-8">

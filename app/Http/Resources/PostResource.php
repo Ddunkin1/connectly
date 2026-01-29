@@ -21,12 +21,12 @@ class PostResource extends JsonResource
             'media_type' => $this->media_type,
             'visibility' => $this->visibility,
             'user' => new UserResource($this->whenLoaded('user')),
-            'likes_count' => $this->whenCounted('likes', fn() => $this->likes()->count()),
-            'comments_count' => $this->whenCounted('allComments', fn() => $this->allComments()->count()),
+            'likes_count' => $this->when(isset($this->likes_count), (int) $this->likes_count, fn () => $this->likes()->count()),
+            'comments_count' => $this->when(isset($this->all_comments_count), (int) $this->all_comments_count, fn () => $this->allComments()->count()),
             'shares_count' => $this->shares_count ?? 0,
             'is_liked' => $this->when(
                 $request->user(),
-                fn() => $this->isLikedBy($request->user())
+                fn () => isset($this->is_liked) ? (bool) $this->is_liked : $this->isLikedBy($request->user())
             ),
             'hashtags' => HashtagResource::collection($this->whenLoaded('hashtags')),
             'shared_post' => new PostResource($this->whenLoaded('sharedPost')),

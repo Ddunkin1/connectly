@@ -7,7 +7,7 @@ import useAuthStore from '../../store/authStore';
 import toast from 'react-hot-toast';
 import ShareToTimelineModal from './ShareToTimelineModal';
 
-const PostCard = ({ post, onDeleted }) => {
+const PostCard = ({ post, onDeleted, onCommentClick }) => {
     const user = useAuthStore((state) => state.user);
     const likeMutation = useLikePost();
     const unlikeMutation = useUnlikePost();
@@ -15,7 +15,8 @@ const PostCard = ({ post, onDeleted }) => {
     const createPostMutation = useCreatePost();
     const deleteMutation = useDeletePost();
     const [shareOpen, setShareOpen] = useState(false);
-    const [shareToTimelineOpen, setShareToTimelineOpen] = useState(false);
+    const [shareEmbeddedOpen, setShareEmbeddedOpen] = useState(false);
+    const [shareToTimelinePost, setShareToTimelinePost] = useState(null);
     const [moreOpen, setMoreOpen] = useState(false);
 
     const isAuthor = user?.id === post.user?.id;
@@ -36,6 +37,22 @@ const PostCard = ({ post, onDeleted }) => {
         } else {
             likeMutation.mutate(post.id);
         }
+    };
+
+    const handleLikeEmbedded = (e, sharedPost) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (sharedPost?.is_liked) {
+            unlikeMutation.mutate(sharedPost.id);
+        } else {
+            likeMutation.mutate(sharedPost.id);
+        }
+    };
+
+    const handleShareEmbeddedOpen = (e, sharedPost) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setShareEmbeddedOpen((open) => !open);
     };
 
     const highlightHashtags = (text) => {
@@ -140,10 +157,10 @@ const PostCard = ({ post, onDeleted }) => {
                 </div>
             )}
 
-            {/* Original post embed (when this is a share) */}
+            {/* Original post embed (when this is a share) – with like/share actions */}
             {post.shared_post && (
-                <Link to={`/post/${post.shared_post.id}`} className="block mb-3 rounded-lg border border-gray-200 overflow-hidden hover:border-gray-300 transition-colors">
-                    <div className="p-3 bg-gray-50">
+                <div className="mb-3 rounded-lg border border-gray-200 overflow-hidden hover:border-gray-300 transition-colors bg-gray-50">
+                    <Link to={`/post/${post.shared_post.id}`} className="block p-3 hover:bg-gray-100/50 transition-colors">
                         <div className="flex items-center gap-2 mb-2">
                             <Avatar src={post.shared_post.user?.profile_picture} alt={post.shared_post.user?.name} size="sm" />
                             <div className="flex-1 min-w-0">
@@ -157,12 +174,75 @@ const PostCard = ({ post, onDeleted }) => {
                                 {post.shared_post.media_type === 'image' ? (
                                     <img src={post.shared_post.media_url} alt="" className="w-full h-auto object-cover" />
                                 ) : (
-                                    <video src={post.shared_post.media_url} className="w-full max-h-48" controls />
+                                    <video src={post.shared_post.media_url} className="w-full max-h-48" controls onClick={(e) => e.stopPropagation()} />
                                 )}
                             </div>
                         )}
+                    </Link>
+                    {/* Like & Share for embedded post */}
+                    <div className="flex items-center gap-4 px-3 py-2 border-t border-gray-200 bg-white/50">
+                        <button
+                            type="button"
+                            onClick={(e) => handleLikeEmbedded(e, post.shared_post)}
+                            disabled={likeMutation.isPending || unlikeMutation.isPending}
+                            className={`flex items-center gap-1.5 flex-shrink-0 transition-colors cursor-pointer disabled:opacity-60 ${
+                                post.shared_post.is_liked ? 'text-red-500 hover:text-red-600' : 'text-gray-500 hover:text-gray-700'
+                            }`}
+                        >
+                            <span className="material-symbols-outlined text-[18px]">
+                                {post.shared_post.is_liked ? 'favorite' : 'favorite_border'}
+                            </span>
+                            <span className="text-xs tabular-nums">{post.shared_post.likes_count ?? 0}</span>
+                        </button>
+                        <div className="relative flex-shrink-0">
+                            <button
+                                type="button"
+                                onClick={(e) => handleShareEmbeddedOpen(e, post.shared_post)}
+                                className="flex items-center gap-1.5 text-gray-500 hover:text-[#359EFF] transition-colors cursor-pointer"
+                            >
+                                <span className="material-symbols-outlined text-[18px]">share</span>
+                                <span className="text-xs tabular-nums">{post.shared_post.shares_count ?? 0}</span>
+                            </button>
+                            {shareEmbeddedOpen && (
+                                <>
+                                    <div className="fixed inset-0 z-10" aria-hidden="true" onClick={() => setShareEmbeddedOpen(false)} />
+                                    <div className="absolute left-0 top-full mt-1 z-20 py-1 w-52 bg-white rounded-lg border border-gray-200 shadow-lg">
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setShareEmbeddedOpen(false);
+                                                setShareToTimelinePost(post.shared_post);
+                                            }}
+                                            className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2 cursor-pointer"
+                                        >
+                                            <span className="material-symbols-outlined text-lg">campaign</span>
+                                            Share to my timeline
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                const url = `${window.location.origin}/post/${post.shared_post.id}`;
+                                                navigator.clipboard.writeText(url).then(() => toast.success('Link copied'));
+                                                shareMutation.mutate(post.shared_post.id);
+                                                setShareEmbeddedOpen(false);
+                                            }}
+                                            className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2 cursor-pointer"
+                                        >
+                                            <span className="material-symbols-outlined text-sm">link</span>
+                                            Copy link
+                                        </button>
+                                    </div>
+                                </>
+                            )}
+                        </div>
+                        <Link
+                            to={`/post/${post.shared_post.id}`}
+                            className="text-xs text-[#359EFF] hover:underline ml-auto flex-shrink-0"
+                        >
+                            View post
+                        </Link>
                     </div>
-                </Link>
+                </div>
             )}
 
             {/* Post Content (only when not a share - shared content is above) */}
@@ -193,42 +273,53 @@ const PostCard = ({ post, onDeleted }) => {
                 </div>
             )}
 
-            {/* Post Actions */}
+            {/* Post Actions - fixed width so icons stay in place when counts change */}
             <div className="flex items-center justify-between pt-3 border-t border-gray-100">
-                <div className="flex items-center space-x-6">
+                <div className="flex items-center gap-6">
                     <button
                         onClick={handleLike}
-                        className={`flex items-center space-x-2 transition-colors cursor-pointer ${
+                        className={`flex items-center gap-2 w-14 flex-shrink-0 transition-colors cursor-pointer ${
                             post.is_liked
                                 ? 'text-red-500 hover:text-red-600'
                                 : 'text-gray-500 hover:text-gray-700'
                         }`}
                     >
-                        <span className="material-symbols-outlined">
+                        <span className="material-symbols-outlined flex-shrink-0 text-[22px]">
                             {post.is_liked ? 'favorite' : 'favorite_border'}
                         </span>
-                        <span className="text-sm">{post.likes_count || 0}</span>
+                        <span className="text-sm tabular-nums w-5 text-left">{post.likes_count ?? 0}</span>
                     </button>
 
-                    <Link
-                        to={`/post/${post.id}`}
-                        className="flex items-center space-x-2 text-gray-500 hover:text-[#359EFF] transition-colors"
-                    >
-                        <span className="material-symbols-outlined">chat_bubble_outline</span>
-                        <span className="text-sm">{post.comments_count || 0}</span>
-                    </Link>
+                    {onCommentClick ? (
+                        <button
+                            type="button"
+                            onClick={onCommentClick}
+                            className="flex items-center gap-2 w-14 flex-shrink-0 text-gray-500 hover:text-[#359EFF] transition-colors cursor-pointer"
+                        >
+                            <span className="material-symbols-outlined flex-shrink-0 text-[22px]">chat_bubble_outline</span>
+                            <span className="text-sm tabular-nums w-5 text-left">{post.comments_count ?? 0}</span>
+                        </button>
+                    ) : (
+                        <Link
+                            to={`/post/${post.id}`}
+                            className="flex items-center gap-2 w-14 flex-shrink-0 text-gray-500 hover:text-[#359EFF] transition-colors cursor-pointer"
+                        >
+                            <span className="material-symbols-outlined flex-shrink-0 text-[22px]">chat_bubble_outline</span>
+                            <span className="text-sm tabular-nums w-5 text-left">{post.comments_count ?? 0}</span>
+                        </Link>
+                    )}
 
-                    <div className="relative">
+                    <div className="relative w-14 flex-shrink-0">
                         <button
                             type="button"
                             onClick={(e) => {
                                 e.preventDefault();
                                 setShareOpen((open) => !open);
                             }}
-                            className="flex items-center space-x-2 text-gray-500 hover:text-[#359EFF] transition-colors cursor-pointer"
+                            className="flex items-center gap-2 w-full text-gray-500 hover:text-[#359EFF] transition-colors cursor-pointer"
                         >
-                            <span className="material-symbols-outlined">share</span>
-                            <span className="text-sm">{post.shares_count ?? 0}</span>
+                            <span className="material-symbols-outlined flex-shrink-0 text-[22px]">share</span>
+                            <span className="text-sm tabular-nums w-5 text-left">{post.shares_count ?? 0}</span>
                         </button>
                         {shareOpen && (
                             <>
@@ -238,17 +329,17 @@ const PostCard = ({ post, onDeleted }) => {
                                     onClick={() => setShareOpen(false)}
                                 />
                                 <div className="absolute left-0 top-full mt-1 z-20 py-1 w-52 bg-white rounded-lg border border-gray-200 shadow-lg">
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            setShareOpen(false);
-                                            setShareToTimelineOpen(true);
-                                        }}
-                                        className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2 cursor-pointer"
-                                    >
-                                        <span className="material-symbols-outlined text-lg">campaign</span>
-                                        Share to my timeline
-                                    </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setShareOpen(false);
+                                                setShareToTimelinePost(post);
+                                            }}
+                                            className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2 cursor-pointer"
+                                        >
+                                            <span className="material-symbols-outlined text-lg">campaign</span>
+                                            Share to my timeline
+                                        </button>
                                     <button
                                         type="button"
                                         onClick={() => {
@@ -288,21 +379,19 @@ const PostCard = ({ post, onDeleted }) => {
                         )}
                     </div>
 
-                    {shareToTimelineOpen && (
+                    {shareToTimelinePost && (
                         <ShareToTimelineModal
-                            post={post}
-                            onClose={() => setShareToTimelineOpen(false)}
+                            post={shareToTimelinePost}
+                            onClose={() => setShareToTimelinePost(null)}
                             onSubmit={(formData) => {
                                 createPostMutation.mutate(
-                                    { formData, sharedPost: post },
+                                    { formData, sharedPost: shareToTimelinePost },
                                     {
                                         onSuccess: () => {
-                                            setShareToTimelineOpen(false);
+                                            setShareToTimelinePost(null);
                                             toast.success('Shared to your timeline');
                                         },
-                                        onError: () => {
-                                            toast.error('Failed to share');
-                                        },
+                                        onError: () => {},
                                     }
                                 );
                             }}
@@ -310,8 +399,8 @@ const PostCard = ({ post, onDeleted }) => {
                         />
                     )}
 
-                    <button className="flex items-center space-x-2 text-gray-500 hover:text-[#359EFF] transition-colors cursor-pointer">
-                        <span className="material-symbols-outlined">bookmark_border</span>
+                    <button className="flex items-center justify-start w-14 flex-shrink-0 text-gray-500 hover:text-[#359EFF] transition-colors cursor-pointer">
+                        <span className="material-symbols-outlined flex-shrink-0 text-[22px]">bookmark_border</span>
                     </button>
                 </div>
             </div>

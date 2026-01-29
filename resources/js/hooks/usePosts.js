@@ -236,21 +236,44 @@ export const useDeletePost = () => {
     });
 };
 
+// Helper: apply updater to post or to nested shared_post when postId matches
+function applyPostUpdater(p, postId, updater) {
+    if (String(p?.id) === String(postId)) return updater(p);
+    if (p?.shared_post && String(p.shared_post.id) === String(postId)) {
+        return { ...p, shared_post: updater(p.shared_post) };
+    }
+    return p;
+}
+
 // Export so useComments can update post counts when a comment is added
 export function updatePostInCaches(queryClient, postId, updater) {
     // Single post (cache may be raw response { data: { post } } or just the post from usePost's select)
     queryClient.setQueryData(['post', postId], (old) => {
         if (!old) return old;
         if (old?.data?.post) {
-            return {
-                ...old,
-                data: { ...old.data, post: updater(old.data.post) },
-            };
+            const post = applyPostUpdater(old.data.post, postId, updater);
+            return post === old.data.post ? old : { ...old, data: { ...old.data, post } };
         }
         if (String(old?.id) === String(postId)) {
             return updater(old);
         }
+        if (old?.shared_post && String(old.shared_post.id) === String(postId)) {
+            return { ...old, shared_post: updater(old.shared_post) };
+        }
         return old;
+    });
+
+    // Also update any other single-post cache where this post is the nested shared_post (e.g. parent post page)
+    const postCaches = queryClient.getQueriesData({ queryKey: ['post'] });
+    postCaches.forEach(([key, old]) => {
+        if (!old) return;
+        const post = old?.data?.post ?? (old?.id != null ? old : null);
+        if (!post || !post.shared_post || String(post.shared_post.id) !== String(postId)) return;
+        const updatedPost = { ...post, shared_post: updater(post.shared_post) };
+        const next = old?.data != null
+            ? { ...old, data: { ...old.data, post: updatedPost } }
+            : updatedPost;
+        queryClient.setQueryData(key, next);
     });
 
     // Feed (infinite query: pages[].data.posts or pages[].data.posts.data)
@@ -261,7 +284,7 @@ export function updatePostInCaches(queryClient, postId, updater) {
             pages: old.pages.map((page) => {
                 const raw = page.data?.posts;
                 const list = Array.isArray(raw) ? raw : raw?.data ?? [];
-                const updated = list.map((p) => (String(p?.id) === String(postId) ? updater(p) : p));
+                const updated = list.map((p) => applyPostUpdater(p, postId, updater));
                 return {
                     ...page,
                     data: {
@@ -277,7 +300,7 @@ export function updatePostInCaches(queryClient, postId, updater) {
     const userPostsEntries = queryClient.getQueriesData({ queryKey: ['user-posts'] });
     userPostsEntries.forEach(([queryKey, data]) => {
         if (!data?.posts) return;
-        const updated = data.posts.map((p) => (String(p?.id) === String(postId) ? updater(p) : p));
+        const updated = data.posts.map((p) => applyPostUpdater(p, postId, updater));
         queryClient.setQueryData(queryKey, { ...data, posts: updated });
     });
 }
@@ -313,14 +336,12 @@ export const useLikePost = () => {
                     likes_count: count,
                 }));
             }
-            queryClient.refetchQueries({ queryKey: ['posts'] });
-            queryClient.refetchQueries({ queryKey: ['user-posts'] });
+            // Do not refetch: overwrites cache with stale data and causes count flicker
         },
         onError: (err, postId, context) => {
             if (context?.previousPost) queryClient.setQueryData(['post', postId], context.previousPost);
             if (context?.previousFeed) queryClient.setQueryData(['posts', 'feed'], context.previousFeed);
             context?.previousUserPosts?.forEach(([key, data]) => queryClient.setQueryData(key, data));
-            toast.error('Failed to like post');
         },
     });
 };
@@ -356,14 +377,12 @@ export const useUnlikePost = () => {
                     likes_count: count,
                 }));
             }
-            queryClient.refetchQueries({ queryKey: ['posts'] });
-            queryClient.refetchQueries({ queryKey: ['user-posts'] });
+            // Do not refetch: overwrites cache with stale data and causes count flicker
         },
         onError: (err, postId, context) => {
             if (context?.previousPost) queryClient.setQueryData(['post', postId], context.previousPost);
             if (context?.previousFeed) queryClient.setQueryData(['posts', 'feed'], context.previousFeed);
             context?.previousUserPosts?.forEach(([key, data]) => queryClient.setQueryData(key, data));
-            toast.error('Failed to unlike post');
         },
     });
 };
@@ -386,8 +405,7 @@ export const useSharePost = () => {
                     shares_count: (post.shares_count ?? 0) + 1,
                 }));
             }
-            queryClient.refetchQueries({ queryKey: ['posts'] });
-            queryClient.refetchQueries({ queryKey: ['user-posts'] });
+            // Do not refetch: cache update is enough for detail page
         },
         onError: () => {
             toast.error('Failed to record share');
