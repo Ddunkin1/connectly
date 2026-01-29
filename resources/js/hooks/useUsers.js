@@ -37,6 +37,8 @@ export const useUpdateProfile = () => {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['user'] });
             queryClient.invalidateQueries({ queryKey: ['profile'] });
+            queryClient.refetchQueries({ queryKey: ['user'] });
+            queryClient.refetchQueries({ queryKey: ['profile'] });
             toast.success('Profile updated successfully');
         },
         onError: (error) => {
@@ -60,6 +62,13 @@ export const useFollow = () => {
             queryClient.invalidateQueries({ queryKey: ['profile', userId] });
             queryClient.invalidateQueries({ queryKey: ['user'] });
             queryClient.invalidateQueries({ queryKey: ['friend-requests'] });
+            queryClient.invalidateQueries({ queryKey: ['posts'] });
+            queryClient.invalidateQueries({ queryKey: ['suggested-users'] });
+            queryClient.refetchQueries({ queryKey: ['profile', userId] });
+            queryClient.refetchQueries({ queryKey: ['user'] });
+            queryClient.refetchQueries({ queryKey: ['friend-requests'] });
+            queryClient.refetchQueries({ queryKey: ['posts'] });
+            queryClient.refetchQueries({ queryKey: ['suggested-users'] });
             toast.success('Friend request sent successfully');
         },
         onError: (error) => {
@@ -76,6 +85,12 @@ export const useUnfollow = () => {
         onSuccess: (response, userId) => {
             queryClient.invalidateQueries({ queryKey: ['profile', userId] });
             queryClient.invalidateQueries({ queryKey: ['user'] });
+            queryClient.invalidateQueries({ queryKey: ['posts'] });
+            queryClient.invalidateQueries({ queryKey: ['suggested-users'] });
+            queryClient.refetchQueries({ queryKey: ['profile', userId] });
+            queryClient.refetchQueries({ queryKey: ['user'] });
+            queryClient.refetchQueries({ queryKey: ['posts'] });
+            queryClient.refetchQueries({ queryKey: ['suggested-users'] });
             toast.success('Unfollowed successfully');
         },
         onError: (error) => {

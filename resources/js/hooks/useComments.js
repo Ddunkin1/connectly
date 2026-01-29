@@ -34,8 +34,11 @@ export const useCreateComment = () => {
                 }));
             }
 
-            // Only refetch comments list so the new comment appears; don't invalidate post/posts/user-posts (we already updated counts)
             queryClient.invalidateQueries({ queryKey: ['comments', postId] });
+            queryClient.refetchQueries({ queryKey: ['comments', postId] });
+            queryClient.refetchQueries({ queryKey: ['posts'] });
+            queryClient.refetchQueries({ queryKey: ['user-posts'] });
+            queryClient.refetchQueries({ queryKey: ['post', postId] });
             toast.success('Comment added successfully');
         },
         onError: (error) => {
@@ -52,6 +55,9 @@ export const useDeleteComment = () => {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['comments'] });
             queryClient.invalidateQueries({ queryKey: ['posts'] });
+            queryClient.refetchQueries({ queryKey: ['comments'] });
+            queryClient.refetchQueries({ queryKey: ['posts'] });
+            queryClient.refetchQueries({ queryKey: ['user-posts'] });
             toast.success('Comment deleted successfully');
         },
         onError: (error) => {

@@ -175,12 +175,10 @@ export const useCreatePost = () => {
                 });
             }
 
-            // Invalidate and explicitly refetch current user's profile posts so timeline updates
             queryClient.invalidateQueries({ queryKey: ['posts'] });
             queryClient.invalidateQueries({ queryKey: ['user-posts'] });
-            if (user?.username) {
-                queryClient.refetchQueries({ queryKey: ['user-posts', user.username] });
-            }
+            queryClient.refetchQueries({ queryKey: ['posts'] });
+            queryClient.refetchQueries({ queryKey: ['user-posts'] });
             toast.success('Post created successfully!');
         },
         onError: (error, newPostData, context) => {
@@ -208,6 +206,9 @@ export const useUpdatePost = () => {
             queryClient.invalidateQueries({ queryKey: ['post', variables.postId] });
             queryClient.invalidateQueries({ queryKey: ['posts'] });
             queryClient.invalidateQueries({ queryKey: ['user-posts'] });
+            queryClient.refetchQueries({ queryKey: ['post', variables.postId] });
+            queryClient.refetchQueries({ queryKey: ['posts'] });
+            queryClient.refetchQueries({ queryKey: ['user-posts'] });
             toast.success('Post updated successfully!');
         },
         onError: (error) => {
@@ -225,6 +226,8 @@ export const useDeletePost = () => {
             queryClient.invalidateQueries({ queryKey: ['posts'] });
             queryClient.invalidateQueries({ queryKey: ['user-posts'] });
             queryClient.removeQueries({ queryKey: ['post', String(postId)] });
+            queryClient.refetchQueries({ queryKey: ['posts'] });
+            queryClient.refetchQueries({ queryKey: ['user-posts'] });
             toast.success('Post deleted successfully!');
         },
         onError: (error) => {
@@ -310,6 +313,8 @@ export const useLikePost = () => {
                     likes_count: count,
                 }));
             }
+            queryClient.refetchQueries({ queryKey: ['posts'] });
+            queryClient.refetchQueries({ queryKey: ['user-posts'] });
         },
         onError: (err, postId, context) => {
             if (context?.previousPost) queryClient.setQueryData(['post', postId], context.previousPost);
@@ -317,7 +322,6 @@ export const useLikePost = () => {
             context?.previousUserPosts?.forEach(([key, data]) => queryClient.setQueryData(key, data));
             toast.error('Failed to like post');
         },
-        // Don't invalidate on success: we already updated cache with server count. Refetch would overwrite with stale data and cause flicker (1 → 2 → 0).
     });
 };
 
@@ -352,6 +356,8 @@ export const useUnlikePost = () => {
                     likes_count: count,
                 }));
             }
+            queryClient.refetchQueries({ queryKey: ['posts'] });
+            queryClient.refetchQueries({ queryKey: ['user-posts'] });
         },
         onError: (err, postId, context) => {
             if (context?.previousPost) queryClient.setQueryData(['post', postId], context.previousPost);
@@ -359,7 +365,6 @@ export const useUnlikePost = () => {
             context?.previousUserPosts?.forEach(([key, data]) => queryClient.setQueryData(key, data));
             toast.error('Failed to unlike post');
         },
-        // Don't invalidate on success: we already updated cache with server count. Refetch would overwrite and cause flicker.
     });
 };
 
@@ -381,6 +386,8 @@ export const useSharePost = () => {
                     shares_count: (post.shares_count ?? 0) + 1,
                 }));
             }
+            queryClient.refetchQueries({ queryKey: ['posts'] });
+            queryClient.refetchQueries({ queryKey: ['user-posts'] });
         },
         onError: () => {
             toast.error('Failed to record share');

@@ -18,6 +18,8 @@ export const useSendFriendRequest = () => {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['friend-requests'] });
             queryClient.invalidateQueries({ queryKey: ['profile'] });
+            queryClient.refetchQueries({ queryKey: ['friend-requests'] });
+            queryClient.refetchQueries({ queryKey: ['profile'] });
             toast.success('Friend request sent successfully');
         },
         onError: (error) => {
@@ -35,6 +37,10 @@ export const useAcceptFriendRequest = () => {
             queryClient.invalidateQueries({ queryKey: ['friend-requests'] });
             queryClient.invalidateQueries({ queryKey: ['profile'] });
             queryClient.invalidateQueries({ queryKey: ['user'] });
+            queryClient.refetchQueries({ queryKey: ['friend-requests'] });
+            queryClient.refetchQueries({ queryKey: ['profile'] });
+            queryClient.refetchQueries({ queryKey: ['user'] });
+            queryClient.refetchQueries({ queryKey: ['posts'] });
             toast.success('Friend request accepted');
         },
         onError: (error) => {
@@ -51,6 +57,8 @@ export const useRejectFriendRequest = () => {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['friend-requests'] });
             queryClient.invalidateQueries({ queryKey: ['profile'] });
+            queryClient.refetchQueries({ queryKey: ['friend-requests'] });
+            queryClient.refetchQueries({ queryKey: ['profile'] });
             toast.success('Friend request rejected');
         },
         onError: (error) => {
@@ -67,6 +75,8 @@ export const useCancelFriendRequest = () => {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['friend-requests'] });
             queryClient.invalidateQueries({ queryKey: ['profile'] });
+            queryClient.refetchQueries({ queryKey: ['friend-requests'] });
+            queryClient.refetchQueries({ queryKey: ['profile'] });
             toast.success('Friend request cancelled');
         },
         onError: (error) => {
