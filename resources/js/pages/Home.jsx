@@ -46,7 +46,12 @@ const Home = () => {
         );
     }
 
-    const posts = data?.pages.flatMap((page) => page.data.posts) || [];
+    // API may return posts as array or as { data: [...] } (Laravel resource collection)
+    const posts =
+        data?.pages.flatMap((page) => {
+            const raw = page.data?.posts;
+            return Array.isArray(raw) ? raw : Array.isArray(raw?.data) ? raw.data : [];
+        }) || [];
 
     return (
         <div className="max-w-2xl mx-auto">

@@ -19,6 +19,7 @@ class Post extends Model
         'media_url',
         'media_type',
         'visibility',
+        'shares_count',
     ];
 
     protected function casts(): array

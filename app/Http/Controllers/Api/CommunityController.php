@@ -8,6 +8,7 @@ use App\Http\Requests\Community\UpdateCommunityRequest;
 use App\Http\Resources\CommunityResource;
 use App\Http\Resources\PostResource;
 use App\Models\Community;
+use App\Models\Post;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -241,11 +242,12 @@ class CommunityController extends Controller
             ->latest()
             ->paginate(15);
 
-        // Check if current user liked each post
+        // Check if current user liked each post (likes table is polymorphic: likeable_id, likeable_type)
         if ($user) {
             $likedPostIds = $user->likes()
-                ->whereIn('post_id', $posts->pluck('id'))
-                ->pluck('post_id')
+                ->where('likeable_type', Post::class)
+                ->whereIn('likeable_id', $posts->pluck('id'))
+                ->pluck('likeable_id')
                 ->toArray();
 
             $posts->getCollection()->transform(function ($post) use ($likedPostIds) {

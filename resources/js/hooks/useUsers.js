@@ -16,7 +16,16 @@ export const useUserPosts = (userId) => {
         queryKey: ['user-posts', userId],
         queryFn: () => userAPI.getUserPosts(userId),
         enabled: !!userId,
-        select: (data) => data.data,
+        // API may return { posts: [...] } or { posts: { data: [...] } } (Laravel resource collection)
+        select: (response) => {
+            const body = response.data;
+            const rawPosts = body?.posts;
+            const posts = Array.isArray(rawPosts)
+                ? rawPosts
+                : (Array.isArray(rawPosts?.data) ? rawPosts.data : []);
+            const pagination = body?.pagination ?? {};
+            return { posts, pagination };
+        },
     });
 };
 

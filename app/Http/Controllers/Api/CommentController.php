@@ -70,9 +70,12 @@ class CommentController extends Controller
         // Notify mentioned users in comment
         $this->mentionService->notifyMentionedUsers($request->content, $post, $user, 'comment');
 
+        $post->loadCount('allComments');
+
         return response()->json([
             'message' => 'Comment created successfully',
             'comment' => new CommentResource($comment),
+            'comments_count' => $post->allComments()->count(),
         ], 201);
     }
 

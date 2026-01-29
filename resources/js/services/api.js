@@ -83,6 +83,7 @@ export const postsAPI = {
     deletePost: (postId) => api.delete(`/posts/${postId}`),
     likePost: (postId) => api.post(`/posts/${postId}/like`),
     unlikePost: (postId) => api.delete(`/posts/${postId}/unlike`),
+    sharePost: (postId) => api.post(`/posts/${postId}/share`),
 };
 
 // Comments API

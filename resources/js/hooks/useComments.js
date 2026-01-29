@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { commentsAPI } from '../services/api';
 import toast from 'react-hot-toast';
+import { updatePostInCaches } from './usePosts';
 
 export const useComments = (postId) => {
     return useQuery({
@@ -17,9 +18,26 @@ export const useCreateComment = () => {
     return useMutation({
         mutationFn: ({ postId, data }) => commentsAPI.createComment(postId, data),
         onSuccess: (response, variables) => {
-            queryClient.invalidateQueries({ queryKey: ['comments', variables.postId] });
-            queryClient.invalidateQueries({ queryKey: ['post', variables.postId] });
+            const postId = variables.postId;
+            const commentsCount = response?.data?.comments_count;
+
+            // Update post's comments_count everywhere so the number increments for every user who interacts
+            if (typeof commentsCount === 'number') {
+                updatePostInCaches(queryClient, postId, (post) => ({
+                    ...post,
+                    comments_count: commentsCount,
+                }));
+            } else {
+                updatePostInCaches(queryClient, postId, (post) => ({
+                    ...post,
+                    comments_count: (post.comments_count ?? 0) + 1,
+                }));
+            }
+
+            queryClient.invalidateQueries({ queryKey: ['comments', postId] });
+            queryClient.invalidateQueries({ queryKey: ['post', postId] });
             queryClient.invalidateQueries({ queryKey: ['posts'] });
+            queryClient.invalidateQueries({ queryKey: ['user-posts'] });
             toast.success('Comment added successfully');
         },
         onError: (error) => {

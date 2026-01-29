@@ -7,10 +7,12 @@ use App\Http\Requests\User\UpdateProfileRequest;
 use App\Http\Requests\User\UploadProfilePictureRequest;
 use App\Http\Resources\PostResource;
 use App\Http\Resources\UserResource;
+use App\Models\Post;
 use App\Models\User;
 use App\Services\MediaService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class UserController extends Controller
 {
@@ -51,12 +53,13 @@ class UserController extends Controller
                 ->latest()
                 ->paginate(15);
 
-            // Check if current user liked each post
+            // Check if current user liked each post (likes table is polymorphic: likeable_id, likeable_type)
             if ($request->user()) {
                 $likedPostIds = $request->user()
                     ->likes()
-                    ->whereIn('post_id', $posts->pluck('id'))
-                    ->pluck('post_id')
+                    ->where('likeable_type', Post::class)
+                    ->whereIn('likeable_id', $posts->pluck('id'))
+                    ->pluck('likeable_id')
                     ->toArray();
 
                 $posts->getCollection()->transform(function ($post) use ($likedPostIds) {
@@ -75,7 +78,7 @@ class UserController extends Controller
                 ],
             ]);
         } catch (\Exception $e) {
-            \Log::error('User posts fetch failed: ' . $e->getMessage(), [
+            Log::error('User posts fetch failed: ' . $e->getMessage(), [
                 'trace' => $e->getTraceAsString(),
                 'user_id' => $user->id,
             ]);

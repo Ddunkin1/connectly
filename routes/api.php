@@ -60,6 +60,9 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function () {
     Route::post('/posts/{post}/like', [LikeController::class, 'like']);
     Route::delete('/posts/{post}/unlike', [LikeController::class, 'unlike']);
 
+    // Post Share (increment share count)
+    Route::post('/posts/{post}/share', [PostController::class, 'share']);
+
     // Comments
     Route::get('/posts/{post}/comments', [CommentController::class, 'index']);
     Route::post('/posts/{post}/comments', [CommentController::class, 'store']);

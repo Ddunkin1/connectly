@@ -114,6 +114,23 @@ class PostController extends Controller
     }
 
     /**
+     * Record a share (increment shares_count when user shares the post).
+     *
+     * @param Request $request
+     * @param Post $post
+     * @return JsonResponse
+     */
+    public function share(Request $request, Post $post): JsonResponse
+    {
+        $post->increment('shares_count');
+
+        return response()->json([
+            'message' => 'Share recorded',
+            'shares_count' => $post->fresh()->shares_count,
+        ]);
+    }
+
+    /**
      * Delete a post.
      *
      * @param Request $request

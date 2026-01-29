@@ -15,7 +15,7 @@ const Profile = () => {
     const [activeTab, setActiveTab] = useState('posts');
     
     const { data: profile, isLoading: profileLoading } = useUserProfile(username);
-    const { data: postsData, isLoading: postsLoading } = useUserPosts(username);
+    const { data: postsData, isLoading: postsLoading, refetch: refetchPosts } = useUserPosts(username);
     const { data: friendRequestsData } = useFriendRequests();
     const followMutation = useFollow();
     const unfollowMutation = useUnfollow();
@@ -289,7 +289,7 @@ const Profile = () => {
                     {/* Post Input - Only show if viewing own profile */}
                     {isOwnProfile && (
                         <div className="bg-white rounded-lg border border-gray-200 p-4">
-                            <PostInput />
+                            <PostInput onPostCreated={refetchPosts} />
                         </div>
                     )}
 

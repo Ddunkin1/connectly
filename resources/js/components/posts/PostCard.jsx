@@ -2,13 +2,15 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import Avatar from '../common/Avatar';
 import { formatDate } from '../../utils/formatDate';
-import { useLikePost, useUnlikePost } from '../../hooks/usePosts';
+import { useLikePost, useUnlikePost, useSharePost } from '../../hooks/usePosts';
 import useAuthStore from '../../store/authStore';
+import toast from 'react-hot-toast';
 
 const PostCard = ({ post }) => {
     const user = useAuthStore((state) => state.user);
     const likeMutation = useLikePost();
     const unlikeMutation = useUnlikePost();
+    const shareMutation = useSharePost();
 
     const handleLike = () => {
         if (post.is_liked) {
@@ -112,8 +114,22 @@ const PostCard = ({ post }) => {
                         <span className="text-sm">{post.comments_count || 0}</span>
                     </Link>
 
-                    <button className="flex items-center space-x-2 text-gray-500 hover:text-[#359EFF] transition-colors">
+                    <button
+                        type="button"
+                        onClick={(e) => {
+                            e.preventDefault();
+                            const url = `${window.location.origin}/post/${post.id}`;
+                            navigator.clipboard.writeText(url).then(() => {
+                                toast.success('Link copied to clipboard');
+                            }).catch(() => {
+                                toast.error('Could not copy link');
+                            });
+                            shareMutation.mutate(post.id);
+                        }}
+                        className="flex items-center space-x-2 text-gray-500 hover:text-[#359EFF] transition-colors"
+                    >
                         <span className="material-symbols-outlined">share</span>
+                        <span className="text-sm">{post.shares_count ?? 0}</span>
                     </button>
 
                     <button className="flex items-center space-x-2 text-gray-500 hover:text-[#359EFF] transition-colors">
