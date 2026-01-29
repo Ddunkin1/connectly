@@ -89,7 +89,7 @@ class PostController extends Controller
      */
     public function show(Request $request, Post $post): JsonResponse
     {
-        $post->load(['user', 'hashtags', 'likes']);
+        $post->load(['user', 'hashtags', 'likes', 'sharedPost.user']);
 
         return response()->json([
             'post' => new PostResource($post),

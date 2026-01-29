@@ -48,7 +48,7 @@ class UserController extends Controller
     {
         try {
             $posts = $user->posts()
-                ->with(['user', 'hashtags', 'likes'])
+                ->with(['user', 'hashtags', 'likes', 'sharedPost.user'])
                 ->withCount(['likes', 'allComments as comments_count'])
                 ->latest()
                 ->paginate(15);

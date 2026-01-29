@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { commentsAPI } from '../../services/api';
+import { useCreateComment } from '../../hooks/useComments';
 import Avatar from '../common/Avatar';
 import Button from '../common/Button';
 import { formatDate } from '../../utils/formatDate';
 import useAuthStore from '../../store/authStore';
-import toast from 'react-hot-toast';
 
 const CommentThread = ({ postId, comment, level = 0 }) => {
     const [showReplies, setShowReplies] = useState(false);
@@ -14,6 +14,7 @@ const CommentThread = ({ postId, comment, level = 0 }) => {
     const user = useAuthStore((state) => state.user);
     const queryClient = useQueryClient();
     const { register, handleSubmit, reset } = useForm();
+    const createCommentMutation = useCreateComment();
 
     const repliesQuery = useQuery({
         queryKey: ['comment-replies', comment.id],
@@ -23,26 +24,21 @@ const CommentThread = ({ postId, comment, level = 0 }) => {
             data.data.comments.filter((c) => c.parent_comment_id === comment.id),
     });
 
-    const createCommentMutation = useMutation({
-        mutationFn: (data) => commentsAPI.createComment(postId, data),
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['post', postId] });
-            queryClient.invalidateQueries({ queryKey: ['comment-replies', comment.id] });
-            reset();
-            setIsReplying(false);
-            setShowReplies(true);
-            toast.success('Comment added');
-        },
-        onError: () => {
-            toast.error('Failed to add comment');
-        },
-    });
-
     const onSubmit = (data) => {
-        createCommentMutation.mutate({
-            ...data,
-            parent_comment_id: comment.id,
-        });
+        createCommentMutation.mutate(
+            {
+                postId,
+                data: { ...data, parent_comment_id: comment.id },
+            },
+            {
+                onSuccess: () => {
+                    queryClient.invalidateQueries({ queryKey: ['comment-replies', comment.id] });
+                    reset();
+                    setIsReplying(false);
+                    setShowReplies(true);
+                },
+            }
+        );
     };
 
     return (

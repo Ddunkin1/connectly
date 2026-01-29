@@ -20,6 +20,7 @@ class Post extends Model
         'media_type',
         'visibility',
         'shares_count',
+        'shared_post_id',
     ];
 
     protected function casts(): array
@@ -36,6 +37,22 @@ class Post extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    /**
+     * Get the original post when this post is a share/repost.
+     */
+    public function sharedPost(): BelongsTo
+    {
+        return $this->belongsTo(Post::class, 'shared_post_id');
+    }
+
+    /**
+     * Get shares of this post.
+     */
+    public function shares(): HasMany
+    {
+        return $this->hasMany(Post::class, 'shared_post_id');
     }
 
     /**

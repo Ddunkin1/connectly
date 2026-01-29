@@ -26,29 +26,41 @@ export const usePost = (postId) => {
     });
 };
 
+// Normalize create post input: can be FormData or { formData, sharedPost }
+function normalizeCreateInput(data) {
+    const isPayload = data && typeof data === 'object' && !(data instanceof FormData) && 'formData' in data;
+    const formData = isPayload ? data.formData : data;
+    const sharedPost = isPayload ? data.sharedPost : null;
+    return { formData, sharedPost };
+}
+
 export const useCreatePost = () => {
     const queryClient = useQueryClient();
     const user = useAuthStore((state) => state.user);
 
     return useMutation({
-        mutationFn: (data) => postsAPI.createPost(data),
-        onMutate: async (newPostData) => {
-            // Cancel outgoing refetches
+        mutationFn: (data) => {
+            const { formData } = normalizeCreateInput(data);
+            return postsAPI.createPost(formData);
+        },
+        onMutate: async (data) => {
+            const { formData, sharedPost } = normalizeCreateInput(data);
+            const raw = formData instanceof FormData ? formData : data;
+            const get = (k) => (raw instanceof FormData ? raw.get(k) : raw?.[k]) ?? '';
+
             await queryClient.cancelQueries({ queryKey: ['posts', 'feed'] });
             await queryClient.cancelQueries({ queryKey: ['user-posts'] });
 
-            // Snapshot previous values
             const previousFeed = queryClient.getQueryData(['posts', 'feed']);
             const previousUserPostsByUsername = queryClient.getQueryData(['user-posts', user?.username]);
             const previousUserPostsById = queryClient.getQueryData(['user-posts', user?.id]);
 
-            // Create optimistic post object
             const optimisticPost = {
                 id: `temp-${Date.now()}`,
-                content: newPostData.get('content') || '',
-                media_url: null, // Will be set when API responds
+                content: String(get('content') || ''),
+                media_url: null,
                 media_type: null,
-                visibility: newPostData.get('visibility') || 'public',
+                visibility: String(get('visibility') || 'public'),
                 user: {
                     id: user?.id,
                     name: user?.name,
@@ -60,6 +72,8 @@ export const useCreatePost = () => {
                 shares_count: 0,
                 is_liked: false,
                 hashtags: [],
+                shared_post_id: raw instanceof FormData ? raw.get('shared_post_id') : raw?.shared_post_id,
+                shared_post: sharedPost || null,
                 created_at: new Date().toISOString(),
                 updated_at: new Date().toISOString(),
             };

@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
-import { usePost, useCreatePost } from '../hooks/usePosts';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
+import { usePost } from '../hooks/usePosts';
+import { useCreateComment } from '../hooks/useComments';
 import { commentsAPI } from '../services/api';
 import PostCard from '../components/posts/PostCard';
 import CommentThread from '../components/posts/CommentThread';
@@ -10,14 +11,13 @@ import Avatar from '../components/common/Avatar';
 import Button from '../components/common/Button';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import useAuthStore from '../store/authStore';
-import toast from 'react-hot-toast';
 
 const PostDetail = () => {
     const { id } = useParams();
     const { data: post, isLoading } = usePost(id);
     const user = useAuthStore((state) => state.user);
-    const queryClient = useQueryClient();
     const { register, handleSubmit, reset } = useForm();
+    const createCommentMutation = useCreateComment();
 
     const { data: commentsData, isLoading: commentsLoading } = useQuery({
         queryKey: ['comments', id],
@@ -26,21 +26,13 @@ const PostDetail = () => {
         select: (data) => data.data.comments,
     });
 
-    const createCommentMutation = useMutation({
-        mutationFn: (data) => commentsAPI.createComment(id, data),
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['comments', id] });
-            queryClient.invalidateQueries({ queryKey: ['post', id] });
-            reset();
-            toast.success('Comment added');
-        },
-        onError: () => {
-            toast.error('Failed to add comment');
-        },
-    });
-
     const onSubmit = (data) => {
-        createCommentMutation.mutate(data);
+        createCommentMutation.mutate(
+            { postId: id, data },
+            {
+                onSuccess: () => reset(),
+            }
+        );
     };
 
     if (isLoading) {

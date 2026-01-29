@@ -26,7 +26,7 @@ class PostService
         $followingIds = $user->following()->pluck('following_id')->toArray();
         $followingIds[] = $user->id; // Include user's own posts
 
-        return Post::with(['user', 'hashtags', 'likes'])
+        return Post::with(['user', 'hashtags', 'likes', 'sharedPost.user'])
             ->whereIn('user_id', $followingIds)
             ->where(function ($query) use ($user, $followingIds) {
                 $query->where('visibility', 'public')
@@ -113,7 +113,13 @@ class PostService
             'media_url' => $mediaUrl,
             'media_type' => $mediaType,
             'visibility' => $data['visibility'] ?? 'public',
+            'shared_post_id' => $data['shared_post_id'] ?? null,
         ]);
+
+        // When sharing a post, increment the original post's shares_count
+        if (!empty($post->shared_post_id)) {
+            Post::where('id', $post->shared_post_id)->increment('shares_count');
+        }
 
         // Sync hashtags (only if content exists)
         if (!empty($data['content'])) {
@@ -122,7 +128,7 @@ class PostService
             $this->mentionService->notifyMentionedUsers($data['content'], $post, $user, 'post');
         }
 
-        return $post->load(['user', 'hashtags']);
+        return $post->load(['user', 'hashtags', 'sharedPost.user']);
     }
 
     /**
