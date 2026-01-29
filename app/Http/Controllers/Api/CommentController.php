@@ -7,11 +7,17 @@ use App\Http\Requests\Comment\StoreCommentRequest;
 use App\Http\Resources\CommentResource;
 use App\Models\Comment;
 use App\Models\Post;
+use App\Notifications\CommentNotification;
+use App\Services\MentionService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class CommentController extends Controller
 {
+    public function __construct(
+        private MentionService $mentionService
+    ) {
+    }
     /**
      * Get comments for a post.
      *
@@ -47,13 +53,22 @@ class CommentController extends Controller
      */
     public function store(StoreCommentRequest $request, Post $post): JsonResponse
     {
+        $user = $request->user();
         $comment = $post->allComments()->create([
-            'user_id' => $request->user()->id,
+            'user_id' => $user->id,
             'content' => $request->content,
             'parent_comment_id' => $request->parent_comment_id,
         ]);
 
         $comment->load(['user', 'replies']);
+
+        // Notify post owner (don't notify if commenting on own post)
+        if ($post->user_id !== $user->id) {
+            $post->user->notify(new CommentNotification($post, $comment, $user));
+        }
+
+        // Notify mentioned users in comment
+        $this->mentionService->notifyMentionedUsers($request->content, $post, $user, 'comment');
 
         return response()->json([
             'message' => 'Comment created successfully',

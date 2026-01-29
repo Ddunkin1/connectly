@@ -13,7 +13,8 @@ class PostService
 {
     public function __construct(
         private HashtagService $hashtagService,
-        private SupabaseService $supabaseService
+        private SupabaseService $supabaseService,
+        private MentionService $mentionService
     ) {
     }
 
@@ -117,6 +118,8 @@ class PostService
         // Sync hashtags (only if content exists)
         if (!empty($data['content'])) {
             $this->hashtagService->syncHashtags($post, $data['content']);
+            // Notify mentioned users in post
+            $this->mentionService->notifyMentionedUsers($data['content'], $post, $user, 'post');
         }
 
         return $post->load(['user', 'hashtags']);

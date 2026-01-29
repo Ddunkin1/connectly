@@ -11,6 +11,7 @@ use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use App\Models\Conversation;
 use App\Models\Message;
+use App\Models\FriendRequest;
 
 class User extends Authenticatable implements MustVerifyEmail
 {
@@ -189,6 +190,47 @@ class User extends Authenticatable implements MustVerifyEmail
         return Message::where('receiver_id', $this->id)
             ->where('is_read', false)
             ->count();
+    }
+
+    /**
+     * Get friend requests sent by this user.
+     */
+    public function sentFriendRequests(): HasMany
+    {
+        return $this->hasMany(FriendRequest::class, 'sender_id');
+    }
+
+    /**
+     * Get friend requests received by this user.
+     */
+    public function receivedFriendRequests(): HasMany
+    {
+        return $this->hasMany(FriendRequest::class, 'receiver_id');
+    }
+
+    /**
+     * Get pending friend requests received by this user.
+     */
+    public function pendingFriendRequests(): HasMany
+    {
+        return $this->hasMany(FriendRequest::class, 'receiver_id')
+            ->where('status', 'pending');
+    }
+
+    /**
+     * Check if user has a pending friend request with another user.
+     */
+    public function hasPendingFriendRequestWith(User $user): bool
+    {
+        return FriendRequest::where(function ($query) use ($user) {
+            $query->where('sender_id', $this->id)
+                  ->where('receiver_id', $user->id)
+                  ->where('status', 'pending');
+        })->orWhere(function ($query) use ($user) {
+            $query->where('sender_id', $user->id)
+                  ->where('receiver_id', $this->id)
+                  ->where('status', 'pending');
+        })->exists();
     }
 
     /**

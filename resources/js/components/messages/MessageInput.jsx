@@ -4,7 +4,7 @@ import { useSendMessage } from '../../hooks/useMessages';
 import Button from '../common/Button';
 
 const MessageInput = ({ conversationId, receiverId, onMessageSent }) => {
-    const { register, handleSubmit, reset, watch } = useForm();
+    const { register, handleSubmit, reset, watch, formState: { errors } } = useForm();
     const sendMessageMutation = useSendMessage();
     const message = watch('message', '');
 

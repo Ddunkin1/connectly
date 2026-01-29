@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Models\FriendRequest;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -14,6 +15,28 @@ class UserResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
+        $currentUser = $request->user();
+        $friendRequestStatus = null;
+        
+        if ($currentUser && $currentUser->id !== $this->id) {
+            // Check for pending friend request
+            $sentRequest = FriendRequest::where('sender_id', $currentUser->id)
+                ->where('receiver_id', $this->id)
+                ->where('status', 'pending')
+                ->first();
+            
+            $receivedRequest = FriendRequest::where('sender_id', $this->id)
+                ->where('receiver_id', $currentUser->id)
+                ->where('status', 'pending')
+                ->first();
+            
+            if ($sentRequest) {
+                $friendRequestStatus = 'sent';
+            } elseif ($receivedRequest) {
+                $friendRequestStatus = 'received';
+            }
+        }
+
         return [
             'id' => $this->id,
             'name' => $this->name,
@@ -31,6 +54,7 @@ class UserResource extends JsonResource
                 $request->user(),
                 fn() => $request->user()->isFollowing($this->resource)
             ),
+            'friend_request_status' => $friendRequestStatus,
             'created_at' => $this->created_at,
         ];
     }

@@ -39,7 +39,8 @@ export const useCreatePost = () => {
 
             // Snapshot previous values
             const previousFeed = queryClient.getQueryData(['posts', 'feed']);
-            const previousUserPosts = queryClient.getQueryData(['user-posts', user?.id]);
+            const previousUserPostsByUsername = queryClient.getQueryData(['user-posts', user?.username]);
+            const previousUserPostsById = queryClient.getQueryData(['user-posts', user?.id]);
 
             // Create optimistic post object
             const optimisticPost = {
@@ -80,9 +81,9 @@ export const useCreatePost = () => {
                 };
             });
 
-            // Optimistically add post to user posts if viewing own profile
-            if (user?.id) {
-                queryClient.setQueryData(['user-posts', user.id], (old) => {
+            // Optimistically add post to user's own profile posts (using username as cache key)
+            if (user?.username) {
+                queryClient.setQueryData(['user-posts', user.username], (old) => {
                     if (!old) return old;
                     return {
                         ...old,
@@ -91,10 +92,56 @@ export const useCreatePost = () => {
                 });
             }
 
-            return { previousFeed, previousUserPosts };
+            return { previousFeed, previousUserPostsByUsername, previousUserPostsById };
         },
-        onSuccess: (response) => {
-            // Invalidate both feed and user posts cache to get real data
+        onSuccess: (response, variables, context) => {
+            const newPost = response.data.post;
+
+            // Update feed with real post data (replace optimistic post)
+            queryClient.setQueryData(['posts', 'feed'], (old) => {
+                if (!old) return old;
+                const pages = old.pages.map((page, index) => {
+                    if (index === 0) {
+                        // Replace optimistic post with real post in first page
+                        const posts = page.data.posts.map((post) =>
+                            post.id?.toString().startsWith('temp-') ? newPost : post
+                        );
+                        // If optimistic post not found, add real post at the beginning
+                        if (!posts.some((p) => p.id === newPost.id)) {
+                            posts.unshift(newPost);
+                        }
+                        return {
+                            ...page,
+                            data: {
+                                ...page.data,
+                                posts,
+                            },
+                        };
+                    }
+                    return page;
+                });
+                return { ...old, pages };
+            });
+
+            // Update user's own profile posts with real post data
+            if (user?.username) {
+                queryClient.setQueryData(['user-posts', user.username], (old) => {
+                    if (!old) return old;
+                    const posts = old.posts.map((post) =>
+                        post.id?.toString().startsWith('temp-') ? newPost : post
+                    );
+                    // If optimistic post not found, add real post at the beginning
+                    if (!posts.some((p) => p.id === newPost.id)) {
+                        posts.unshift(newPost);
+                    }
+                    return {
+                        ...old,
+                        posts,
+                    };
+                });
+            }
+
+            // Also invalidate to ensure everything is in sync
             queryClient.invalidateQueries({ queryKey: ['posts'] });
             queryClient.invalidateQueries({ queryKey: ['user-posts'] });
             toast.success('Post created successfully!');
@@ -104,8 +151,11 @@ export const useCreatePost = () => {
             if (context?.previousFeed) {
                 queryClient.setQueryData(['posts', 'feed'], context.previousFeed);
             }
-            if (context?.previousUserPosts) {
-                queryClient.setQueryData(['user-posts', user?.id], context.previousUserPosts);
+            if (context?.previousUserPostsByUsername && user?.username) {
+                queryClient.setQueryData(['user-posts', user.username], context.previousUserPostsByUsername);
+            }
+            if (context?.previousUserPostsById && user?.id) {
+                queryClient.setQueryData(['user-posts', user.id], context.previousUserPostsById);
             }
             toast.error(error.response?.data?.message || 'Failed to create post');
         },

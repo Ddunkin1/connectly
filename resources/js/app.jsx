@@ -19,6 +19,7 @@ import CommunityDetail from './pages/CommunityDetail';
 import EditProfile from './pages/EditProfile';
 import Search from './pages/Search';
 import Messages from './pages/Messages';
+import Notifications from './pages/Notifications';
 import TestUpload from './pages/TestUpload';
 import useAuthStore from './store/authStore';
 
@@ -177,6 +178,14 @@ function AppContent() {
                             element={
                                 <ProtectedRoute>
                                     <Messages />
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/notifications"
+                            element={
+                                <ProtectedRoute>
+                                    <Notifications />
                                 </ProtectedRoute>
                             }
                         />

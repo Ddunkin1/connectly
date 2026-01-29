@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useUserProfile, useUserPosts, useFollow, useUnfollow } from '../hooks/useUsers';
+import { useFriendRequests, useAcceptFriendRequest, useRejectFriendRequest } from '../hooks/useFriendRequests';
 import useAuthStore from '../store/authStore';
 import Avatar from '../components/common/Avatar';
 import PostCard from '../components/posts/PostCard';
@@ -15,12 +16,21 @@ const Profile = () => {
     
     const { data: profile, isLoading: profileLoading } = useUserProfile(username);
     const { data: postsData, isLoading: postsLoading } = useUserPosts(username);
+    const { data: friendRequestsData } = useFriendRequests();
     const followMutation = useFollow();
     const unfollowMutation = useUnfollow();
+    const acceptFriendRequestMutation = useAcceptFriendRequest();
+    const rejectFriendRequestMutation = useRejectFriendRequest();
 
     const isOwnProfile = currentUser?.username === username;
     const isFollowing = profile?.is_following;
+    const friendRequestStatus = profile?.friend_request_status; // 'sent', 'received', or null
     const posts = postsData?.posts || [];
+
+    // Find the friend request ID if there's a received request
+    const receivedRequest = friendRequestsData?.received?.find(
+        req => req.sender?.id === profile?.id
+    );
 
     if (profileLoading) {
         return (
@@ -105,26 +115,52 @@ const Profile = () => {
                                 </Link>
                             ) : (
                                 <>
-                                    <button
-                                        onClick={() => {
-                                            if (isFollowing) {
-                                                unfollowMutation.mutate(profile.id);
-                                            } else {
-                                                followMutation.mutate(profile.id);
-                                            }
-                                        }}
-                                        disabled={followMutation.isPending || unfollowMutation.isPending}
-                                        className={`px-6 py-2 rounded-lg font-medium transition-colors flex items-center space-x-2 ${
-                                            isFollowing
-                                                ? 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                                                : 'bg-[#359EFF] text-white hover:bg-[#2a8eef]'
-                                        }`}
-                                    >
-                                        <span className="material-symbols-outlined text-lg">
-                                            {isFollowing ? 'person_remove' : 'person_add'}
-                                        </span>
-                                        <span>{isFollowing ? 'Connected' : 'Connect'}</span>
-                                    </button>
+                                    {friendRequestStatus === 'sent' ? (
+                                        <button
+                                            disabled
+                                            className="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg font-medium flex items-center space-x-2 cursor-not-allowed"
+                                        >
+                                            <span className="material-symbols-outlined text-lg">hourglass_empty</span>
+                                            <span>Request Sent</span>
+                                        </button>
+                                    ) : friendRequestStatus === 'received' ? (
+                                        <div className="flex items-center space-x-2">
+                                            <button
+                                                onClick={() => acceptFriendRequestMutation.mutate(receivedRequest?.id)}
+                                                disabled={acceptFriendRequestMutation.isPending}
+                                                className="px-6 py-2 bg-[#359EFF] text-white rounded-lg font-medium transition-colors hover:bg-[#2a8eef] flex items-center space-x-2"
+                                            >
+                                                <span className="material-symbols-outlined text-lg">check</span>
+                                                <span>Accept</span>
+                                            </button>
+                                            <button
+                                                onClick={() => rejectFriendRequestMutation.mutate(receivedRequest?.id)}
+                                                disabled={rejectFriendRequestMutation.isPending}
+                                                className="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors hover:bg-gray-300 flex items-center space-x-2"
+                                            >
+                                                <span className="material-symbols-outlined text-lg">close</span>
+                                                <span>Reject</span>
+                                            </button>
+                                        </div>
+                                    ) : isFollowing ? (
+                                        <button
+                                            onClick={() => unfollowMutation.mutate(profile.id)}
+                                            disabled={unfollowMutation.isPending}
+                                            className="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors hover:bg-gray-300 flex items-center space-x-2"
+                                        >
+                                            <span className="material-symbols-outlined text-lg">person_remove</span>
+                                            <span>Connected</span>
+                                        </button>
+                                    ) : (
+                                        <button
+                                            onClick={() => followMutation.mutate(profile.id)}
+                                            disabled={followMutation.isPending}
+                                            className="px-6 py-2 bg-[#359EFF] text-white rounded-lg font-medium transition-colors hover:bg-[#2a8eef] flex items-center space-x-2"
+                                        >
+                                            <span className="material-symbols-outlined text-lg">person_add</span>
+                                            <span>Connect</span>
+                                        </button>
+                                    )}
                                     <Link
                                         to={`/messages/${username}`}
                                         className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 font-medium text-gray-700 transition-colors flex items-center space-x-2"

@@ -4,6 +4,7 @@ import { useLogout } from '../../hooks/useAuth';
 import useAuthStore from '../../store/authStore';
 import Avatar from '../common/Avatar';
 import Button from '../common/Button';
+import NotificationDropdown from './NotificationDropdown';
 
 const Header = () => {
     const [searchQuery, setSearchQuery] = useState('');
@@ -64,10 +65,10 @@ const Header = () => {
                                     <Link to="/explore" className="text-sm font-medium text-gray-700 hover:text-[#359EFF] transition-colors">
                                         Explore
                                     </Link>
-                                    <Link to="/notifications" className="text-sm font-medium text-gray-700 hover:text-[#359EFF] transition-colors">
-                                        Notifications
-                                    </Link>
                                 </div>
+
+                                {/* Notification Bell with Dropdown (friend requests, likes, comments, mentions) */}
+                                <NotificationDropdown />
 
                                 {/* Create Post Button */}
                                 <button

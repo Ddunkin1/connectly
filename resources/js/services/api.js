@@ -92,10 +92,19 @@ export const commentsAPI = {
     deleteComment: (commentId) => api.delete(`/comments/${commentId}`),
 };
 
-// Follow API
+// Follow API (now sends friend requests)
 export const followAPI = {
     follow: (userId) => api.post(`/users/${userId}/follow`),
     unfollow: (userId) => api.delete(`/users/${userId}/unfollow`),
+};
+
+// Friend Requests API
+export const friendRequestAPI = {
+    getFriendRequests: () => api.get('/friend-requests'),
+    sendFriendRequest: (userId) => api.post(`/users/${userId}/friend-request`),
+    acceptFriendRequest: (friendRequestId) => api.post(`/friend-requests/${friendRequestId}/accept`),
+    rejectFriendRequest: (friendRequestId) => api.post(`/friend-requests/${friendRequestId}/reject`),
+    cancelFriendRequest: (friendRequestId) => api.delete(`/friend-requests/${friendRequestId}`),
 };
 
 // Search API
@@ -127,6 +136,14 @@ export const messagesAPI = {
     sendMessage: (data) => api.post('/messages', data),
     getMessages: (conversationId, page = 1) => api.get(`/conversations/${conversationId}/messages`, { params: { page } }),
     markAsRead: (conversationId) => api.post(`/conversations/${conversationId}/read`),
+};
+
+// Notifications API
+export const notificationsAPI = {
+    getNotifications: () => api.get('/notifications'),
+    getUnreadCount: () => api.get('/notifications/unread-count'),
+    markAsRead: (notificationId) => api.post(`/notifications/${notificationId}/read`),
+    markAllAsRead: () => api.post('/notifications/read-all'),
 };
 
 export default api;

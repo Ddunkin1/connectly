@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { userAPI, followAPI } from '../services/api';
+import { userAPI, followAPI, friendRequestAPI } from '../services/api';
 import toast from 'react-hot-toast';
 
 export const useUserProfile = (userId) => {
@@ -50,10 +50,11 @@ export const useFollow = () => {
         onSuccess: (response, userId) => {
             queryClient.invalidateQueries({ queryKey: ['profile', userId] });
             queryClient.invalidateQueries({ queryKey: ['user'] });
-            toast.success('Followed successfully');
+            queryClient.invalidateQueries({ queryKey: ['friend-requests'] });
+            toast.success('Friend request sent successfully');
         },
         onError: (error) => {
-            toast.error(error.response?.data?.message || 'Failed to follow user');
+            toast.error(error.response?.data?.message || 'Failed to send friend request');
         },
     });
 };

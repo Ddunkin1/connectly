@@ -5,7 +5,9 @@ use App\Http\Controllers\Api\CommentController;
 use App\Http\Controllers\Api\CommunityController;
 use App\Http\Controllers\Api\ConversationController;
 use App\Http\Controllers\Api\FollowController;
+use App\Http\Controllers\Api\FriendRequestController;
 use App\Http\Controllers\Api\LikeController;
+use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\MessageController;
 use App\Http\Controllers\Api\PostController;
 use App\Http\Controllers\Api\SearchController;
@@ -63,9 +65,16 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function () {
     Route::post('/posts/{post}/comments', [CommentController::class, 'store']);
     Route::delete('/comments/{comment}', [CommentController::class, 'destroy']);
 
-    // Follow/Unfollow (using user ID)
+    // Follow/Unfollow (now sends friend requests)
     Route::post('/users/{id}/follow', [FollowController::class, 'follow']);
     Route::delete('/users/{id}/unfollow', [FollowController::class, 'unfollow']);
+
+    // Friend Requests
+    Route::get('/friend-requests', [FriendRequestController::class, 'index']);
+    Route::post('/users/{id}/friend-request', [FriendRequestController::class, 'store']);
+    Route::post('/friend-requests/{friendRequest}/accept', [FriendRequestController::class, 'accept']);
+    Route::post('/friend-requests/{friendRequest}/reject', [FriendRequestController::class, 'reject']);
+    Route::delete('/friend-requests/{friendRequest}', [FriendRequestController::class, 'cancel']);
 
     // Search
     Route::get('/search', [SearchController::class, 'search']);
@@ -89,5 +98,11 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function () {
     Route::post('/messages', [MessageController::class, 'store']);
     Route::get('/conversations/{conversation}/messages', [MessageController::class, 'index']);
     Route::post('/conversations/{conversation}/read', [MessageController::class, 'markAsRead']);
+
+    // Notifications (read-all must be before {id} to avoid matching "read-all" as id)
+    Route::get('/notifications', [NotificationController::class, 'index']);
+    Route::get('/notifications/unread-count', [NotificationController::class, 'unreadCount']);
+    Route::post('/notifications/read-all', [NotificationController::class, 'markAllAsRead']);
+    Route::post('/notifications/{id}/read', [NotificationController::class, 'markAsRead']);
 
 });
