@@ -13,14 +13,15 @@ let jsPath = '';
 if (fs.existsSync(manifestPath)) {
     const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
 
+    // Paths are relative to deployment root (Vercel serves public/build as root, so no /build prefix)
     if (manifest['resources/css/app.css']) {
-        cssPath = `/build/${manifest['resources/css/app.css'].file}`;
+        cssPath = `/${manifest['resources/css/app.css'].file}`;
     }
     // Entry is now main.jsx
     if (manifest['resources/js/main.jsx']) {
-        jsPath = `/build/${manifest['resources/js/main.jsx'].file}`;
+        jsPath = `/${manifest['resources/js/main.jsx'].file}`;
     } else if (manifest['resources/js/app.jsx']) {
-        jsPath = `/build/${manifest['resources/js/app.jsx'].file}`;
+        jsPath = `/${manifest['resources/js/app.jsx'].file}`;
     }
 }
 
