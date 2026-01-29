@@ -58,21 +58,61 @@ export const useFollow = () => {
 
     return useMutation({
         mutationFn: (userId) => followAPI.follow(userId),
+        onMutate: async (userId) => {
+            await queryClient.cancelQueries({ queryKey: ['profile'] });
+            await queryClient.cancelQueries({ queryKey: ['friend-requests'] });
+
+            const previousProfiles = queryClient.getQueriesData({ queryKey: ['profile'] });
+            const previousFriendRequests = queryClient.getQueryData(['friend-requests']);
+
+            const profileEntries = queryClient.getQueriesData({ queryKey: ['profile'] });
+            const profileForReceiver = profileEntries.find(([, data]) => data?.id === userId)?.[1];
+
+            queryClient.setQueriesData({ queryKey: ['profile'] }, (data) => {
+                if (!data || data.id !== userId) return data;
+                return { ...data, friend_request_status: 'sent' };
+            });
+
+            const friendRequests = queryClient.getQueryData(['friend-requests']);
+            if (friendRequests?.sent && profileForReceiver) {
+                queryClient.setQueryData(['friend-requests'], {
+                    ...friendRequests,
+                    sent: [
+                        ...friendRequests.sent,
+                        {
+                            id: `temp-${Date.now()}`,
+                            receiver: { id: userId, username: profileForReceiver.username, name: profileForReceiver.name },
+                            status: 'pending',
+                        },
+                    ],
+                });
+            }
+
+            return { previousProfiles, previousFriendRequests };
+        },
+        onError: (error, userId, context) => {
+            if (context?.previousProfiles) {
+                context.previousProfiles.forEach(([key, data]) => queryClient.setQueryData(key, data));
+            }
+            if (context?.previousFriendRequests != null) {
+                queryClient.setQueryData(['friend-requests'], context.previousFriendRequests);
+            }
+            toast.error(error.response?.data?.message || 'Failed to send friend request');
+        },
         onSuccess: (response, userId) => {
-            queryClient.invalidateQueries({ queryKey: ['profile', userId] });
+            queryClient.invalidateQueries({ queryKey: ['profile'] });
             queryClient.invalidateQueries({ queryKey: ['user'] });
             queryClient.invalidateQueries({ queryKey: ['friend-requests'] });
             queryClient.invalidateQueries({ queryKey: ['posts'] });
+            queryClient.invalidateQueries({ queryKey: ['user-posts'] });
             queryClient.invalidateQueries({ queryKey: ['suggested-users'] });
-            queryClient.refetchQueries({ queryKey: ['profile', userId] });
+            queryClient.refetchQueries({ queryKey: ['profile'] });
             queryClient.refetchQueries({ queryKey: ['user'] });
             queryClient.refetchQueries({ queryKey: ['friend-requests'] });
             queryClient.refetchQueries({ queryKey: ['posts'] });
+            queryClient.refetchQueries({ queryKey: ['user-posts'] });
             queryClient.refetchQueries({ queryKey: ['suggested-users'] });
             toast.success('Friend request sent successfully');
-        },
-        onError: (error) => {
-            toast.error(error.response?.data?.message || 'Failed to send friend request');
         },
     });
 };
@@ -83,13 +123,15 @@ export const useUnfollow = () => {
     return useMutation({
         mutationFn: (userId) => followAPI.unfollow(userId),
         onSuccess: (response, userId) => {
-            queryClient.invalidateQueries({ queryKey: ['profile', userId] });
+            queryClient.invalidateQueries({ queryKey: ['profile'] });
             queryClient.invalidateQueries({ queryKey: ['user'] });
             queryClient.invalidateQueries({ queryKey: ['posts'] });
+            queryClient.invalidateQueries({ queryKey: ['user-posts'] });
             queryClient.invalidateQueries({ queryKey: ['suggested-users'] });
-            queryClient.refetchQueries({ queryKey: ['profile', userId] });
+            queryClient.refetchQueries({ queryKey: ['profile'] });
             queryClient.refetchQueries({ queryKey: ['user'] });
             queryClient.refetchQueries({ queryKey: ['posts'] });
+            queryClient.refetchQueries({ queryKey: ['user-posts'] });
             queryClient.refetchQueries({ queryKey: ['suggested-users'] });
             toast.success('Unfollowed successfully');
         },

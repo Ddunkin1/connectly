@@ -128,7 +128,7 @@ const Profile = () => {
                                             </span>
                                             <button
                                                 onClick={() => cancelFriendRequestMutation.mutate(sentRequest?.id)}
-                                                disabled={cancelFriendRequestMutation.isPending || !sentRequest?.id}
+                                                disabled={cancelFriendRequestMutation.isPending || !sentRequest?.id || String(sentRequest?.id).startsWith('temp-')}
                                                 className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg font-medium transition-colors hover:bg-gray-50 flex items-center space-x-2 cursor-pointer"
                                             >
                                                 <span className="material-symbols-outlined text-lg">close</span>
@@ -170,7 +170,7 @@ const Profile = () => {
                                             className="px-6 py-2 bg-[#359EFF] text-white rounded-lg font-medium transition-colors hover:bg-[#2a8eef] flex items-center space-x-2 cursor-pointer"
                                         >
                                             <span className="material-symbols-outlined text-lg">person_add</span>
-                                            <span>Add / Connect</span>
+                                            <span>Connect</span>
                                         </button>
                                     )}
                                     <Link
