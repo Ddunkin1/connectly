@@ -1,13 +1,21 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { useLogin } from '../../hooks/useAuth';
 import Button from '../../components/common/Button';
+import toast from 'react-hot-toast';
 
 const Login = () => {
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
     const loginMutation = useLogin();
     const [showPassword, setShowPassword] = useState(false);
+
+    useEffect(() => {
+        if (searchParams.get('verified') === '1') {
+            toast.success('Your email has been verified. You can sign in now.');
+        }
+    }, [searchParams]);
     const {
         register,
         handleSubmit,

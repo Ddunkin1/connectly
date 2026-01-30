@@ -55,6 +55,7 @@ class UserResource extends JsonResource
                 fn() => $request->user()->isFollowing($this->resource)
             ),
             'friend_request_status' => $friendRequestStatus,
+            'email_verified_at' => $this->when($request->user()?->id === $this->id, $this->email_verified_at),
             'created_at' => $this->created_at,
         ];
     }

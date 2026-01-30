@@ -9,6 +9,8 @@ import RightSidebar from './components/layout/RightSidebar';
 import QuickChat from './components/layout/QuickChat';
 import Login from './pages/Auth/Login';
 import Register from './pages/Auth/Register';
+import ForgotPassword from './pages/Auth/ForgotPassword';
+import ResetPassword from './pages/Auth/ResetPassword';
 import Landing from './pages/Landing';
 import Home from './pages/Home';
 import Profile from './pages/Profile';
@@ -21,6 +23,7 @@ import Messages from './pages/Messages';
 import Notifications from './pages/Notifications';
 import TestUpload from './pages/TestUpload';
 import useAuthStore from './store/authStore';
+import EmailVerificationBanner from './components/auth/EmailVerificationBanner';
 
 const queryClient = new QueryClient({
     defaultOptions: {
@@ -54,7 +57,8 @@ const PublicRoute = ({ children }) => {
 
 function AppContent() {
     const location = useLocation();
-    const isPublicPage = location.pathname === '/' || location.pathname === '/login' || location.pathname === '/register';
+    const isPublicPage = ['/', '/login', '/register', '/forgot-password', '/reset-password'].includes(location.pathname) ||
+        location.pathname.startsWith('/reset-password');
 
     // Render public pages (Landing, Login, Register) without layout wrapper
     if (isPublicPage) {
@@ -75,6 +79,22 @@ function AppContent() {
                         element={
                             <PublicRoute>
                                 <Register />
+                            </PublicRoute>
+                        }
+                    />
+                    <Route
+                        path="/forgot-password"
+                        element={
+                            <PublicRoute>
+                                <ForgotPassword />
+                            </PublicRoute>
+                        }
+                    />
+                    <Route
+                        path="/reset-password"
+                        element={
+                            <PublicRoute>
+                                <ResetPassword />
                             </PublicRoute>
                         }
                     />
@@ -112,6 +132,7 @@ function AppContent() {
     return (
         <div className="min-h-screen bg-[#f5f7f8]">
             <Header />
+            <EmailVerificationBanner />
             <div className="flex">
                 <LeftSidebar />
                 <main className="flex-1 px-4 py-6 lg:px-8">

@@ -51,6 +51,9 @@ export const authAPI = {
     login: (data) => api.post('/login', data),
     logout: () => api.post('/logout'),
     getUser: () => api.get('/user'),
+    resendVerification: () => api.post('/email/verification-notification'),
+    forgotPassword: (data) => api.post('/forgot-password', data),
+    resetPassword: (data) => api.post('/reset-password', data),
 };
 
 // User API

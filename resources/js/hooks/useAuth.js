@@ -31,7 +31,7 @@ export const useRegister = () => {
             const { user, token } = response.data;
             setAuth(user, token);
             queryClient.setQueryData(['user'], user);
-            toast.success('Registration successful!');
+            toast.success(response.data?.message || 'Registration successful! Please verify your email.');
         },
         onError: (error) => {
             if (!error.response) {
@@ -88,5 +88,44 @@ export const useCurrentUser = () => {
         enabled: !!token,
         select: (data) => data.data.user,
         initialData: user ? { data: { user } } : undefined,
+    });
+};
+
+export const useResendVerification = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: () => authAPI.resendVerification(),
+        onSuccess: () => {
+            toast.success('Verification link sent. Check your email.');
+            queryClient.invalidateQueries({ queryKey: ['user'] });
+        },
+        onError: (error) => {
+            toast.error(error.response?.data?.message || 'Failed to send verification email');
+        },
+    });
+};
+
+export const useForgotPassword = () => {
+    return useMutation({
+        mutationFn: (data) => authAPI.forgotPassword(data),
+        onSuccess: () => {
+            toast.success('If that email exists, we sent a password reset link. Check your inbox.');
+        },
+        onError: (error) => {
+            toast.error(error.response?.data?.message || 'Something went wrong. Try again.');
+        },
+    });
+};
+
+export const useResetPassword = () => {
+    return useMutation({
+        mutationFn: (data) => authAPI.resetPassword(data),
+        onSuccess: () => {
+            toast.success('Password has been reset. You can sign in now.');
+        },
+        onError: (error) => {
+            toast.error(error.response?.data?.message || 'This link is invalid or has expired.');
+        },
     });
 };
