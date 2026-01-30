@@ -10,17 +10,22 @@ const manifestPath = path.join(__dirname, '..', 'public', 'build', 'manifest.jso
 let cssPath = '';
 let jsPath = '';
 
+// Vercel outputDirectory is public/build, so deployed root = /. Paths must be /assets/... never /build/assets/
+function toRootPath(file) {
+    const p = file.replace(/^\/+/, '').replace(/^build\//, '');
+    return '/' + p;
+}
+
 if (fs.existsSync(manifestPath)) {
     const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
 
-    // Paths: root-relative only (Vercel outputDirectory is public/build, so root = /, no /build prefix)
     if (manifest['resources/css/app.css']) {
-        cssPath = `/${manifest['resources/css/app.css'].file}`;
+        cssPath = toRootPath(manifest['resources/css/app.css'].file);
     }
     if (manifest['resources/js/main.jsx']) {
-        jsPath = `/${manifest['resources/js/main.jsx'].file}`;
+        jsPath = toRootPath(manifest['resources/js/main.jsx'].file);
     } else if (manifest['resources/js/app.jsx']) {
-        jsPath = `/${manifest['resources/js/app.jsx'].file}`;
+        jsPath = toRootPath(manifest['resources/js/app.jsx'].file);
     }
 }
 
