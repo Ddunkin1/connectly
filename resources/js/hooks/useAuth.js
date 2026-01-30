@@ -34,8 +34,22 @@ export const useRegister = () => {
             toast.success('Registration successful!');
         },
         onError: (error) => {
-            const message = error.response?.data?.message || 'Registration failed';
-            const errors = error.response?.data?.errors;
+            if (!error.response) {
+                toast.error(
+                    "Could not reach the server. If you're deploying the app, set VITE_API_URL to your API URL and redeploy."
+                );
+                return;
+            }
+            const data = error.response.data;
+            const isJson = data && typeof data === 'object' && !Array.isArray(data);
+            if (!isJson) {
+                toast.error(
+                    "Server returned an invalid response. Check that VITE_API_URL points to your API and CORS allows this origin."
+                );
+                return;
+            }
+            const message = data?.message || 'Registration failed';
+            const errors = data?.errors;
             if (errors) {
                 Object.values(errors).flat().forEach((err) => toast.error(err));
             } else {
