@@ -13,16 +13,20 @@ let jsPath = '';
 if (fs.existsSync(manifestPath)) {
     const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
 
-    // Paths are relative to deployment root (Vercel serves public/build as root, so no /build prefix)
+    // Paths: root-relative only (Vercel outputDirectory is public/build, so root = /, no /build prefix)
     if (manifest['resources/css/app.css']) {
         cssPath = `/${manifest['resources/css/app.css'].file}`;
     }
-    // Entry is now main.jsx
     if (manifest['resources/js/main.jsx']) {
         jsPath = `/${manifest['resources/js/main.jsx'].file}`;
     } else if (manifest['resources/js/app.jsx']) {
         jsPath = `/${manifest['resources/js/app.jsx'].file}`;
     }
+}
+
+if (!jsPath) {
+    console.error('create-index.js: No JS entry found in manifest. Build may be broken.');
+    process.exit(1);
 }
 
 // Create index.html for Vercel deployment
