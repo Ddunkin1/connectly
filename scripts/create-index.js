@@ -34,8 +34,9 @@ if (!jsPath) {
     process.exit(1);
 }
 
-// Create index.html for Vercel deployment
-const indexHtml = `<!DOCTYPE html>
+// Create index.html for Vercel deployment.
+// Vercel root = public/build, so asset URLs must be /assets/... never /build/assets/
+const indexHtmlRaw = `<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8">
@@ -57,6 +58,11 @@ const indexHtml = `<!DOCTYPE html>
     ${jsPath ? `<script type="module" src="${jsPath}"></script>` : ''}
 </body>
 </html>`;
+
+// Ensure no /build/ in asset URLs (Vercel 404 otherwise)
+const indexHtml = indexHtmlRaw
+    .replace(/\bhref="\/build\//g, 'href="/')
+    .replace(/\bsrc="\/build\//g, 'src="/');
 
 // Write to public/build/index.html
 const buildDir = path.join(__dirname, '..', 'public', 'build');
