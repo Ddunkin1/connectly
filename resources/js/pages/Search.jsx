@@ -35,12 +35,12 @@ const Search = () => {
     if (!query) {
         return (
             <div className="max-w-4xl mx-auto">
-                <div className="bg-white rounded-lg border border-gray-200 p-8 text-center">
-                    <span className="material-symbols-outlined text-6xl text-gray-300 mb-4">
+                <div className="bg-[#252538] rounded-xl border border-gray-700/50 p-8 text-center">
+                    <span className="material-symbols-outlined text-6xl text-gray-500 mb-4">
                         search
                     </span>
-                    <h2 className="text-xl font-semibold text-gray-900 mb-2">Search Connectly</h2>
-                    <p className="text-gray-500">Enter a search query to find users, posts, and communities</p>
+                    <h2 className="text-xl font-semibold text-white mb-2">Search connectly</h2>
+                    <p className="text-gray-400">Enter a search query to find users, posts, and communities</p>
                 </div>
             </div>
         );
@@ -102,20 +102,29 @@ const Search = () => {
                             </div>
                         </Link>
                         {userResult.id !== user?.id && (
-                            <button
-                                onClick={() =>
-                                    userResult.is_following
-                                        ? handleUnfollow(userResult.id)
-                                        : handleFollow(userResult.id)
-                                }
-                                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                                    userResult.is_following
-                                        ? 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                                        : 'bg-[#359EFF] text-white hover:bg-[#2a8eef]'
-                                }`}
-                            >
-                                {userResult.is_following ? 'Unfollow' : 'Follow'}
-                            </button>
+                            <div className="flex items-center gap-2">
+                                {userResult.is_following ? (
+                                    <>
+                                        <span className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-emerald-700 bg-emerald-50 rounded-lg">
+                                            <span className="material-symbols-outlined text-lg">check_circle</span>
+                                            Connected
+                                        </span>
+                                        <button
+                                            onClick={() => handleUnfollow(userResult.id)}
+                                            className="px-4 py-2 rounded-lg font-medium bg-gray-200 text-gray-700 hover:bg-gray-300 transition-colors"
+                                        >
+                                            Unfollow
+                                        </button>
+                                    </>
+                                ) : (
+                                    <button
+                                        onClick={() => handleFollow(userResult.id)}
+                                        className="px-4 py-2 rounded-lg font-medium bg-[#359EFF] text-white hover:bg-[#2a8eef] transition-colors"
+                                    >
+                                        Connect
+                                    </button>
+                                )}
+                            </div>
                         )}
                     </div>
                 ))}

@@ -79,7 +79,7 @@ const PostInput = ({ onPostCreated }) => {
     };
 
     return (
-        <div className="bg-white rounded-lg border border-gray-200 p-4 mb-4">
+        <div className="theme-surface rounded-xl border border-gray-700/50 p-4 mb-4">
             <form onSubmit={handleSubmit(onSubmit)}>
                 <div className="flex items-start space-x-3">
                     <Avatar src={user?.profile_picture} alt={user?.name} size="md" />
@@ -99,11 +99,11 @@ const PostInput = ({ onPostCreated }) => {
                                 placeholder="What's happening in your community?"
                                 rows={isExpanded ? 4 : 2}
                                 onFocus={() => setIsExpanded(true)}
-                                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#359EFF] focus:border-transparent resize-none"
+                                className="flex-1 px-4 py-2 bg-[#1A1A2E] border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[var(--theme-accent)] focus:border-transparent resize-none"
                             />
                             <label
                                 htmlFor="media-upload"
-                                className="cursor-pointer text-[#359EFF] hover:text-[#2a8eef] transition-colors flex-shrink-0"
+                                className="cursor-pointer text-[var(--theme-accent)] hover:opacity-80 transition-colors flex-shrink-0"
                                 title="Add image or video"
                             >
                                 <span className="material-symbols-outlined text-2xl">image</span>
@@ -145,31 +145,31 @@ const PostInput = ({ onPostCreated }) => {
                         )}
                         <div className="flex items-center justify-between mt-3 gap-2 flex-wrap">
                             <div className="flex items-center gap-4">
-                                <span className="text-sm text-gray-600">Who can see this?</span>
-                                <label className="flex items-center gap-1.5 cursor-pointer">
+                                <span className="text-sm text-gray-400">Who can see this?</span>
+                                <label className="flex items-center gap-1.5 cursor-pointer text-gray-400 hover:text-white">
                                     <input
                                         type="radio"
                                         value="public"
                                         {...register('visibility')}
-                                        className="text-[#359EFF]"
+                                        className="text-[var(--theme-accent)]"
                                     />
-                                    <span className="material-symbols-outlined text-sm text-gray-500">public</span>
+                                    <span className="material-symbols-outlined text-sm">public</span>
                                     <span className="text-sm">Public</span>
                                 </label>
-                                <label className="flex items-center gap-1.5 cursor-pointer">
+                                <label className="flex items-center gap-1.5 cursor-pointer text-gray-400 hover:text-white">
                                     <input
                                         type="radio"
                                         value="followers"
                                         {...register('visibility')}
-                                        className="text-[#359EFF]"
+                                        className="text-[var(--theme-accent)]"
                                     />
-                                    <span className="material-symbols-outlined text-sm text-gray-500">group</span>
+                                    <span className="material-symbols-outlined text-sm">group</span>
                                     <span className="text-sm">Friends only</span>
                                 </label>
                             </div>
                             <div className="flex items-center space-x-2">
                                 {content.length > 0 && (
-                                    <span className="text-xs text-gray-500">
+                                    <span className="text-xs text-gray-400">
                                         {content.length}/5000
                                     </span>
                                 )}

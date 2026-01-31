@@ -1,49 +1,108 @@
 import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import useAuthStore from '../../store/authStore';
+import useThemeStore from '../../store/themeStore';
+import Avatar from '../common/Avatar';
+import { useUnreadNotificationsCount } from '../../hooks/useNotifications';
+import { useConversations } from '../../hooks/useConversations';
 
 const LeftSidebar = () => {
     const location = useLocation();
+    const navigate = useNavigate();
     const user = useAuthStore((state) => state.user);
+    const { data: unreadNotifications } = useUnreadNotificationsCount();
+    const { data: conversationsData } = useConversations();
+
+    const notificationsBadge = unreadNotifications ?? 0;
+    const messagesBadge = conversationsData?.pages
+        ?.flatMap((p) => p.data?.conversations ?? [])
+        ?.reduce((sum, c) => sum + (c.unread_count ?? 0), 0) ?? 0;
 
     const navItems = [
         { icon: 'home', label: 'Home', path: '/home' },
-        { icon: 'group', label: 'Communities', path: '/communities' },
-        { icon: 'chat', label: 'Messages', path: '/messages', badge: 4 },
-        { icon: 'notifications', label: 'Notifications', path: '/notifications' },
+        { icon: 'explore', label: 'Explore', path: '/search' },
+        { icon: 'notifications', label: 'Notifications', path: '/notifications', badge: notificationsBadge },
+        { icon: 'mail', label: 'Messages', path: '/messages', badge: messagesBadge },
+        { icon: 'bookmark', label: 'Bookmarks', path: '/bookmarks' },
+        { icon: 'show_chart', label: 'Analytics', path: '/analytics' },
+        { icon: 'palette', label: 'Theme', path: null, isTheme: true },
         { icon: 'settings', label: 'Settings', path: '/settings' },
     ];
 
-    // Mock joined communities - replace with real data
-    const joinedCommunities = [
-        { id: 1, name: 'Tech Enthusiasts', icon: 'memory', path: '/communities/tech-enthusiasts' },
-        { id: 2, name: 'UI/UX Design', icon: 'eco', path: '/communities/ui-ux-design' },
-        { id: 3, name: 'Web Dev 2024', icon: 'computer', path: '/communities/web-dev-2024' },
-    ];
+    const openThemeCustomizer = useThemeStore((s) => s.openCustomizer);
+    const isThemeCustomizerOpen = useThemeStore((s) => s.isCustomizerOpen);
+
+    const handleCreatePost = () => {
+        navigate('/home');
+        setTimeout(() => window.dispatchEvent(new CustomEvent('open-create-post')), 100);
+    };
 
     return (
-        <aside className="hidden lg:block w-64 bg-white border-r border-gray-200 h-[calc(100vh-4rem)] sticky top-16 overflow-y-auto flex flex-col">
-            {/* Primary Navigation */}
-            <nav className="p-4 space-y-1">
+        <aside className="hidden lg:flex lg:flex-col w-64 theme-bg-sidebar border-r border-gray-700/50 h-screen sticky top-0 overflow-y-auto">
+            {/* Logo */}
+            <div className="p-4">
+                <Link to="/home" className="block">
+                    <span className="text-xl font-bold text-white">connectly</span>
+                </Link>
+            </div>
+
+            {/* User profile card */}
+            {user && (
+                <Link
+                    to={`/profile/${user.username}`}
+                    className="mx-4 mb-4 p-3 rounded-xl theme-surface hover:brightness-110 transition-colors flex items-center gap-3"
+                >
+                    <Avatar src={user.profile_picture} alt={user.name} size="md" />
+                    <div className="flex-1 min-w-0">
+                        <p className="font-medium text-white truncate">{user.name}</p>
+                        <p className="text-sm text-gray-400 truncate">@{user.username}</p>
+                    </div>
+                </Link>
+            )}
+
+            {/* Navigation */}
+            <nav className="flex-1 px-4 space-y-1">
                 {navItems.map((item) => {
-                    const isActive = location.pathname === item.path;
+                    if (item.isTheme) {
+                        return (
+                            <button
+                                key="theme"
+                                type="button"
+                                onClick={openThemeCustomizer}
+                                className={`w-full flex items-center justify-between px-4 py-3 rounded-lg transition-colors ${
+                                    isThemeCustomizerOpen
+                                        ? 'bg-[var(--theme-accent)]/20 text-[var(--theme-accent)] border-l-4 border-[var(--theme-accent)] -ml-[2px] pl-[14px]'
+                                        : 'text-gray-300 hover:bg-white/5'
+                                }`}
+                            >
+                                <div className="flex items-center space-x-3">
+                                    <span className="material-symbols-outlined">{item.icon}</span>
+                                    <span className="font-medium">Theme</span>
+                                </div>
+                            </button>
+                        );
+                    }
+                    const isActive =
+                        item.path === location.pathname ||
+                        (item.path === '/search' && location.pathname === '/search') ||
+                        (item.path === '/home' && location.pathname === '/home');
                     return (
                         <Link
                             key={item.path}
                             to={item.path}
                             className={`flex items-center justify-between px-4 py-3 rounded-lg transition-colors ${
                                 isActive
-                                    ? 'bg-blue-50 text-[#359EFF]'
-                                    : 'text-gray-700 hover:bg-gray-100'
+                                    ? 'bg-[var(--theme-accent)]/20 text-[var(--theme-accent)] border-l-4 border-[var(--theme-accent)] -ml-[2px] pl-[14px]'
+                                    : 'text-gray-300 hover:bg-white/5'
                             }`}
                         >
                             <div className="flex items-center space-x-3">
                                 <span className="material-symbols-outlined">{item.icon}</span>
                                 <span className="font-medium">{item.label}</span>
                             </div>
-                            {item.badge && (
-                                <span className="bg-[#359EFF] text-white text-xs font-semibold px-2 py-0.5 rounded-full">
-                                    {item.badge}
+                            {item.badge > 0 && (
+                                <span className="bg-red-500 text-white text-xs font-semibold px-2 py-0.5 rounded-full min-w-[20px] text-center">
+                                    {item.badge > 99 ? '99+' : item.badge}
                                 </span>
                             )}
                         </Link>
@@ -51,45 +110,16 @@ const LeftSidebar = () => {
                 })}
             </nav>
 
-            {/* Joined Communities Section */}
-            <div className="px-4 mt-4 border-t border-gray-200 pt-4">
-                <h3 className="text-sm font-semibold text-gray-900 mb-3">Joined Communities</h3>
-                <div className="space-y-2">
-                    {joinedCommunities.map((community) => (
-                        <Link
-                            key={community.id}
-                            to={community.path}
-                            className="flex items-center justify-between px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors group"
-                        >
-                            <div className="flex items-center space-x-3">
-                                <div className="w-8 h-8 bg-gray-200 rounded-lg flex items-center justify-center">
-                                    <span className="material-symbols-outlined text-gray-600 text-lg">
-                                        {community.icon}
-                                    </span>
-                                </div>
-                                <span className="text-sm font-medium text-gray-700 group-hover:text-[#359EFF]">
-                                    {community.name}
-                                </span>
-                            </div>
-                            <span className="material-symbols-outlined text-gray-400 text-sm">
-                                chevron_right
-                            </span>
-                        </Link>
-                    ))}
-                </div>
-            </div>
-
-            {/* Footer Links */}
-            <div className="mt-auto px-4 pb-4 border-t border-gray-200 pt-4">
-                <div className="flex items-center space-x-4 text-xs text-gray-500 mb-2">
-                    <Link to="/privacy" className="hover:text-[#359EFF] transition-colors">
-                        Privacy Policy
-                    </Link>
-                    <Link to="/terms" className="hover:text-[#359EFF] transition-colors">
-                        Terms
-                    </Link>
-                </div>
-                <p className="text-xs text-gray-400">©2024 Connectly Inc.</p>
+            {/* Create Post button */}
+            <div className="p-4">
+                <button
+                    type="button"
+                    onClick={handleCreatePost}
+                    className="w-full theme-accent hover:opacity-90 text-white font-medium py-3 px-4 rounded-xl transition-colors flex items-center justify-center gap-2"
+                >
+                    <span className="material-symbols-outlined">add</span>
+                    Create Post
+                </button>
             </div>
         </aside>
     );

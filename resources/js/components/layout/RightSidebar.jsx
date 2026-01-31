@@ -1,164 +1,198 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
-import { useSuggestedUsers } from '../../hooks/useUsers';
-import { useFollow, useUnfollow } from '../../hooks/useUsers';
+import { Link, useNavigate } from 'react-router-dom';
+import { useConversations } from '../../hooks/useConversations';
+import { useFriendRequests, useAcceptFriendRequest, useRejectFriendRequest } from '../../hooks/useFriendRequests';
 import Avatar from '../common/Avatar';
 import Button from '../common/Button';
 import LoadingSpinner from '../common/LoadingSpinner';
+import useAuthStore from '../../store/authStore';
 
 const RightSidebar = () => {
-    const { data: suggestedUsers, isLoading } = useSuggestedUsers();
-    const followMutation = useFollow();
-    const unfollowMutation = useUnfollow();
+    const navigate = useNavigate();
+    const user = useAuthStore((state) => state.user);
+    const { data: conversationsData, isLoading: conversationsLoading } = useConversations();
+    const { data: friendRequestsData, isLoading: friendRequestsLoading } = useFriendRequests();
+    const acceptMutation = useAcceptFriendRequest();
+    const rejectMutation = useRejectFriendRequest();
 
-    // Mock data - replace with actual API calls
-    const trendingTopics = [
-        { tag: '#WebDevTips', category: 'Technology', posts: '12.5k' },
-        { tag: '#FigmaUpdate', category: 'Design', posts: '8.2k' },
-        { tag: '#NoCodeRevolution', category: 'Productivity', posts: '5.1k' },
-    ];
+    const conversations = conversationsData?.pages?.flatMap((p) => p.data?.conversations ?? []) ?? [];
+    const recentConversations = conversations.slice(0, 5);
+    const receivedRequests = friendRequestsData?.received ?? [];
 
-    const suggestedCommunities = [
-        { id: 1, name: 'Photography Club', members: '4.2k', icon: 'camera_alt' },
-        { id: 2, name: 'Startup Founders', members: '12.8k', icon: 'rocket_launch' },
-    ];
-
-    const handleFollow = (userId, isFollowing) => {
-        if (isFollowing) {
-            unfollowMutation.mutate(userId);
-        } else {
-            followMutation.mutate(userId);
-        }
+    const handleCreatePost = () => {
+        navigate('/home');
+        window.dispatchEvent(new CustomEvent('open-create-post'));
     };
 
     return (
-        <aside className="hidden xl:block w-80 bg-white border-l border-gray-200 h-[calc(100vh-4rem)] sticky top-16 overflow-y-auto">
+        <aside className="hidden xl:flex xl:flex-col w-80 theme-bg-sidebar border-l border-gray-700/50 h-screen sticky top-0 overflow-y-auto">
             <div className="p-4 space-y-6">
-                {/* Trending Topics */}
-                <div>
-                    <div className="flex items-center justify-between mb-3">
-                        <h3 className="text-sm font-semibold text-gray-900">Trending Topics</h3>
-                        <span className="material-symbols-outlined text-gray-400 text-lg">show_chart</span>
-                    </div>
-                    <div className="space-y-3">
-                        {trendingTopics.map((topic, index) => (
-                            <Link
-                                key={index}
-                                to={`/hashtag/${topic.tag.replace('#', '')}`}
-                                className="block p-3 rounded-lg hover:bg-gray-50 transition-colors group"
-                            >
-                                <div className="flex items-start justify-between">
-                                    <div className="flex-1">
-                                        <p className="text-xs text-gray-500 mb-1">{topic.category}</p>
-                                        <p className="text-sm font-semibold text-gray-900 group-hover:text-[#359EFF] transition-colors">
-                                            {topic.tag}
-                                        </p>
-                                        <p className="text-xs text-gray-500 mt-1">{topic.posts} posts</p>
-                                    </div>
-                                </div>
-                            </Link>
-                        ))}
-                    </div>
-                    <Link
-                        to="/explore"
-                        className="block mt-3 text-sm text-[#359EFF] hover:underline text-center"
+                {/* Top: Create button + user avatar */}
+                <div className="flex items-center justify-between gap-3">
+                    <button
+                        type="button"
+                        onClick={handleCreatePost}
+                        className="flex-1 theme-accent hover:opacity-90 text-white font-medium py-2.5 px-4 rounded-xl transition-colors"
                     >
-                        Show More
-                    </Link>
+                        Create
+                    </button>
+                    {user && (
+                        <Link to={`/profile/${user.username}`}>
+                            <Avatar src={user.profile_picture} alt={user.name} size="sm" />
+                        </Link>
+                    )}
                 </div>
 
-                {/* Suggested Users */}
+                {/* Messages / Updates */}
                 <div>
-                    <h3 className="text-sm font-semibold text-gray-900 mb-3">Suggested Users</h3>
-                    {isLoading ? (
+                    <h3 className="text-sm font-semibold text-white mb-3">Messages</h3>
+                    {conversationsLoading ? (
                         <div className="flex justify-center py-4">
                             <LoadingSpinner size="sm" />
                         </div>
-                    ) : suggestedUsers && suggestedUsers.length > 0 ? (
-                        <>
-                            <div className="space-y-3">
-                                {suggestedUsers.slice(0, 5).map((user) => {
-                                    const isFollowing = user.is_following || false;
-                                    const isPending = (followMutation.isPending && followMutation.variables === user.id) ||
-                                                     (unfollowMutation.isPending && unfollowMutation.variables === user.id);
-                                    
-                                    return (
-                                        <div
-                                            key={user.id}
-                                            className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 transition-colors"
-                                        >
-                                            <Link
-                                                to={`/profile/${user.username}`}
-                                                className="flex items-center space-x-3 flex-1 min-w-0"
-                                            >
-                                                <Avatar src={user.profile_picture} alt={user.name} size="md" />
-                                                <div className="flex-1 min-w-0">
-                                                    <p className="text-sm font-medium text-gray-900 truncate">{user.name}</p>
-                                                    <p className="text-xs text-gray-500 truncate">@{user.username}</p>
-                                                </div>
-                                            </Link>
-                                            <Button
-                                                size="sm"
-                                                variant={isFollowing ? "outline" : "primary"}
-                                                onClick={(e) => {
-                                                    e.preventDefault();
-                                                    handleFollow(user.id, isFollowing);
-                                                }}
-                                                disabled={isPending}
-                                                loading={isPending}
-                                            >
-                                                {isFollowing ? 'Connected' : 'Connect'}
-                                            </Button>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                            <Link
-                                to="/explore"
-                                className="block mt-3 text-sm text-[#359EFF] hover:underline text-center"
-                            >
-                                View All
+                    ) : recentConversations.length === 0 ? (
+                        <div className="p-3 rounded-lg theme-surface text-center">
+                            <p className="text-sm text-gray-400">No conversations yet</p>
+                            <Link to="/messages" className="text-sm text-[var(--theme-accent)] hover:underline mt-1 inline-block">
+                                Start a conversation
                             </Link>
-                        </>
+                        </div>
                     ) : (
-                        <div className="text-center py-4">
-                            <p className="text-sm text-gray-500">No suggestions available</p>
+                        <div className="space-y-2">
+                            {recentConversations.map((conversation) => {
+                                const otherUser = conversation.other_user;
+                                const lastMessage = conversation.last_message;
+                                const preview = lastMessage?.message
+                                    ? (lastMessage.message.length > 30
+                                          ? lastMessage.message.slice(0, 30) + '...'
+                                          : lastMessage.message)
+                                    : 'No messages yet';
+                                const status =
+                                    conversation.unread_count > 0
+                                        ? `${conversation.unread_count} new message${conversation.unread_count > 1 ? 's' : ''}`
+                                        : preview;
+                                return (
+                                    <Link
+                                        key={conversation.id}
+                                        to={`/messages/${otherUser?.username}`}
+                                        className="flex items-center gap-3 p-3 rounded-lg theme-surface hover:brightness-110 transition-colors"
+                                    >
+                                        <div className="relative flex-shrink-0">
+                                            <Avatar
+                                                src={otherUser?.profile_picture}
+                                                alt={otherUser?.name}
+                                                size="sm"
+                                            />
+                                            {conversation.unread_count > 0 && (
+                                                <span className="absolute -top-0.5 -right-0.5 bg-red-500 text-white text-[10px] rounded-full w-4 h-4 flex items-center justify-center">
+                                                    {conversation.unread_count > 9
+                                                        ? '9+'
+                                                        : conversation.unread_count}
+                                                </span>
+                                            )}
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-sm font-medium text-white truncate">
+                                                {otherUser?.name}
+                                            </p>
+                                            <p className="text-xs text-gray-400 truncate">{status}</p>
+                                        </div>
+                                    </Link>
+                                );
+                            })}
+                            <Link
+                                to="/messages"
+                                className="block text-center text-sm text-[var(--theme-accent)] hover:underline py-2"
+                            >
+                                View all
+                            </Link>
                         </div>
                     )}
                 </div>
 
-                {/* Suggested Communities */}
+                {/* Requests */}
                 <div>
-                    <h3 className="text-sm font-semibold text-gray-900 mb-3">Suggested Communities</h3>
-                    <div className="space-y-3">
-                        {suggestedCommunities.map((community) => (
-                            <div
-                                key={community.id}
-                                className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 transition-colors"
+                    <h3 className="text-sm font-semibold text-white mb-3">Requests</h3>
+                    {friendRequestsLoading ? (
+                        <div className="flex justify-center py-4">
+                            <LoadingSpinner size="sm" />
+                        </div>
+                    ) : receivedRequests.length === 0 ? (
+                        <div className="p-3 rounded-lg theme-surface text-center">
+                            <p className="text-sm text-gray-400">No pending requests</p>
+                        </div>
+                    ) : (
+                        <div className="space-y-3">
+                            {receivedRequests.map((request) => {
+                                const sender = request.sender;
+                                const isAccepting =
+                                    acceptMutation.isPending && acceptMutation.variables === request.id;
+                                const isRejecting =
+                                    rejectMutation.isPending && rejectMutation.variables === request.id;
+                                const isPending = isAccepting || isRejecting;
+                                return (
+                                    <div
+                                        key={request.id}
+                                        className="flex flex-col gap-2 p-3 rounded-lg theme-surface hover:brightness-110 transition-colors"
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            <Link
+                                                to={`/profile/${sender?.username}`}
+                                                className="flex-shrink-0"
+                                            >
+                                                <Avatar
+                                                    src={sender?.profile_picture}
+                                                    alt={sender?.name}
+                                                    size="md"
+                                                />
+                                            </Link>
+                                            <div className="flex-1 min-w-0">
+                                                <Link
+                                                    to={`/profile/${sender?.username}`}
+                                                    className="text-sm font-medium text-white hover:text-[var(--theme-accent)] truncate block"
+                                                >
+                                                    {sender?.name}
+                                                </Link>
+                                                <p className="text-xs text-gray-400">
+                                                    {sender?.followers_count != null
+                                                        ? `${sender.followers_count} mutual ${sender.followers_count === 1 ? 'friend' : 'friends'}`
+                                                        : 'Wants to connect'}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <div className="flex gap-2">
+                                            <Button
+                                                size="sm"
+                                                variant="primary"
+                                                onClick={() => acceptMutation.mutate(request.id)}
+                                                disabled={isPending}
+                                                loading={isAccepting}
+                                                className="flex-1"
+                                            >
+                                                Accept
+                                            </Button>
+                                            <Button
+                                                size="sm"
+                                                variant="outline"
+                                                onClick={() => rejectMutation.mutate(request.id)}
+                                                disabled={isPending}
+                                                loading={isRejecting}
+                                                className="flex-1"
+                                            >
+                                                Decline
+                                            </Button>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                            <Link
+                                to="/notifications"
+                                className="block text-center text-sm text-[var(--theme-accent)] hover:underline py-2"
                             >
-                                <div className="flex items-center space-x-3 flex-1">
-                                    <div className="w-10 h-10 bg-gray-200 rounded-lg flex items-center justify-center">
-                                        <span className="material-symbols-outlined text-gray-600">
-                                            {community.icon}
-                                        </span>
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                        <p className="text-sm font-medium text-gray-900">{community.name}</p>
-                                        <p className="text-xs text-gray-500">{community.members} members</p>
-                                    </div>
-                                </div>
-                                <Button size="sm" variant="primary">
-                                    Join
-                                </Button>
-                            </div>
-                        ))}
-                    </div>
-                    <Link
-                        to="/communities"
-                        className="block mt-3 text-sm text-[#359EFF] hover:underline text-center"
-                    >
-                        View All
-                    </Link>
+                                View all
+                            </Link>
+                        </div>
+                    )}
                 </div>
             </div>
         </aside>

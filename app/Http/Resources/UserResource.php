@@ -24,18 +24,29 @@ class UserResource extends JsonResource
                 ->where('receiver_id', $this->id)
                 ->where('status', 'pending')
                 ->first();
-            
+
             $receivedRequest = FriendRequest::where('sender_id', $this->id)
                 ->where('receiver_id', $currentUser->id)
                 ->where('status', 'pending')
                 ->first();
-            
+
             if ($sentRequest) {
                 $friendRequestStatus = 'sent';
             } elseif ($receivedRequest) {
                 $friendRequestStatus = 'received';
             }
         }
+
+        // is_following = following in follows table OR accepted friend request (handles sync edge cases)
+        $isConnected = $currentUser && $currentUser->id !== $this->id && (
+            $currentUser->isFollowing($this->resource) ||
+            FriendRequest::where('status', 'accepted')
+                ->where(function ($q) use ($currentUser) {
+                    $q->where('sender_id', $currentUser->id)->where('receiver_id', $this->id)
+                        ->orWhere('sender_id', $this->id)->where('receiver_id', $currentUser->id);
+                })
+                ->exists()
+        );
 
         return [
             'id' => $this->id,
@@ -50,10 +61,7 @@ class UserResource extends JsonResource
             'privacy_settings' => $this->privacy_settings,
             'followers_count' => $this->whenCounted('followers'),
             'following_count' => $this->whenCounted('following'),
-            'is_following' => $this->when(
-                $request->user(),
-                fn() => $request->user()->isFollowing($this->resource)
-            ),
+            'is_following' => $this->when($request->user(), $isConnected ?? false),
             'friend_request_status' => $friendRequestStatus,
             'email_verified_at' => $this->when($request->user()?->id === $this->id, $this->email_verified_at),
             'created_at' => $this->created_at,

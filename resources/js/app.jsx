@@ -1,9 +1,8 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'react-hot-toast';
-import Header from './components/layout/Header';
 import LeftSidebar from './components/layout/LeftSidebar';
 import RightSidebar from './components/layout/RightSidebar';
 import QuickChat from './components/layout/QuickChat';
@@ -22,8 +21,13 @@ import Search from './pages/Search';
 import Messages from './pages/Messages';
 import Notifications from './pages/Notifications';
 import TestUpload from './pages/TestUpload';
+import Bookmarks from './pages/Bookmarks';
+import Analytics from './pages/Analytics';
+import Settings from './pages/Settings';
 import useAuthStore from './store/authStore';
+import useThemeStore from './store/themeStore';
 import EmailVerificationBanner from './components/auth/EmailVerificationBanner';
+import ThemeCustomizer from './components/layout/ThemeCustomizer';
 
 const queryClient = new QueryClient({
     defaultOptions: {
@@ -57,6 +61,12 @@ const PublicRoute = ({ children }) => {
 
 function AppContent() {
     const location = useLocation();
+    const isCustomizerOpen = useThemeStore((s) => s.isCustomizerOpen);
+    const closeCustomizer = useThemeStore((s) => s.closeCustomizer);
+
+    useEffect(() => {
+        useThemeStore.getState().applyToDom();
+    }, []);
     const isPublicPage = ['/', '/login', '/register', '/forgot-password', '/reset-password'].includes(location.pathname) ||
         location.pathname.startsWith('/reset-password');
 
@@ -111,7 +121,7 @@ function AppContent() {
                         success: {
                             duration: 3000,
                             iconTheme: {
-                                primary: '#359EFF',
+                                primary: '#8B5CF6',
                                 secondary: '#fff',
                             },
                         },
@@ -128,14 +138,13 @@ function AppContent() {
         );
     }
 
-    // Render protected pages with full layout
+    // Render protected pages with full layout (theme defaults to dark)
     return (
-        <div className="min-h-screen bg-[#f5f7f8]">
-            <Header />
+        <div className="min-h-screen bg-[#0F0F1A]" id="app-root">
             <EmailVerificationBanner />
             <div className="flex">
                 <LeftSidebar />
-                <main className="flex-1 px-4 py-6 lg:px-8">
+                <main className="flex-1 px-4 py-6 lg:px-8 min-w-0">
                     <Routes>
                         <Route
                             path="/home"
@@ -217,12 +226,37 @@ function AppContent() {
                                 </ProtectedRoute>
                             }
                         />
+                        <Route
+                            path="/bookmarks"
+                            element={
+                                <ProtectedRoute>
+                                    <Bookmarks />
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/analytics"
+                            element={
+                                <ProtectedRoute>
+                                    <Analytics />
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/settings"
+                            element={
+                                <ProtectedRoute>
+                                    <Settings />
+                                </ProtectedRoute>
+                            }
+                        />
                         <Route path="*" element={<Navigate to="/home" replace />} />
                     </Routes>
                 </main>
                 <RightSidebar />
             </div>
             <QuickChat />
+            <ThemeCustomizer isOpen={isCustomizerOpen} onClose={closeCustomizer} />
             <Toaster
                 position="top-right"
                 toastOptions={{

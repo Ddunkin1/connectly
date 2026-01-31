@@ -19,9 +19,9 @@ const Notifications = () => {
 
     return (
         <div className="max-w-2xl mx-auto">
-            <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
-                <div className="p-4 border-b border-gray-200 flex items-center justify-between">
-                    <h1 className="text-xl font-bold text-gray-900">Notifications</h1>
+            <div className="bg-[#252538] rounded-xl border border-gray-700/50 shadow-sm">
+                <div className="p-4 border-b border-gray-700 flex items-center justify-between">
+                    <h1 className="text-xl font-bold text-white">Notifications</h1>
                     {unreadCount > 0 && (
                         <Button
                             variant="ghost"
@@ -39,8 +39,8 @@ const Notifications = () => {
                         <LoadingSpinner />
                     </div>
                 ) : notifications.length === 0 ? (
-                    <div className="p-12 text-center text-gray-500">
-                        <span className="material-symbols-outlined text-5xl text-gray-300 mb-4 block">
+                    <div className="p-12 text-center text-gray-400">
+                        <span className="material-symbols-outlined text-5xl text-gray-500 mb-4 block">
                             notifications
                         </span>
                         <p className="text-lg">No notifications yet</p>
@@ -49,7 +49,7 @@ const Notifications = () => {
                         </p>
                     </div>
                 ) : (
-                    <div className="divide-y divide-gray-100">
+                    <div className="divide-y divide-gray-700">
                         {notifications.map((notification) => (
                             <NotificationItem
                                 key={notification.id}

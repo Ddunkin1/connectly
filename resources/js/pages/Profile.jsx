@@ -155,14 +155,20 @@ const Profile = () => {
                                             </button>
                                         </div>
                                     ) : isFollowing ? (
-                                        <button
-                                            onClick={() => unfollowMutation.mutate(profile.id)}
-                                            disabled={unfollowMutation.isPending}
-                                            className="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors hover:bg-gray-300 flex items-center space-x-2 cursor-pointer"
-                                        >
-                                            <span className="material-symbols-outlined text-lg">person_remove</span>
-                                            <span>Unfollow</span>
-                                        </button>
+                                        <div className="flex items-center gap-2">
+                                            <span className="px-6 py-2 bg-emerald-50 text-emerald-700 rounded-lg font-medium flex items-center space-x-2">
+                                                <span className="material-symbols-outlined text-lg">check_circle</span>
+                                                <span>Connected</span>
+                                            </span>
+                                            <button
+                                                onClick={() => unfollowMutation.mutate(profile.id)}
+                                                disabled={unfollowMutation.isPending}
+                                                className="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors hover:bg-gray-300 flex items-center space-x-2 cursor-pointer"
+                                            >
+                                                <span className="material-symbols-outlined text-lg">person_remove</span>
+                                                <span>Unfollow</span>
+                                            </button>
+                                        </div>
                                     ) : (
                                         <button
                                             onClick={() => followMutation.mutate(profile.id)}

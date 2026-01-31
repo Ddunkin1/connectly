@@ -33,7 +33,7 @@ const NotificationDropdown = () => {
         <div className="relative" ref={dropdownRef}>
             <button
                 onClick={() => setIsOpen(!isOpen)}
-                className="relative p-2 text-gray-600 hover:text-[#359EFF] hover:bg-gray-100 rounded-lg transition-colors"
+                className="relative p-2 text-gray-400 hover:text-purple-400 hover:bg-white/10 rounded-lg transition-colors"
                 title="Notifications"
             >
                 <span className="material-symbols-outlined text-2xl">notifications</span>
@@ -63,7 +63,7 @@ const NotificationDropdown = () => {
                                 <LoadingSpinner size="sm" />
                             </div>
                         ) : notifications.length === 0 ? (
-                            <div className="p-6 text-center text-gray-500 text-sm">
+                            <div className="p-6 text-center text-gray-400 text-sm">
                                 No notifications yet
                             </div>
                         ) : (
@@ -79,7 +79,7 @@ const NotificationDropdown = () => {
                     <Link
                         to="/notifications"
                         onClick={() => setIsOpen(false)}
-                        className="p-3 text-center text-sm text-[#359EFF] hover:bg-gray-50 border-t border-gray-200 font-medium"
+                        className="p-3 text-center text-sm text-purple-400 hover:bg-white/5 border-t border-gray-700 font-medium"
                     >
                         View all notifications
                     </Link>

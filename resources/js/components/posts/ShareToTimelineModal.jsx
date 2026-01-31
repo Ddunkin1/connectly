@@ -20,15 +20,15 @@ const ShareToTimelineModal = ({ post, onClose, onSubmit, isSubmitting }) => {
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" onClick={onClose}>
             <div
-                className="bg-white rounded-xl shadow-xl max-w-lg w-full max-h-[90vh] overflow-hidden flex flex-col"
+                className="bg-[#252538] rounded-xl shadow-xl max-w-lg w-full max-h-[90vh] overflow-hidden flex flex-col border border-gray-700"
                 onClick={(e) => e.stopPropagation()}
             >
-                <div className="p-4 border-b border-gray-200 flex items-center justify-between">
-                    <h2 className="text-lg font-semibold text-gray-900">Share to your timeline</h2>
+                <div className="p-4 border-b border-gray-700 flex items-center justify-between">
+                    <h2 className="text-lg font-semibold text-white">Share to your timeline</h2>
                     <button
                         type="button"
                         onClick={onClose}
-                        className="p-1 rounded-full hover:bg-gray-100 text-gray-500"
+                        className="p-1 rounded-full hover:bg-white/10 text-gray-400"
                         aria-label="Close"
                     >
                         <span className="material-symbols-outlined">close</span>
@@ -40,53 +40,53 @@ const ShareToTimelineModal = ({ post, onClose, onSubmit, isSubmitting }) => {
                             {...register('content')}
                             placeholder="Add your thoughts (optional)"
                             rows={3}
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#359EFF] focus:border-transparent resize-none"
+                            className="w-full px-4 py-2 bg-[#1A1A2E] border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
                             maxLength={5000}
                         />
-                        <p className="text-xs text-gray-500 mt-1">{content.length}/5000</p>
+                        <p className="text-xs text-gray-400 mt-1">{content.length}/5000</p>
 
                         {/* Original post preview */}
-                        <div className="mt-4 p-3 bg-gray-50 rounded-lg border border-gray-200">
-                            <p className="text-xs text-gray-500 mb-2">Sharing this post:</p>
+                        <div className="mt-4 p-3 bg-[#1A1A2E] rounded-lg border border-gray-700">
+                            <p className="text-xs text-gray-400 mb-2">Sharing this post:</p>
                             <div className="flex gap-3">
                                 <Avatar src={post.user?.profile_picture} alt={post.user?.name} size="sm" />
                                 <div className="flex-1 min-w-0">
-                                    <p className="text-sm font-medium text-gray-900">{post.user?.name}</p>
-                                    <p className="text-xs text-gray-500">@{post.user?.username} · {formatDate(post.created_at)}</p>
-                                    <p className="text-sm text-gray-700 mt-1 line-clamp-2">{post.content || '—'}</p>
+                                    <p className="text-sm font-medium text-white">{post.user?.name}</p>
+                                    <p className="text-xs text-gray-400">@{post.user?.username} · {formatDate(post.created_at)}</p>
+                                    <p className="text-sm text-gray-300 mt-1 line-clamp-2">{post.content || '—'}</p>
                                 </div>
                             </div>
                         </div>
 
                         <div className="mt-4">
-                            <p className="text-sm font-medium text-gray-700 mb-2">Who can see this?</p>
+                            <p className="text-sm font-medium text-gray-300 mb-2">Who can see this?</p>
                             <div className="flex gap-4">
-                                <label className="flex items-center gap-2 cursor-pointer">
+                                <label className="flex items-center gap-2 cursor-pointer text-gray-300">
                                     <input
                                         type="radio"
                                         name="visibility"
                                         value="public"
                                         checked={visibility === 'public'}
                                         onChange={(e) => setVisibility(e.target.value)}
-                                        className="text-[#359EFF]"
+                                        className="text-purple-500"
                                     />
                                     <span className="text-sm">Public</span>
                                 </label>
-                                <label className="flex items-center gap-2 cursor-pointer">
+                                <label className="flex items-center gap-2 cursor-pointer text-gray-300">
                                     <input
                                         type="radio"
                                         name="visibility"
                                         value="followers"
                                         checked={visibility === 'followers'}
                                         onChange={(e) => setVisibility(e.target.value)}
-                                        className="text-[#359EFF]"
+                                        className="text-purple-500"
                                     />
                                     <span className="text-sm">Friends</span>
                                 </label>
                             </div>
                         </div>
                     </div>
-                    <div className="p-4 border-t border-gray-200 flex justify-end gap-2">
+                    <div className="p-4 border-t border-gray-700 flex justify-end gap-2">
                         <Button type="button" variant="ghost" onClick={onClose}>
                             Cancel
                         </Button>

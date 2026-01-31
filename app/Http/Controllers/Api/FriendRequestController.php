@@ -7,6 +7,7 @@ use App\Http\Resources\FriendRequestResource;
 use App\Models\FriendRequest;
 use App\Models\User;
 use App\Notifications\FriendRequestNotification;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -67,29 +68,67 @@ class FriendRequestController extends Controller
             ], 422);
         }
 
-        // Check if there's already a pending request
-        $existingRequest = FriendRequest::where(function ($query) use ($sender, $receiver) {
-            $query->where('sender_id', $sender->id)
-                  ->where('receiver_id', $receiver->id)
-                  ->where('status', 'pending');
-        })->orWhere(function ($query) use ($sender, $receiver) {
-            $query->where('sender_id', $receiver->id)
-                  ->where('receiver_id', $sender->id)
-                  ->where('status', 'pending');
-        })->first();
+        // Check for any existing request in this direction (unique constraint: sender_id + receiver_id)
+        $existingRequest = FriendRequest::where('sender_id', $sender->id)
+            ->where('receiver_id', $receiver->id)
+            ->first();
 
         if ($existingRequest) {
+            if ($existingRequest->status === 'pending') {
+                return response()->json([
+                    'message' => 'Friend request already sent',
+                ], 422);
+            }
+
+            if ($existingRequest->status === 'accepted') {
+                return response()->json([
+                    'message' => 'You are already friends',
+                ], 422);
+            }
+
+            // Rejected: allow re-requesting by updating the existing record
+            $existingRequest->update([
+                'status' => 'pending',
+                'responded_at' => null,
+            ]);
+            $friendRequest = $existingRequest->fresh(['sender', 'receiver']);
+            $receiver->notify(new FriendRequestNotification($friendRequest->load('sender')));
+
             return response()->json([
-                'message' => 'Friend request already exists',
+                'message' => 'Friend request sent successfully',
+                'friend_request' => new FriendRequestResource($friendRequest),
+            ], 201);
+        }
+
+        // Check if the other user already sent a pending request (reciprocal)
+        $incomingRequest = FriendRequest::where('sender_id', $receiver->id)
+            ->where('receiver_id', $sender->id)
+            ->where('status', 'pending')
+            ->first();
+
+        if ($incomingRequest) {
+            return response()->json([
+                'message' => 'This user has already sent you a friend request. Check your notifications to accept it.',
             ], 422);
         }
 
-        // Create friend request
-        $friendRequest = FriendRequest::create([
-            'sender_id' => $sender->id,
-            'receiver_id' => $receiver->id,
-            'status' => 'pending',
-        ]);
+        // Create friend request (catch race condition: double-click or duplicate request)
+        try {
+            $friendRequest = FriendRequest::create([
+                'sender_id' => $sender->id,
+                'receiver_id' => $receiver->id,
+                'status' => 'pending',
+            ]);
+        } catch (QueryException $e) {
+            $isDuplicate = in_array($e->getCode(), [23000, '23000'], true)
+                && str_contains($e->getMessage(), 'Duplicate entry');
+            if ($isDuplicate) {
+                return response()->json([
+                    'message' => 'Friend request already sent',
+                ], 422);
+            }
+            throw $e;
+        }
 
         // Send notification to receiver
         $receiver->notify(new FriendRequestNotification($friendRequest->load('sender')));

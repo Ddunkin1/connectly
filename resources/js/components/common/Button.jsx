@@ -14,11 +14,11 @@ const Button = ({
     const baseClasses = 'font-medium rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed';
     
     const variants = {
-        primary: 'bg-[#359EFF] text-white hover:bg-[#2a8eef] focus:ring-[#359EFF]',
-        secondary: 'bg-gray-200 text-gray-800 hover:bg-gray-300 focus:ring-gray-400',
-        outline: 'border-2 border-[#359EFF] text-[#359EFF] hover:bg-[#359EFF] hover:text-white focus:ring-[#359EFF]',
+        primary: 'theme-accent text-white hover:opacity-90 focus:ring-2 focus:ring-[var(--theme-accent)]',
+        secondary: 'bg-gray-600 text-white hover:bg-gray-500 focus:ring-gray-500',
+        outline: 'border-2 border-[var(--theme-accent)] text-[var(--theme-accent)] hover:bg-[var(--theme-accent)]/10 focus:ring-[var(--theme-accent)]',
         danger: 'bg-red-500 text-white hover:bg-red-600 focus:ring-red-500',
-        ghost: 'text-gray-700 hover:bg-gray-100 focus:ring-gray-400',
+        ghost: 'text-gray-300 hover:bg-white/10 focus:ring-gray-500',
     };
 
     const sizes = {

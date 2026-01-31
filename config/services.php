@@ -42,4 +42,9 @@ return [
         'bucket' => env('SUPABASE_BUCKET', 'publicConnectly'),
     ],
 
+    // FFmpeg for video transcoding (VideoTranscodeService). Use if ffmpeg is not in system PATH.
+    'ffmpeg' => [
+        'path' => env('FFMPEG_PATH', 'ffmpeg'),
+    ],
+
 ];

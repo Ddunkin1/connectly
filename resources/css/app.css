@@ -10,7 +10,37 @@
 
 @theme {
     --font-sans: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
-    --color-primary: #359EFF;
-    --color-bg-light: #f5f7f8;
-    --color-bg-dark: #0f1923;
+    --color-primary: #8B5CF6;
+    --color-primary-dark: #7C3AED;
+    --color-bg-main: #0F0F1A;
+    --color-bg-sidebar: #1A1A2E;
+    --color-surface: #252538;
+    --color-surface-hover: #2D2D44;
+    --color-text-primary: #ffffff;
+    --color-text-secondary: #9ca3af;
+    --color-border: #374151;
 }
+
+/* Theme customization - CSS variables (set by themeStore) */
+:root {
+    --theme-bg-main: #0F0F1A;
+    --theme-bg-sidebar: #1A1A2E;
+    --theme-surface: #252538;
+    --theme-accent: #8B5CF6;
+    --theme-accent-hover: #7C3AED;
+}
+
+/* Font size scaling */
+html[data-font-size="sm"] #app-root { font-size: 14px; }
+html[data-font-size="md"] #app-root { font-size: 16px; }
+html[data-font-size="lg"] #app-root { font-size: 18px; }
+
+/* Use theme variables for main backgrounds */
+.theme-bg-main { background-color: var(--theme-bg-main); }
+.theme-bg-sidebar { background-color: var(--theme-bg-sidebar); }
+.theme-surface { background-color: var(--theme-surface); }
+.theme-accent { background-color: var(--theme-accent); }
+.theme-accent:hover { filter: brightness(0.95); }
+.theme-accent-text { color: var(--theme-accent); }
+.theme-accent-border { border-color: var(--theme-accent); }
+

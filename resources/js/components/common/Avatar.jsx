@@ -10,12 +10,12 @@ const Avatar = ({ src, alt, size = 'md', className = '' }) => {
 
     return (
         <div
-            className={`${sizeClasses[size]} rounded-full overflow-hidden bg-gray-200 flex items-center justify-center ${className}`}
+            className={`${sizeClasses[size]} rounded-full overflow-hidden bg-gray-600 flex items-center justify-center flex-shrink-0 ${className}`}
         >
             {src ? (
                 <img src={src} alt={alt || 'Avatar'} className="w-full h-full object-cover" />
             ) : (
-                <div className="w-full h-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white font-semibold">
+                <div className="w-full h-full bg-gradient-to-br from-purple-500 to-purple-700 flex items-center justify-center text-white font-semibold">
                     {alt?.[0]?.toUpperCase() || '?'}
                 </div>
             )}

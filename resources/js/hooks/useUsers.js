@@ -91,13 +91,35 @@ export const useFollow = () => {
             return { previousProfiles, previousFriendRequests };
         },
         onError: (error, userId, context) => {
-            if (context?.previousProfiles) {
-                context.previousProfiles.forEach(([key, data]) => queryClient.setQueryData(key, data));
+            const message = error.response?.data?.message || 'Failed to send friend request';
+
+            // When already friends: update UI immediately to show Connected + Unfollow
+            if (message.includes('already friends')) {
+                queryClient.setQueriesData({ queryKey: ['profile'] }, (data) => {
+                    if (!data || data.id !== userId) return data;
+                    return { ...data, is_following: true, friend_request_status: null };
+                });
+                queryClient.invalidateQueries({ queryKey: ['profile'] });
+                queryClient.invalidateQueries({ queryKey: ['suggested-users'] });
+                queryClient.refetchQueries({ queryKey: ['profile'] });
+                queryClient.refetchQueries({ queryKey: ['suggested-users'] });
+            } else if (message.includes('already sent')) {
+                // Already sent: refetch to show Request Sent state
+                queryClient.invalidateQueries({ queryKey: ['profile'] });
+                queryClient.invalidateQueries({ queryKey: ['friend-requests'] });
+                queryClient.refetchQueries({ queryKey: ['profile'] });
+                queryClient.refetchQueries({ queryKey: ['friend-requests'] });
+            } else {
+                // Other errors: rollback optimistic update
+                if (context?.previousProfiles) {
+                    context.previousProfiles.forEach(([key, data]) => queryClient.setQueryData(key, data));
+                }
+                if (context?.previousFriendRequests != null) {
+                    queryClient.setQueryData(['friend-requests'], context.previousFriendRequests);
+                }
             }
-            if (context?.previousFriendRequests != null) {
-                queryClient.setQueryData(['friend-requests'], context.previousFriendRequests);
-            }
-            toast.error(error.response?.data?.message || 'Failed to send friend request');
+
+            toast.error(message);
         },
         onSuccess: (response, userId) => {
             queryClient.invalidateQueries({ queryKey: ['profile'] });

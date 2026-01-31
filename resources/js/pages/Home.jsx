@@ -1,11 +1,15 @@
-import React, { useRef, useCallback, useState } from 'react';
+import React, { useRef, useCallback, useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useFeed } from '../hooks/usePosts';
 import PostInput from '../components/posts/PostInput';
 import PostCard from '../components/posts/PostCard';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 
 const Home = () => {
+    const navigate = useNavigate();
     const [activeTab, setActiveTab] = useState('for-you');
+    const [searchQuery, setSearchQuery] = useState('');
+    const postInputRef = useRef(null);
     const {
         data,
         fetchNextPage,
@@ -14,6 +18,14 @@ const Home = () => {
         isLoading,
         isError,
     } = useFeed();
+
+    useEffect(() => {
+        const handler = () => {
+            postInputRef.current?.scrollIntoView?.({ behavior: 'smooth' });
+        };
+        window.addEventListener('open-create-post', handler);
+        return () => window.removeEventListener('open-create-post', handler);
+    }, []);
 
     const observer = useRef();
     const lastPostElementRef = useCallback(
@@ -30,6 +42,13 @@ const Home = () => {
         [isLoading, hasNextPage, isFetchingNextPage, fetchNextPage]
     );
 
+    const handleSearch = (e) => {
+        e.preventDefault();
+        if (searchQuery.trim()) {
+            navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+        }
+    };
+
     if (isLoading) {
         return (
             <div className="flex justify-center items-center py-12">
@@ -41,7 +60,7 @@ const Home = () => {
     if (isError) {
         return (
             <div className="text-center py-12">
-                <p className="text-red-600">Failed to load posts. Please try again.</p>
+                <p className="text-red-500">Failed to load posts. Please try again.</p>
             </div>
         );
     }
@@ -55,15 +74,31 @@ const Home = () => {
 
     return (
         <div className="max-w-2xl mx-auto">
+            {/* Search Bar */}
+            <form onSubmit={handleSearch} className="mb-4">
+                <div className="relative">
+                    <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
+                        search
+                    </span>
+                    <input
+                        type="text"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        placeholder="Search for creators, inspirations, and projects"
+                        className="w-full pl-12 pr-4 py-3 theme-surface border border-gray-700 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[var(--theme-accent)] focus:border-transparent"
+                    />
+                </div>
+            </form>
+
             {/* Feed Tabs */}
-            <div className="bg-white rounded-lg border border-gray-200 mb-4">
-                <div className="flex border-b border-gray-200">
+            <div className="theme-surface rounded-xl border border-gray-700/50 mb-4 overflow-hidden">
+                <div className="flex">
                     <button
                         onClick={() => setActiveTab('for-you')}
                         className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${
                             activeTab === 'for-you'
-                                ? 'bg-blue-50 text-[#359EFF] border-b-2 border-[#359EFF]'
-                                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                                ? 'bg-[var(--theme-accent)]/20 text-[var(--theme-accent)] border-b-2 border-[var(--theme-accent)]'
+                                : 'text-gray-400 hover:text-white hover:bg-white/5'
                         }`}
                     >
                         For You
@@ -72,8 +107,8 @@ const Home = () => {
                         onClick={() => setActiveTab('following')}
                         className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${
                             activeTab === 'following'
-                                ? 'bg-blue-50 text-[#359EFF] border-b-2 border-[#359EFF]'
-                                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                                ? 'bg-[var(--theme-accent)]/20 text-[var(--theme-accent)] border-b-2 border-[var(--theme-accent)]'
+                                : 'text-gray-400 hover:text-white hover:bg-white/5'
                         }`}
                     >
                         Following
@@ -82,8 +117,8 @@ const Home = () => {
                         onClick={() => setActiveTab('recent')}
                         className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${
                             activeTab === 'recent'
-                                ? 'bg-blue-50 text-[#359EFF] border-b-2 border-[#359EFF]'
-                                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                                ? 'bg-[var(--theme-accent)]/20 text-[var(--theme-accent)] border-b-2 border-[var(--theme-accent)]'
+                                : 'text-gray-400 hover:text-white hover:bg-white/5'
                         }`}
                     >
                         Recent
@@ -91,22 +126,24 @@ const Home = () => {
                 </div>
             </div>
 
-            <PostInput />
+            <div ref={postInputRef}>
+                <PostInput />
+            </div>
             <div className="space-y-4">
                 {posts.length === 0 ? (
-                    <div className="text-center py-12 bg-white rounded-lg border border-gray-200">
-                        <p className="text-gray-500">No posts yet. Start following people to see their posts!</p>
+                    <div className="text-center py-12 theme-surface rounded-xl border border-gray-700/50">
+                        <p className="text-gray-400">No posts yet. Start following people to see their posts!</p>
                     </div>
                 ) : (
                     posts.map((post, index) => {
                         if (posts.length === index + 1) {
                             return (
                                 <div key={post.id} ref={lastPostElementRef}>
-                                    <PostCard post={post} />
+                                    <PostCard post={post} onCommentClick={() => {}} />
                                 </div>
                             );
                         }
-                        return <PostCard key={post.id} post={post} />;
+                        return <PostCard key={post.id} post={post} onCommentClick={() => {}} />;
                     })
                 )}
                 {isFetchingNextPage && (
