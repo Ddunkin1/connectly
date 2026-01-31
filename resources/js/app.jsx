@@ -143,10 +143,9 @@ function AppContent() {
     return (
         <div className="min-h-screen theme-bg-main flex flex-col" id="app-root">
             <EmailVerificationBanner />
+            <AppTopBar />
             <div className="flex flex-1 min-h-0 w-full justify-center overflow-auto">
-                <div className="w-full max-w-[1280px] flex flex-col min-h-0">
-                <AppTopBar />
-                <div className="flex flex-1 min-h-0 px-4 pt-4 pb-4 gap-4">
+                <div className="flex w-full max-w-[1280px] min-h-0 px-4 pt-4 pb-4 gap-4">
                 <LeftSidebar />
                 <main className="flex-1 flex justify-center min-w-0 overflow-auto py-6 px-4">
                     <div className="w-full max-w-[1200px] flex justify-center">
@@ -260,7 +259,6 @@ function AppContent() {
                     </div>
                 </main>
                 <RightSidebar />
-                </div>
                 </div>
             </div>
             <QuickChat />

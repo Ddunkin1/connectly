@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import Avatar from '../common/Avatar';
+import { UilPlus } from '../common/Icons';
 import useAuthStore from '../../store/authStore';
 
 /* Story cards: 120x200px, gradient overlay, 36px avatar top-left with 3px purple ring, name bottom-left */
@@ -24,8 +25,8 @@ const StoriesRow = () => {
                     <div className="w-full h-full bg-gradient-to-br from-[#2D2D44] to-[#1A1A2E] relative">
                         <div className="absolute top-2 left-2 w-9 h-9 rounded-full border-[3px] flex items-center justify-center overflow-hidden z-[2]" style={{ borderColor: 'var(--theme-accent)', background: 'white' }}>
                             <Avatar src={user.profile_picture} alt={user.name} className="!w-7 !h-7 object-cover" />
-                            <span className="absolute -bottom-0.5 -right-0.5 w-5 h-5 bg-[var(--theme-accent)] rounded-full border-2 border-[#1A1A1A] flex items-center justify-center text-white text-xs font-bold">
-                                +
+                            <span className="absolute -bottom-0.5 -right-0.5 w-5 h-5 bg-[var(--theme-accent)] rounded-full border-2 border-[#1A1A1A] flex items-center justify-center text-white">
+                                <UilPlus size={12} color="white" />
                             </span>
                         </div>
                     </div>

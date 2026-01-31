@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { UilSearch, UilEdit } from '../common/Icons';
 import { useConversations } from '../../hooks/useConversations';
 import { useFriendRequests, useAcceptFriendRequest, useRejectFriendRequest } from '../../hooks/useFriendRequests';
 import Avatar from '../common/Avatar';
@@ -27,11 +28,13 @@ const RightSidebar = () => {
                     <div className="flex items-center justify-between mb-4">
                         <h3 className="text-xl font-bold text-white">Messages</h3>
                         <Link to="/messages" className="text-[#9CA3AF] hover:text-[var(--theme-accent)] p-1 rounded" aria-label="Compose message">
-                            <span className="material-symbols-outlined text-[24px]">edit</span>
+                            <UilEdit size={22} color="currentColor" />
                         </Link>
                     </div>
                     <div className="relative mb-4">
-                        <span className="material-symbols-outlined absolute left-[10px] top-1/2 -translate-y-1/2 text-[#9CA3AF] text-[20px]">search</span>
+                        <span className="absolute left-[10px] top-1/2 -translate-y-1/2 text-[#9CA3AF]">
+                            <UilSearch size={20} color="currentColor" />
+                        </span>
                         <input
                             type="text"
                             value={messageSearch}
@@ -67,12 +70,7 @@ const RightSidebar = () => {
                                 activeTab === 'requests' ? 'text-white border-[var(--theme-accent)]' : 'text-[#9CA3AF] hover:text-white border-transparent'
                             }`}
                         >
-                            Requests
-                            {requestsCount > 0 && (
-                                <span className="bg-[var(--theme-accent)] text-white text-xs px-1.5 py-0.5 rounded-full">
-                                    {requestsCount}
-                                </span>
-                            )}
+                            Requests{requestsCount > 0 ? `(${requestsCount})` : ''}
                         </button>
                     </div>
 

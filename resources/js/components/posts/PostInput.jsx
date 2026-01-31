@@ -5,6 +5,7 @@ import useAuthStore from '../../store/authStore';
 import toast from 'react-hot-toast';
 import Avatar from '../common/Avatar';
 import Button from '../common/Button';
+import { UilImage, UilGlobe, UilUsersAlt, UilTimes } from '../common/Icons';
 
 /* Post input: 64px height pill, 40px avatar, 80x40 Post button */
 
@@ -80,7 +81,7 @@ const PostInput = ({ onPostCreated }) => {
                             className="flex-1 min-w-0 bg-transparent text-white placeholder-[#9CA3AF] text-sm focus:outline-none"
                         />
                         <label htmlFor="media-upload" className="cursor-pointer text-[var(--theme-accent)] hover:opacity-80 shrink-0">
-                            <span className="material-symbols-outlined text-[24px]">image</span>
+                            <UilImage size={24} color="currentColor" />
                             <input type="file" id="media-upload" accept="image/*,video/*" onChange={handleFileChange} className="hidden" />
                         </label>
                     </div>
@@ -99,12 +100,12 @@ const PostInput = ({ onPostCreated }) => {
                             <span className="text-sm text-[#9CA3AF]">Who can see this?</span>
                             <label className="flex items-center gap-1.5 cursor-pointer text-[#9CA3AF] hover:text-white text-sm">
                                 <input type="radio" value="public" {...register('visibility')} className="text-[var(--theme-accent)]" />
-                                <span className="material-symbols-outlined text-sm">public</span>
+                                <UilGlobe size={16} color="currentColor" />
                                 Public
                             </label>
                             <label className="flex items-center gap-1.5 cursor-pointer text-[#9CA3AF] hover:text-white text-sm">
                                 <input type="radio" value="followers" {...register('visibility')} className="text-[var(--theme-accent)]" />
-                                <span className="material-symbols-outlined text-sm">group</span>
+                                <UilUsersAlt size={16} color="currentColor" />
                                 Friends only
                             </label>
                         </div>
@@ -126,7 +127,7 @@ const PostInput = ({ onPostCreated }) => {
                             onClick={removeMedia}
                             className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
                         >
-                            <span className="material-symbols-outlined text-sm">close</span>
+                            <UilTimes size={14} color="white" />
                         </button>
                     </div>
                 )}

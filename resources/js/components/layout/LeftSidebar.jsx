@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import useAuthStore from '../../store/authStore';
 import useThemeStore from '../../store/themeStore';
 import Avatar from '../common/Avatar';
+import { UilHome, UilCompass, UilBell, UilEnvelope, UilBookmark, UilAnalytics, UilPalette, UilSetting, UilPlus } from '../common/Icons';
 import { useUnreadNotificationsCount } from '../../hooks/useNotifications';
 import { useConversations } from '../../hooks/useConversations';
 
@@ -19,14 +20,14 @@ const LeftSidebar = () => {
         ?.reduce((sum, c) => sum + (c.unread_count ?? 0), 0) ?? 0;
 
     const navItems = [
-        { icon: 'home', label: 'Home', path: '/home' },
-        { icon: 'explore', label: 'Explore', path: '/search' },
-        { icon: 'notifications', label: 'Notifications', path: '/notifications', badge: notificationsBadge },
-        { icon: 'mail', label: 'Messages', path: '/messages', badge: messagesBadge },
-        { icon: 'bookmark', label: 'Bookmarks', path: '/bookmarks' },
-        { icon: 'show_chart', label: 'Analytics', path: '/analytics' },
-        { icon: 'palette', label: 'Theme', path: null, isTheme: true },
-        { icon: 'settings', label: 'Settings', path: '/settings' },
+        { Icon: UilHome, label: 'Home', path: '/home' },
+        { Icon: UilCompass, label: 'Explore', path: '/search' },
+        { Icon: UilBell, label: 'Notifications', path: '/notifications', badge: notificationsBadge },
+        { Icon: UilEnvelope, label: 'Messages', path: '/messages', badge: messagesBadge },
+        { Icon: UilBookmark, label: 'Bookmarks', path: '/bookmarks' },
+        { Icon: UilAnalytics, label: 'Analytics', path: '/analytics' },
+        { Icon: UilPalette, label: 'Theme', path: null, isTheme: true },
+        { Icon: UilSetting, label: 'Settings', path: '/settings' },
     ];
 
     const openThemeCustomizer = useThemeStore((s) => s.openCustomizer);
@@ -62,14 +63,14 @@ const LeftSidebar = () => {
                                 key="theme"
                                 type="button"
                                 onClick={openThemeCustomizer}
-                                className={`w-full flex items-center justify-between px-3 py-4 rounded-[12px] transition-colors ${
+                                className={`w-full flex items-center justify-between py-4 rounded-[12px] border-l-4 transition-colors ${
                                     isThemeCustomizerOpen
-                                        ? 'bg-[var(--theme-accent)] text-white'
-                                        : 'text-[#9CA3AF] hover:bg-[#1E1E1E] hover:text-white'
+                                        ? 'border-[var(--theme-accent)] pl-[8px] pr-3 text-[var(--theme-accent)]'
+                                        : 'border-transparent px-3 text-[#9CA3AF] hover:bg-[#1E1E1E] hover:text-white'
                                 }`}
                             >
                                 <div className="flex items-center gap-4">
-                                    <span className="material-symbols-outlined text-[24px]">{item.icon}</span>
+                                    <item.Icon size={24} color="currentColor" />
                                     <span className="text-base font-medium">Theme</span>
                                 </div>
                             </button>
@@ -83,15 +84,15 @@ const LeftSidebar = () => {
                         <Link
                             key={item.path}
                             to={item.path}
-                            className={`relative flex items-center justify-between px-3 py-4 rounded-[12px] transition-colors ${
+                            className={`relative flex items-center justify-between py-4 rounded-[12px] border-l-4 transition-colors ${
                                 isActive
-                                    ? 'bg-[var(--theme-accent)] text-white'
-                                    : 'text-[#9CA3AF] hover:bg-[#1E1E1E] hover:text-white'
+                                    ? 'border-[var(--theme-accent)] pl-[8px] pr-3 text-[var(--theme-accent)]'
+                                    : 'border-transparent px-3 text-[#9CA3AF] hover:bg-[#1E1E1E] hover:text-white'
                             }`}
                         >
                             <div className="flex items-center gap-4">
                                 <div className="relative">
-                                    <span className="material-symbols-outlined text-[24px]">{item.icon}</span>
+                                    <item.Icon size={24} color="currentColor" />
                                     {item.badge > 0 && (
                                         <span
                                             className="absolute -top-1 -right-1 w-5 h-5 bg-[#EF4444] text-white text-[12px] font-bold rounded-full flex items-center justify-center"
@@ -116,7 +117,7 @@ const LeftSidebar = () => {
                     className="w-full h-12 rounded-[12px] font-semibold text-base text-white flex items-center justify-center gap-2 transition-all hover:brightness-110 active:scale-[0.98]"
                     style={{ background: 'linear-gradient(135deg, #8B5CF6, #7C3AED)' }}
                 >
-                    <span className="material-symbols-outlined">add</span>
+                    <UilPlus size={20} color="white" />
                     Create Post
                 </button>
             </div>
