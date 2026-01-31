@@ -14,15 +14,15 @@ export const ACCENT_COLORS = {
 };
 export const BACKGROUND_THEMES = {
     light: { name: 'Light', bg: '#f5f7f8', sidebar: '#ffffff', surface: '#ffffff' },
-    dim: { name: 'Dim', bg: '#0F0F1A', sidebar: '#1A1A2E', surface: '#252538' },
-    dark: { name: 'Lights Out', bg: '#000000', sidebar: '#0a0a0a', surface: '#1a1a1a' },
+    dim: { name: 'Dim', bg: '#121212', sidebar: '#161616', surface: '#1A1A1A' },
+    dark: { name: 'Lights Out', bg: '#0F0F0F', sidebar: '#121212', surface: '#1A1A1A' },
 };
 
 const useThemeStore = create(
     persist(
         (set) => ({
             fontSize: 'md',
-            accentColor: 'purple',
+            accentColor: 'peachy',
             background: 'dim',
             isCustomizerOpen: false,
             setFontSize: (fontSize) => {
@@ -60,8 +60,15 @@ const useThemeStore = create(
         }),
         {
             name: THEME_KEY,
+            version: 2,
             partialize: (s) => ({ fontSize: s.fontSize, accentColor: s.accentColor, background: s.background }),
             onRehydrateStorage: () => () => useThemeStore.getState().applyToDom(),
+            migrate: (persistedState, version) => {
+                if (version < 2 && persistedState?.accentColor === 'purple') {
+                    return { ...persistedState, accentColor: 'peachy' };
+                }
+                return persistedState;
+            },
         }
     )
 );

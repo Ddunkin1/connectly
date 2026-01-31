@@ -38,30 +38,23 @@ const LeftSidebar = () => {
     };
 
     return (
-        <aside className="hidden lg:flex lg:flex-col w-64 theme-bg-sidebar border-r border-gray-700/50 h-screen sticky top-0 overflow-y-auto">
-            {/* Logo */}
-            <div className="p-4">
-                <Link to="/home" className="block">
-                    <span className="text-xl font-bold text-white">connectly</span>
-                </Link>
-            </div>
-
-            {/* User profile card */}
+        <aside className="hidden lg:flex lg:flex-col w-[300px] theme-bg-sidebar shrink-0 overflow-y-auto sticky top-4 rounded-2xl shadow-lg mt-4 mb-4" style={{ boxShadow: '0 4px 24px rgba(0,0,0,0.4)' }}>
+            {/* Profile card: 48px avatar, 20px padding, 12px radius, bg #1A1A1A */}
             {user && (
                 <Link
                     to={`/profile/${user.username}`}
-                    className="mx-4 mb-4 p-3 rounded-xl theme-surface hover:brightness-110 transition-colors flex items-center gap-3"
+                    className="mx-5 mt-5 mb-6 p-5 rounded-[12px] theme-surface hover:bg-[#1E1E1E] transition-colors flex items-center gap-4"
                 >
-                    <Avatar src={user.profile_picture} alt={user.name} size="md" />
+                    <Avatar src={user.profile_picture} alt={user.name} size="md" className="w-12 h-12 shrink-0" />
                     <div className="flex-1 min-w-0">
-                        <p className="font-medium text-white truncate">{user.name}</p>
-                        <p className="text-sm text-gray-400 truncate">@{user.username}</p>
+                        <p className="text-base font-medium text-white truncate">{user.name}</p>
+                        <p className="text-sm text-[#9CA3AF] truncate">@{user.username}</p>
                     </div>
                 </Link>
             )}
 
-            {/* Navigation */}
-            <nav className="flex-1 px-4 space-y-1">
+            {/* Navigation: 16px vertical padding, 16px icon-text gap */}
+            <nav className="flex-1 px-3 py-2 space-y-0.5 min-h-0" aria-label="Main navigation">
                 {navItems.map((item) => {
                     if (item.isTheme) {
                         return (
@@ -69,15 +62,15 @@ const LeftSidebar = () => {
                                 key="theme"
                                 type="button"
                                 onClick={openThemeCustomizer}
-                                className={`w-full flex items-center justify-between px-4 py-3 rounded-lg transition-colors ${
+                                className={`w-full flex items-center justify-between px-3 py-4 rounded-[12px] transition-colors ${
                                     isThemeCustomizerOpen
-                                        ? 'bg-[var(--theme-accent)]/20 text-[var(--theme-accent)] border-l-4 border-[var(--theme-accent)] -ml-[2px] pl-[14px]'
-                                        : 'text-gray-300 hover:bg-white/5'
+                                        ? 'bg-[var(--theme-accent)] text-white'
+                                        : 'text-[#9CA3AF] hover:bg-[#1E1E1E] hover:text-white'
                                 }`}
                             >
-                                <div className="flex items-center space-x-3">
-                                    <span className="material-symbols-outlined">{item.icon}</span>
-                                    <span className="font-medium">Theme</span>
+                                <div className="flex items-center gap-4">
+                                    <span className="material-symbols-outlined text-[24px]">{item.icon}</span>
+                                    <span className="text-base font-medium">Theme</span>
                                 </div>
                             </button>
                         );
@@ -90,32 +83,38 @@ const LeftSidebar = () => {
                         <Link
                             key={item.path}
                             to={item.path}
-                            className={`flex items-center justify-between px-4 py-3 rounded-lg transition-colors ${
+                            className={`relative flex items-center justify-between px-3 py-4 rounded-[12px] transition-colors ${
                                 isActive
-                                    ? 'bg-[var(--theme-accent)]/20 text-[var(--theme-accent)] border-l-4 border-[var(--theme-accent)] -ml-[2px] pl-[14px]'
-                                    : 'text-gray-300 hover:bg-white/5'
+                                    ? 'bg-[var(--theme-accent)] text-white'
+                                    : 'text-[#9CA3AF] hover:bg-[#1E1E1E] hover:text-white'
                             }`}
                         >
-                            <div className="flex items-center space-x-3">
-                                <span className="material-symbols-outlined">{item.icon}</span>
-                                <span className="font-medium">{item.label}</span>
+                            <div className="flex items-center gap-4">
+                                <div className="relative">
+                                    <span className="material-symbols-outlined text-[24px]">{item.icon}</span>
+                                    {item.badge > 0 && (
+                                        <span
+                                            className="absolute -top-1 -right-1 w-5 h-5 bg-[#EF4444] text-white text-[12px] font-bold rounded-full flex items-center justify-center"
+                                            aria-label={`${item.badge} unread`}
+                                        >
+                                            {item.badge > 99 ? '99+' : item.badge}
+                                        </span>
+                                    )}
+                                </div>
+                                <span className="text-base font-medium">{item.label}</span>
                             </div>
-                            {item.badge > 0 && (
-                                <span className="bg-red-500 text-white text-xs font-semibold px-2 py-0.5 rounded-full min-w-[20px] text-center">
-                                    {item.badge > 99 ? '99+' : item.badge}
-                                </span>
-                            )}
                         </Link>
                     );
                 })}
             </nav>
 
-            {/* Create Post button */}
+            {/* Create Post button: 48px height, purple gradient, 12px radius */}
             <div className="p-4">
                 <button
                     type="button"
                     onClick={handleCreatePost}
-                    className="w-full theme-accent hover:opacity-90 text-white font-medium py-3 px-4 rounded-xl transition-colors flex items-center justify-center gap-2"
+                    className="w-full h-12 rounded-[12px] font-semibold text-base text-white flex items-center justify-center gap-2 transition-all hover:brightness-110 active:scale-[0.98]"
+                    style={{ background: 'linear-gradient(135deg, #8B5CF6, #7C3AED)' }}
                 >
                     <span className="material-symbols-outlined">add</span>
                     Create Post

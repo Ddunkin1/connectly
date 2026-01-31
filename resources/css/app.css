@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200');
 @import 'tailwindcss';
 
@@ -8,26 +8,60 @@
 @source '../**/*.js';
 @source '../**/*.jsx';
 
+/* ========== DESIGN TOKENS - nokoSocial/connectly ========== */
+
 @theme {
-    --font-sans: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+    --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    /* Colors from guide */
     --color-primary: #8B5CF6;
     --color-primary-dark: #7C3AED;
-    --color-bg-main: #0F0F1A;
-    --color-bg-sidebar: #1A1A2E;
-    --color-surface: #252538;
-    --color-surface-hover: #2D2D44;
+    --color-bg-main: #121212;
+    --color-bg-sidebar: #161616;
+    --color-surface: #1A1A1A;
+    --color-surface-hover: #1E1E1E;
     --color-text-primary: #ffffff;
     --color-text-secondary: #9ca3af;
-    --color-border: #374151;
+    --color-text-tertiary: #6b7280;
+    --color-border: #2A2A2A;
+    --color-border-medium: #374151;
+    --color-success: #10B981;
+    --color-error: #EF4444;
 }
 
 /* Theme customization - CSS variables (set by themeStore) */
 :root {
-    --theme-bg-main: #0F0F1A;
-    --theme-bg-sidebar: #1A1A2E;
-    --theme-surface: #252538;
+    --theme-bg-main: #121212;
+    --theme-bg-sidebar: #161616;
+    --theme-surface: #1A1A1A;
+    --theme-surface-hover: #1E1E1E;
     --theme-accent: #8B5CF6;
     --theme-accent-hover: #7C3AED;
+    --theme-border: #2A2A2A;
+    /* Typography */
+    --text-xl: 24px;
+    --text-lg: 20px;
+    --text-md: 16px;
+    --text-sm: 14px;
+    --text-xs: 12px;
+    --text-2xs: 10px;
+    /* Spacing */
+    --space-xs: 4px;
+    --space-sm: 8px;
+    --space-md: 12px;
+    --space-base: 16px;
+    --space-lg: 24px;
+    --space-xl: 32px;
+    --space-2xl: 48px;
+    /* Radius */
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 16px;
+    --radius-xl: 24px;
+    /* Shadows */
+    --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.2);
+    --shadow-card-hover: 0 4px 12px rgba(0, 0, 0, 0.3);
+    --shadow-button: 0 2px 4px rgba(0, 0, 0, 0.2);
+    --shadow-elevated: 0 8px 16px rgba(0, 0, 0, 0.4);
 }
 
 /* Font size scaling */
@@ -35,12 +69,81 @@ html[data-font-size="sm"] #app-root { font-size: 14px; }
 html[data-font-size="md"] #app-root { font-size: 16px; }
 html[data-font-size="lg"] #app-root { font-size: 18px; }
 
-/* Use theme variables for main backgrounds */
+/* Use theme variables */
 .theme-bg-main { background-color: var(--theme-bg-main); }
 .theme-bg-sidebar { background-color: var(--theme-bg-sidebar); }
 .theme-surface { background-color: var(--theme-surface); }
+.theme-surface-hover:hover { background-color: var(--theme-surface-hover); }
 .theme-accent { background-color: var(--theme-accent); }
 .theme-accent:hover { filter: brightness(0.95); }
 .theme-accent-text { color: var(--theme-accent); }
 .theme-accent-border { border-color: var(--theme-accent); }
 
+/* Card shadows */
+.card-shadow { box-shadow: var(--shadow-card); }
+.card-shadow-hover:hover { box-shadow: var(--shadow-card-hover); }
+
+/* Story card - exact spec from guide */
+.story-card {
+    position: relative;
+    width: 120px;
+    height: 200px;
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: transform 0.2s ease;
+}
+.story-card:hover { transform: translateY(-4px); }
+.story-gradient {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.6) 100%);
+}
+.story-avatar-overlay {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 3px solid var(--theme-accent);
+    background: white;
+    padding: 2px;
+    z-index: 2;
+}
+.story-name-overlay {
+    position: absolute;
+    bottom: 12px;
+    left: 12px;
+    color: white;
+    font-size: 14px;
+    font-weight: 500;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+    z-index: 2;
+}
+
+/* Scrollbar hide */
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* Transition utilities */
+.transition-standard { transition: all 0.2s ease; }
+.lift-on-hover {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.lift-on-hover:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+/* Responsive - guide breakpoints */
+@media (max-width: 1023px) {
+    /* Tablet: sidebar may collapse depending on layout */
+}
+@media (max-width: 1279px) {
+    /* Hide messages panel on smaller desktop */
+}
+@media (min-width: 1440px) {
+    /* Full 3-column layout */
+}

@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'react-hot-toast';
+import AppTopBar from './components/layout/AppTopBar';
 import LeftSidebar from './components/layout/LeftSidebar';
 import RightSidebar from './components/layout/RightSidebar';
 import QuickChat from './components/layout/QuickChat';
@@ -138,14 +139,18 @@ function AppContent() {
         );
     }
 
-    // Render protected pages with full layout (theme defaults to dark)
+    // Render protected pages - 3-column grid: [Sidebar 300px] | [Main flex-1] | [Messages 380px]
     return (
-        <div className="min-h-screen bg-[#0F0F1A]" id="app-root">
+        <div className="min-h-screen theme-bg-main flex flex-col" id="app-root">
             <EmailVerificationBanner />
-            <div className="flex">
+            <div className="flex flex-1 min-h-0 w-full justify-center overflow-auto">
+                <div className="w-full max-w-[1280px] flex flex-col min-h-0">
+                <AppTopBar />
+                <div className="flex flex-1 min-h-0 px-4 pt-4 pb-4 gap-4">
                 <LeftSidebar />
-                <main className="flex-1 px-4 py-6 lg:px-8 min-w-0">
-                    <Routes>
+                <main className="flex-1 flex justify-center min-w-0 overflow-auto py-6 px-4">
+                    <div className="w-full max-w-[1200px] flex justify-center">
+                        <Routes>
                         <Route
                             path="/home"
                             element={
@@ -251,9 +256,12 @@ function AppContent() {
                             }
                         />
                         <Route path="*" element={<Navigate to="/home" replace />} />
-                    </Routes>
+                        </Routes>
+                    </div>
                 </main>
                 <RightSidebar />
+                </div>
+                </div>
             </div>
             <QuickChat />
             <ThemeCustomizer isOpen={isCustomizerOpen} onClose={closeCustomizer} />

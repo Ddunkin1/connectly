@@ -72,11 +72,11 @@ const PostCard = ({ post, onDeleted, onCommentClick }) => {
     };
 
     return (
-        <article className="theme-surface rounded-xl border border-gray-700/50 p-4 hover:border-gray-600/50 transition-colors">
+        <article className="theme-surface rounded-[16px] p-4 mb-4 last:mb-0 lift-on-hover" style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.2)' }}>
             {/* Post Header */}
-            <div className="flex items-start space-x-3 mb-3">
+            <div className="flex items-start space-x-2 mb-2">
                 <Link to={`/profile/${post.user?.username}`}>
-                    <Avatar src={post.user?.profile_picture} alt={post.user?.name} size="md" />
+                    <Avatar src={post.user?.profile_picture} alt={post.user?.name} size="sm" />
                 </Link>
                 <div className="flex-1 min-w-0">
                     <div className="flex items-center flex-wrap gap-x-2 gap-y-0.5">
@@ -131,7 +131,7 @@ const PostCard = ({ post, onDeleted, onCommentClick }) => {
                                     aria-hidden="true"
                                     onClick={() => setMoreOpen(false)}
                                 />
-                                <div className="absolute right-0 top-full mt-1 z-20 py-1 w-44 bg-[#252538] rounded-lg border border-gray-700 shadow-xl">
+                                <div className="absolute right-0 top-full mt-1 z-20 py-1 w-44 theme-surface rounded-lg border border-[#2A2A2A] shadow-xl">
                                     <button
                                         type="button"
                                         onClick={handleDeleteClick}
@@ -157,7 +157,7 @@ const PostCard = ({ post, onDeleted, onCommentClick }) => {
 
             {/* Original post embed (when this is a share) – content clickable to post; like/comment/share on embed */}
             {post.shared_post && (
-                <div className="mb-3 rounded-lg border border-gray-600 overflow-hidden bg-[#1A1A2E]">
+                <div className="mb-2 rounded-lg border border-gray-600 overflow-hidden bg-[#1A1A2E]">
                     <Link
                         to={`/post/${post.shared_post.id}`}
                         className="block p-3 hover:bg-white/5 transition-colors"
@@ -221,7 +221,7 @@ const PostCard = ({ post, onDeleted, onCommentClick }) => {
                                         aria-hidden="true"
                                         onClick={() => setShareOpenInner(false)}
                                     />
-                                    <div className="absolute left-0 top-full mt-1 z-20 py-1 w-52 bg-[#252538] rounded-lg border border-gray-700 shadow-xl">
+                                    <div className="absolute left-0 top-full mt-1 z-20 py-1 w-52 theme-surface rounded-lg border border-[#2A2A2A] shadow-xl">
                                         <button
                                             type="button"
                                             onClick={() => {
@@ -244,13 +244,13 @@ const PostCard = ({ post, onDeleted, onCommentClick }) => {
             {/* Post Content (only when not a share - shared content is above) */}
             {!post.shared_post && (
                 <Link to={`/post/${post.id}`}>
-                    <p className="text-white mb-3 whitespace-pre-wrap">{highlightHashtags(post.content)}</p>
+                    <p className="text-white text-sm mb-2 whitespace-pre-wrap">{highlightHashtags(post.content)}</p>
                 </Link>
             )}
 
             {/* Media (only when not a share) */}
             {!post.shared_post && post.media_url && (
-                <div className="mb-3 rounded-lg overflow-hidden">
+                <div className="mb-2 rounded-lg overflow-hidden">
                     {post.media_type === 'image' ? (
                         <img
                             src={post.media_url}
@@ -270,7 +270,7 @@ const PostCard = ({ post, onDeleted, onCommentClick }) => {
             )}
 
             {/* Post Actions - fixed width so icons stay in place when counts change */}
-            <div className="flex items-center justify-between pt-3 border-t border-gray-700/50">
+            <div className="flex items-center justify-between pt-2 border-t border-gray-700/50">
                 <div className="flex items-center gap-6">
                     <button
                         type="button"

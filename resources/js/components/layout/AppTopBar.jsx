@@ -1,0 +1,60 @@
+import React, { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import Avatar from '../common/Avatar';
+import useAuthStore from '../../store/authStore';
+
+const AppTopBar = () => {
+    const navigate = useNavigate();
+    const user = useAuthStore((s) => s.user);
+    const [searchQuery, setSearchQuery] = useState('');
+
+    const handleSearch = (e) => {
+        e.preventDefault();
+        if (searchQuery.trim()) navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+    };
+
+    const handleCreate = () => {
+        navigate('/home');
+        setTimeout(() => window.dispatchEvent(new CustomEvent('open-create-post')), 100);
+    };
+
+    return (
+        <header className="theme-bg-sidebar border-b border-[#2A2A2A] shrink-0">
+            <div className="px-4 py-3 flex items-center gap-6">
+                <Link to="/home" className="shrink-0">
+                    <span className="text-2xl font-bold text-white">connectly</span>
+                </Link>
+                <form onSubmit={handleSearch} className="flex-1 min-w-0 max-w-[600px]">
+                    <div className="relative w-full">
+                        <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-[#9CA3AF] text-[24px]">
+                            search
+                        </span>
+                        <input
+                            type="text"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            placeholder="Search for creators, inspirations, and projects"
+                            className="w-full h-12 pl-12 pr-4 bg-[#1A1A1A] border border-transparent rounded-[24px] text-white placeholder-[#9CA3AF] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--theme-accent)]"
+                        />
+                    </div>
+                </form>
+                <div className="flex items-center gap-2 shrink-0">
+                    <button
+                        type="button"
+                        onClick={handleCreate}
+                        className="h-10 px-6 rounded-lg bg-[#8B5CF6] hover:bg-[#7C3AED] text-white font-medium text-sm transition-colors"
+                    >
+                        Create
+                    </button>
+                    {user && (
+                        <Link to={`/profile/${user.username}`}>
+                            <Avatar src={user.profile_picture} alt={user.name} size="sm" />
+                        </Link>
+                    )}
+                </div>
+            </div>
+        </header>
+    );
+};
+
+export default AppTopBar;
