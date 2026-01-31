@@ -24,20 +24,30 @@ const PostInput = ({ onPostCreated }) => {
     const handleFileChange = (event) => {
         const file = event.target.files?.[0];
         if (!file) return;
-        if (file.size > 10 * 1024 * 1024) {
-            toast.error('File size must be less than 10MB');
+        const maxSize = 50 * 1024 * 1024; // 50MB for videos
+        if (file.size > maxSize) {
+            toast.error('File size must be less than 50MB');
             return;
         }
-        const reader = new FileReader();
-        reader.onloadend = () => {
-            setMediaPreview(reader.result);
-            setMediaType(file.type.startsWith('image/') ? 'image' : 'video');
-        };
-        reader.readAsDataURL(file);
+        const isVideo = file.type.startsWith('video/');
+        if (isVideo) {
+            // Use createObjectURL for videos - avoids loading entire file into memory (readAsDataURL would crash on large videos)
+            setMediaPreview(URL.createObjectURL(file));
+        } else {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setMediaPreview(reader.result);
+            };
+            reader.readAsDataURL(file);
+        }
+        setMediaType(isVideo ? 'video' : 'image');
         setMediaFile(file);
     };
 
     const removeMedia = () => {
+        if (mediaPreview && mediaType === 'video') {
+            URL.revokeObjectURL(mediaPreview);
+        }
         setMediaPreview(null);
         setMediaFile(null);
         setMediaType(null);
@@ -56,12 +66,23 @@ const PostInput = ({ onPostCreated }) => {
 
             await createPostMutation.mutateAsync(formData);
             reset();
+            if (mediaPreview && mediaType === 'video') {
+                URL.revokeObjectURL(mediaPreview);
+            }
             setMediaPreview(null);
             setMediaFile(null);
             setMediaType(null);
             setIsExpanded(false);
             if (onPostCreated) onPostCreated();
-        } catch (error) {}
+        } catch (error) {
+            const d = error?.response?.data;
+            const status = error?.response?.status;
+            let msg = d?.message || d?.error || error?.message || 'Failed to post. Try a smaller file (under 50MB) or check your connection.';
+            if (status === 422 && d?.errors?.media) {
+                msg = Array.isArray(d.errors.media) ? d.errors.media[0] : d.errors.media;
+            }
+            toast.error(msg);
+        }
     };
 
     const firstName = user?.name?.split(' ')[0] || 'there';

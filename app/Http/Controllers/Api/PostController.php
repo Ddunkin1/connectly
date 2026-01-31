@@ -90,10 +90,15 @@ class PostController extends Controller
                 'data' => $request->all(),
             ]);
 
+            $errorMsg = $e->getMessage();
+            $userMessage = $errorMsg;
+            if (str_contains($errorMsg, 'upload media')) {
+                $userMessage = 'Failed to upload media. Check that SUPABASE_SERVICE_ROLE_KEY is set in .env and the Supabase bucket exists.';
+            }
+
             return response()->json([
-                'message' => 'Failed to create post',
-                'error' => config('app.debug') ? $e->getMessage() : 'An error occurred while creating the post',
-                'hint' => config('app.debug') ? 'Check if database migration was run and Supabase bucket exists' : null,
+                'message' => $userMessage,
+                'error' => $userMessage,
             ], 500);
         }
     }

@@ -23,7 +23,22 @@ class StorePostRequest extends FormRequest
     {
         return [
             'content' => ['nullable', 'string', 'max:5000'],
-            'media' => ['nullable', 'file', 'mimes:jpeg,jpg,png,gif,webp,mp4,mov,avi', 'max:10240'], // 10MB max
+            'media' => [
+                'nullable',
+                'file',
+                'max:51200',
+                function ($attribute, $value, $fail) {
+                    if (!$value instanceof \Illuminate\Http\UploadedFile) {
+                        return;
+                    }
+                    $mime = $value->getMimeType();
+                    $validImage = str_starts_with($mime ?? '', 'image/');
+                    $validVideo = str_starts_with($mime ?? '', 'video/');
+                    if (!$validImage && !$validVideo) {
+                        $fail('File must be an image (JPEG, PNG, GIF, WebP) or video (MP4, MOV, AVI, WebM).');
+                    }
+                },
+            ],
             'visibility' => ['nullable', 'in:public,followers'],
             'shared_post_id' => ['nullable', 'integer', 'exists:posts,id'],
         ];

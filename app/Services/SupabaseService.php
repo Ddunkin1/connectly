@@ -81,38 +81,31 @@ class SupabaseService
                 'error_data' => $errorData,
                 'url' => "{$this->supabaseUrl}/storage/v1/object/{$this->bucket}/{$path}",
                 'bucket' => $this->bucket,
-                'using_key_type' => $this->serviceRoleKey ? 'service_role' : 'anon',
+                'using_key_type' => (!empty($this->serviceRoleKey)) ? 'service_role' : 'anon',
                 'file_size' => strlen($fileContents),
                 'file_name' => $fileName,
             ]);
 
-            // Handle different error statuses
+            $errorMsg = null;
             if ($response->status() === 404) {
-                $errorMsg = 'Bucket "' . $this->bucket . '" not found in Supabase. ';
-                $errorMsg .= 'Please verify the bucket exists at: https://app.supabase.com/project/' . str_replace(['https://', '.supabase.co'], '', $this->supabaseUrl) . '/storage/buckets';
-                Log::error($errorMsg, [
-                    'bucket' => $this->bucket,
-                    'supabase_url' => $this->supabaseUrl,
-                    'using_key_type' => $this->serviceRoleKey ? 'service_role' : 'anon',
-                ]);
+                $errorMsg = "Bucket \"{$this->bucket}\" not found. Create it in Supabase Dashboard: Storage → New bucket → name it \"{$this->bucket}\" and set it as public.";
             } elseif ($response->status() === 401 || $response->status() === 403) {
-                $errorMsg = 'Supabase authentication failed. ';
-                $errorMsg .= $this->serviceRoleKey ? 'Service role key may be invalid.' : 'Anon key may not have permissions. Consider using SUPABASE_SERVICE_ROLE_KEY.';
-                Log::error($errorMsg, [
-                    'status' => $response->status(),
-                    'using_key_type' => $this->serviceRoleKey ? 'service_role' : 'anon',
-                ]);
+                if (empty($this->serviceRoleKey)) {
+                    $errorMsg = 'SUPABASE_SERVICE_ROLE_KEY is missing in .env. Add it from Supabase Dashboard → Project Settings → API (service_role key).';
+                } else {
+                    $errorMsg = 'Invalid SUPABASE_SERVICE_ROLE_KEY. Copy the service_role key from Supabase Dashboard → Project Settings → API.';
+                }
             } else {
-                Log::error('Supabase upload failed with status ' . $response->status(), [
-                    'status' => $response->status(),
-                    'error_body' => $errorBody,
-                ]);
+                $msg = $errorData['message'] ?? $errorData['error'] ?? $errorBody;
+                $errorMsg = "Supabase upload failed ({$response->status()}): " . (is_string($msg) ? $msg : json_encode($msg));
             }
 
-            return null;
+            throw new \RuntimeException($errorMsg);
+        } catch (\RuntimeException $e) {
+            throw $e;
         } catch (\Exception $e) {
             Log::error('Supabase upload error: ' . $e->getMessage());
-            return null;
+            throw new \RuntimeException('Supabase upload failed: ' . $e->getMessage());
         }
     }
 
