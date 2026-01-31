@@ -64,7 +64,7 @@ const Home = () => {
         }) || [];
 
     return (
-        <div className="w-full max-w-[600px]">
+        <div className="w-full max-w-[720px]">
             <StoriesRow />
             {/* Feed Tabs */}
             <div className="theme-surface rounded-[16px] border border-[#2A2A2A] mb-6 overflow-hidden card-shadow">

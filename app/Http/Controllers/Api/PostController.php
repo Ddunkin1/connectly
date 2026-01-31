@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Post\StorePostRequest;
 use App\Http\Requests\Post\UpdatePostRequest;
 use App\Http\Resources\PostResource;
+use App\Models\Like;
 use App\Models\Post;
 use App\Services\PostService;
 use Illuminate\Http\JsonResponse;
@@ -27,6 +28,23 @@ class PostController extends Controller
     public function index(Request $request): JsonResponse
     {
         $posts = $this->postService->getFeed($request->user(), 15);
+
+        // Load recent likers (3 per post) in bulk to avoid N+1
+        $postIds = $posts->pluck('id')->toArray();
+        $recentLikes = Like::where('likeable_type', Post::class)
+            ->whereIn('likeable_id', $postIds)
+            ->with('user')
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        $recentLikersByPost = [];
+        foreach ($recentLikes->groupBy('likeable_id') as $postId => $likes) {
+            $recentLikersByPost[$postId] = $likes->take(3)->pluck('user')->filter()->values();
+        }
+
+        $posts->getCollection()->each(function ($post) use ($recentLikersByPost) {
+            $post->recent_likers = $recentLikersByPost[$post->id] ?? collect();
+        });
 
         return response()->json([
             'posts' => PostResource::collection($posts->items()),
@@ -95,6 +113,8 @@ class PostController extends Controller
         if ($request->user()) {
             $post->is_liked = $post->likes()->where('user_id', $request->user()->id)->exists();
         }
+
+        $post->recent_likers = $post->likes()->with('user')->latest()->limit(3)->get()->pluck('user')->filter()->values();
 
         return response()->json([
             'post' => new PostResource($post),

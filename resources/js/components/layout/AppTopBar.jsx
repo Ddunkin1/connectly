@@ -20,7 +20,7 @@ const AppTopBar = () => {
     };
 
     return (
-        <header className="theme-bg-sidebar border-b border-[#2A2A2A] shrink-0 w-full">
+        <header className="sticky top-0 z-20 theme-bg-sidebar border-b border-[#2A2A2A] shrink-0 w-full">
             <div className="w-full px-4 lg:px-6 py-3 flex items-center">
                 <div className="flex-1 flex items-center min-w-0">
                     <Link to="/home" className="shrink-0">

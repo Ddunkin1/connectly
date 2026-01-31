@@ -7,6 +7,7 @@ use App\Http\Requests\User\UpdateProfileRequest;
 use App\Http\Requests\User\UploadProfilePictureRequest;
 use App\Http\Resources\PostResource;
 use App\Http\Resources\UserResource;
+use App\Models\Like;
 use App\Models\Post;
 use App\Models\User;
 use App\Services\MediaService;
@@ -67,6 +68,23 @@ class UserController extends Controller
                     return $post;
                 });
             }
+
+            // Load recent likers (3 per post) in bulk
+            $postIds = $posts->pluck('id')->toArray();
+            $recentLikes = Like::where('likeable_type', Post::class)
+                ->whereIn('likeable_id', $postIds)
+                ->with('user')
+                ->orderBy('created_at', 'desc')
+                ->get();
+
+            $recentLikersByPost = [];
+            foreach ($recentLikes->groupBy('likeable_id') as $pid => $likes) {
+                $recentLikersByPost[$pid] = $likes->take(3)->pluck('user')->filter()->values();
+            }
+
+            $posts->getCollection()->each(function ($post) use ($recentLikersByPost) {
+                $post->recent_likers = $recentLikersByPost[$post->id] ?? collect();
+            });
 
             return response()->json([
                 'posts' => PostResource::collection($posts->items()),

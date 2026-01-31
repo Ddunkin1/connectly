@@ -30,6 +30,7 @@ class PostResource extends JsonResource
             ),
             'hashtags' => HashtagResource::collection($this->whenLoaded('hashtags')),
             'shared_post' => new PostResource($this->whenLoaded('sharedPost')),
+            'recent_likers' => UserResource::collection($this->recent_likers ?? collect()),
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
         ];

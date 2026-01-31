@@ -39,7 +39,7 @@ const LeftSidebar = () => {
     };
 
     return (
-        <aside className="hidden lg:flex lg:flex-col w-[300px] theme-bg-sidebar shrink-0 overflow-y-auto sticky top-4 rounded-2xl shadow-lg mt-4 mb-4" style={{ boxShadow: '0 4px 24px rgba(0,0,0,0.4)' }}>
+        <aside className="hidden lg:flex lg:flex-col w-[340px] self-start max-h-[calc(100vh-56px)] theme-bg-sidebar shrink-0 overflow-y-auto rounded-2xl shadow-lg" style={{ boxShadow: '0 4px 24px rgba(0,0,0,0.4)' }}>
             {/* Profile card: 48px avatar, 20px padding, 12px radius, bg #1A1A1A */}
             {user && (
                 <Link
@@ -55,7 +55,7 @@ const LeftSidebar = () => {
             )}
 
             {/* Navigation: 16px vertical padding, 16px icon-text gap */}
-            <nav className="flex-1 px-3 py-2 space-y-0.5 min-h-0" aria-label="Main navigation">
+            <nav className="px-3 py-2 space-y-0.5" aria-label="Main navigation">
                 {navItems.map((item) => {
                     if (item.isTheme) {
                         return (
@@ -109,8 +109,8 @@ const LeftSidebar = () => {
                 })}
             </nav>
 
-            {/* Create Post button: 48px height, purple gradient, 12px radius */}
-            <div className="p-4">
+            {/* Create Post button: 48px height, purple gradient, 12px radius - close to Settings */}
+            <div className="px-4 pt-2 pb-4">
                 <button
                     type="button"
                     onClick={handleCreatePost}

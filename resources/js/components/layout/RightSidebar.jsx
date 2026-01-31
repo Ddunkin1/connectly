@@ -21,7 +21,7 @@ const RightSidebar = () => {
     const requestsCount = receivedRequests.length;
 
     return (
-        <aside className="hidden xl:flex xl:flex-col w-[380px] shrink-0 overflow-y-auto sticky top-4 rounded-2xl shadow-lg mt-4 mb-4" style={{ backgroundColor: '#161616', boxShadow: '0 4px 24px rgba(0,0,0,0.4)' }}>
+        <aside className="hidden xl:flex xl:flex-col w-[420px] self-start max-h-[calc(100vh-56px)] shrink-0 overflow-y-auto rounded-2xl shadow-lg" style={{ backgroundColor: '#161616', boxShadow: '0 4px 24px rgba(0,0,0,0.4)' }}>
             <div className="p-6 space-y-6">
                 {/* Messages header: 20px bold + compose icon */}
                 <div>

@@ -74,10 +74,12 @@ const PostCard = ({ post, onDeleted, onCommentClick }) => {
 
     return (
         <article className="theme-surface rounded-[16px] p-4 mb-4 last:mb-0 lift-on-hover" style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.2)' }}>
-            {/* Post Header - reference: name, location + timestamp */}
+            {/* Post Header - reference: name, location + timestamp, avatar with gradient ring */}
             <div className="flex items-start space-x-2 mb-2">
-                <Link to={`/profile/${post.user?.username}`}>
-                    <Avatar src={post.user?.profile_picture} alt={post.user?.name} size="sm" />
+                <Link to={`/profile/${post.user?.username}`} className="shrink-0 block p-[3px] rounded-full bg-gradient-to-r from-yellow-400 via-orange-400 to-green-400">
+                    <div className="rounded-full overflow-hidden w-8 h-8 bg-[#1A1A1A]">
+                        <Avatar src={post.user?.profile_picture} alt={post.user?.name} size="sm" className="w-8 h-8" />
+                    </div>
                 </Link>
                 <div className="flex-1 min-w-0">
                     <Link
@@ -229,13 +231,13 @@ const PostCard = ({ post, onDeleted, onCommentClick }) => {
                         <img
                             src={post.media_url}
                             alt="Post media"
-                            className="w-full h-auto max-h-96 object-cover"
+                            className="w-full h-auto object-contain max-h-[70vh]"
                         />
                     ) : (
                         <video
                             src={post.media_url}
                             controls
-                            className="w-full h-auto max-h-96"
+                            className="w-full h-auto max-h-[70vh] object-contain"
                         >
                             Your browser does not support the video tag.
                         </video>
@@ -249,58 +251,55 @@ const PostCard = ({ post, onDeleted, onCommentClick }) => {
                 </Link>
             )}
 
-            {/* Post Actions - reference: heart, comment, share, bookmark icons + Liked by line + View comments */}
+            {/* Post Actions - heart, comment, share left; bookmark right (outline icons, no counts) */}
             <div className="pt-3 mt-2 border-t border-gray-700/50 space-y-2">
-                <div className="flex items-center gap-6">
-                    <button
-                        type="button"
-                        onClick={handleLike}
-                        disabled={isLikePendingFor(post.id)}
-                        className={`flex items-center gap-2 w-14 flex-shrink-0 transition-colors cursor-pointer disabled:opacity-60 ${
-                            post.is_liked
-                                ? 'text-red-500 hover:text-red-600'
-                                : 'text-gray-400 hover:text-white'
-                        }`}
-                    >
-                        {post.is_liked ? (
-                            <UilHeartAlt size={22} className="flex-shrink-0" color="currentColor" />
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-6">
+                        <button
+                            type="button"
+                            onClick={handleLike}
+                            disabled={isLikePendingFor(post.id)}
+                            className={`flex items-center flex-shrink-0 transition-colors cursor-pointer disabled:opacity-60 ${
+                                post.is_liked
+                                    ? 'text-red-500 hover:text-red-600'
+                                    : 'text-gray-400 hover:text-white'
+                            }`}
+                        >
+                            {post.is_liked ? (
+                                <UilHeartAlt size={22} color="currentColor" />
+                            ) : (
+                                <UilHeart size={22} color="currentColor" />
+                            )}
+                        </button>
+
+                        {onCommentClick ? (
+                            <button
+                                type="button"
+                                onClick={onCommentClick}
+                                className="flex items-center flex-shrink-0 text-gray-400 hover:text-[var(--theme-accent)] transition-colors cursor-pointer"
+                            >
+                                <UilComment size={22} color="currentColor" />
+                            </button>
                         ) : (
-                            <UilHeart size={22} className="flex-shrink-0" color="currentColor" />
+                            <Link
+                                to={`/post/${post.id}`}
+                                className="flex items-center flex-shrink-0 text-gray-400 hover:text-[var(--theme-accent)] transition-colors cursor-pointer"
+                            >
+                                <UilComment size={22} color="currentColor" />
+                            </Link>
                         )}
-                        <span className="text-sm tabular-nums w-5 text-left">{post.likes_count ?? 0}</span>
-                    </button>
 
-                    {onCommentClick ? (
-                        <button
-                            type="button"
-                            onClick={onCommentClick}
-                            className="flex items-center gap-2 w-14 flex-shrink-0 text-gray-400 hover:text-[var(--theme-accent)] transition-colors cursor-pointer"
-                        >
-                            <UilComment size={22} className="flex-shrink-0" color="currentColor" />
-                            <span className="text-sm tabular-nums w-5 text-left">{post.comments_count ?? 0}</span>
-                        </button>
-                    ) : (
-                        <Link
-                            to={`/post/${post.id}`}
-                            className="flex items-center gap-2 w-14 flex-shrink-0 text-gray-400 hover:text-[var(--theme-accent)] transition-colors cursor-pointer"
-                        >
-                            <UilComment size={22} className="flex-shrink-0" color="currentColor" />
-                            <span className="text-sm tabular-nums w-5 text-left">{post.comments_count ?? 0}</span>
-                        </Link>
-                    )}
-
-                    <div className="relative w-14 flex-shrink-0">
-                        <button
-                            type="button"
-                            onClick={(e) => {
-                                e.preventDefault();
-                                setShareOpen((open) => !open);
-                            }}
-                            className="flex items-center gap-2 w-full text-gray-400 hover:text-[var(--theme-accent)] transition-colors cursor-pointer"
-                        >
-                            <UilShare size={22} className="flex-shrink-0" color="currentColor" />
-                            <span className="text-sm tabular-nums w-5 text-left">{post.shares_count ?? 0}</span>
-                        </button>
+                        <div className="relative flex-shrink-0">
+                            <button
+                                type="button"
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    setShareOpen((open) => !open);
+                                }}
+                                className="flex items-center text-gray-400 hover:text-[var(--theme-accent)] transition-colors cursor-pointer"
+                            >
+                                <UilShare size={22} color="currentColor" />
+                            </button>
                         {shareOpen && (
                             <>
                                 <div
@@ -323,7 +322,13 @@ const PostCard = ({ post, onDeleted, onCommentClick }) => {
                                 </div>
                             </>
                         )}
+                        </div>
                     </div>
+
+                    <button className="flex items-center flex-shrink-0 text-gray-400 hover:text-[var(--theme-accent)] transition-colors cursor-pointer">
+                        <UilBookmark size={22} color="currentColor" />
+                    </button>
+                </div>
 
                     {shareToTimelinePost && (
                         <ShareToTimelineModal
@@ -344,17 +349,43 @@ const PostCard = ({ post, onDeleted, onCommentClick }) => {
                             isSubmitting={createPostMutation.isPending}
                         />
                     )}
-
-                    <button className="flex items-center justify-start w-14 flex-shrink-0 text-gray-400 hover:text-[var(--theme-accent)] transition-colors cursor-pointer">
-                        <UilBookmark size={22} className="flex-shrink-0" color="currentColor" />
-                    </button>
-                </div>
                 {(post.likes_count > 0 || post.is_liked) && (
-                    <p className="text-sm text-white">
-                        {post.is_liked && user
-                            ? `Liked by you${(post.likes_count ?? 0) > 1 ? ` and ${(post.likes_count ?? 1) - 1} others` : ''}`
-                            : `${post.likes_count ?? 0} ${(post.likes_count ?? 0) === 1 ? 'like' : 'likes'}`}
-                    </p>
+                    <div className="flex items-center gap-2">
+                        {(() => {
+                            const likers = post.recent_likers ?? [];
+                            const total = post.likes_count ?? 0;
+                            const othersCount = Math.max(0, total - 1);
+                            const displayLikers = post.is_liked && user
+                                ? [user, ...likers.filter((l) => l?.id !== user?.id)].slice(0, 3)
+                                : likers.slice(0, 3);
+                            const firstLiker = displayLikers[0];
+
+                            return (
+                                <>
+                                    {displayLikers.length > 0 && (
+                                        <div className="flex -space-x-2">
+                                            {displayLikers.map((l) => (
+                                                <Link
+                                                    key={l?.id}
+                                                    to={`/profile/${l?.username}`}
+                                                    className="block rounded-full ring-2 ring-[#1A1A1A] w-5 h-5 overflow-hidden shrink-0"
+                                                >
+                                                    <Avatar src={l?.profile_picture} alt={l?.name} size="xs" className="w-5 h-5" />
+                                                </Link>
+                                            ))}
+                                        </div>
+                                    )}
+                                    <span className="text-sm text-[#9CA3AF]">
+                                        {post.is_liked && user
+                                            ? `Liked by you${othersCount > 0 ? ` and ${othersCount} others` : ''}`
+                                            : firstLiker
+                                                ? `Liked by ${firstLiker.name}${othersCount > 0 ? ` and ${othersCount} others` : ''}`
+                                                : `${total} ${total === 1 ? 'like' : 'likes'}`}
+                                    </span>
+                                </>
+                            );
+                        })()}
+                    </div>
                 )}
                 {/* Caption for media posts - author + content (reference format) */}
                 {!post.shared_post && post.content && post.media_url && (
