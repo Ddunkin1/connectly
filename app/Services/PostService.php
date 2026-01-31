@@ -28,11 +28,13 @@ class PostService
 
         return Post::with(['user', 'hashtags', 'likes', 'sharedPost.user'])
             ->whereIn('user_id', $followingIds)
-            ->where(function ($query) use ($user, $followingIds) {
+            ->where('is_archived', false)
+            ->where(function ($query) use ($user) {
                 $query->where('visibility', 'public')
-                    ->orWhere(function ($q) use ($user, $followingIds) {
-                        $q->where('visibility', 'followers')
-                            ->whereIn('user_id', $followingIds);
+                    ->orWhere('visibility', 'followers')
+                    ->orWhere(function ($q) use ($user) {
+                        $q->where('visibility', 'private')
+                            ->where('user_id', $user->id);
                     });
             })
             ->orderBy('created_at', 'desc')
@@ -45,7 +47,8 @@ class PostService
     public function getUserPosts(User $user, ?User $viewer = null, int $perPage = 15): LengthAwarePaginator
     {
         $query = Post::with(['user', 'hashtags', 'likes'])
-            ->where('user_id', $user->id);
+            ->where('user_id', $user->id)
+            ->where('is_archived', false);
 
         // If viewer is not the owner and profile is private, check if viewer follows
         if ($viewer && $viewer->id !== $user->id && $user->privacy_settings === 'private') {

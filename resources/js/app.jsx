@@ -141,13 +141,13 @@ function AppContent() {
 
     // Render protected pages - 3-column grid: [Sidebar 300px] | [Main flex-1] | [Messages 380px]
     return (
-        <div className="min-h-screen theme-bg-main flex flex-col" id="app-root">
+        <div className="h-screen overflow-hidden theme-bg-main flex flex-col" id="app-root">
             <EmailVerificationBanner />
             <AppTopBar />
             <div className="flex flex-1 min-h-0 w-full justify-center overflow-hidden">
                 <div className="flex w-full max-w-[1536px] min-h-0 px-3 pt-4 pb-4 gap-4 items-stretch">
                 <LeftSidebar />
-                <main className="flex-1 flex justify-center min-w-0 min-h-0 overflow-y-auto pt-4 pb-6 px-4">
+                <main className="flex-1 flex justify-center min-w-0 min-h-0 overflow-y-auto pt-4 pb-6 px-4 scrollbar-hide">
                     <div className="w-full max-w-[1200px] flex justify-center">
                         <Routes>
                         <Route

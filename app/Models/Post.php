@@ -19,6 +19,7 @@ class Post extends Model
         'media_url',
         'media_type',
         'visibility',
+        'is_archived',
         'shares_count',
         'shared_post_id',
     ];
@@ -28,6 +29,7 @@ class Post extends Model
         return [
             'created_at' => 'datetime',
             'updated_at' => 'datetime',
+            'is_archived' => 'boolean',
         ];
     }
 

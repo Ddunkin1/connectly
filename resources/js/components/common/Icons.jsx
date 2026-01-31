@@ -29,4 +29,7 @@ export {
     UilGlobe,
     UilUsersAlt,
     UilTimes,
+    UilArchive,
+    UilLock,
+    UilEye,
 } from '@iconscout/react-unicons';

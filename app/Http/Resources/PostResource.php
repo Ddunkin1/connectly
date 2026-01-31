@@ -20,6 +20,7 @@ class PostResource extends JsonResource
             'media_url' => $this->media_url, // Supabase URLs are already full URLs
             'media_type' => $this->media_type,
             'visibility' => $this->visibility,
+            'is_archived' => (bool) ($this->is_archived ?? false),
             'user' => new UserResource($this->whenLoaded('user')),
             'likes_count' => $this->when(isset($this->likes_count), (int) $this->likes_count, fn () => $this->likes()->count()),
             'comments_count' => $this->when(isset($this->all_comments_count), (int) $this->all_comments_count, fn () => $this->allComments()->count()),

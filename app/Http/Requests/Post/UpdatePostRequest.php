@@ -25,7 +25,8 @@ class UpdatePostRequest extends FormRequest
             'content' => ['sometimes', 'required', 'string', 'max:5000'],
             'media_url' => ['nullable', 'url', 'max:500'],
             'media_type' => ['nullable', 'in:image,video'],
-            'visibility' => ['sometimes', 'in:public,followers'],
+            'visibility' => ['sometimes', 'in:public,followers,private'],
+            'is_archived' => ['sometimes', 'boolean'],
         ];
     }
 }

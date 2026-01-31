@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import Avatar from '../common/Avatar';
-import { UilHeart, UilHeartAlt, UilComment, UilShare, UilBookmark, UilEllipsisH, UilTrash, UilMegaphone } from '../common/Icons';
+import { UilHeart, UilHeartAlt, UilComment, UilShare, UilBookmark, UilEllipsisH, UilTrash, UilMegaphone, UilArchive, UilGlobe, UilUsersAlt, UilLock } from '../common/Icons';
 import { formatDateUppercase } from '../../utils/formatDate';
-import { useLikePost, useUnlikePost, useSharePost, useCreatePost, useDeletePost } from '../../hooks/usePosts';
+import { useLikePost, useUnlikePost, useSharePost, useCreatePost, useDeletePost, useUpdatePost } from '../../hooks/usePosts';
 import useAuthStore from '../../store/authStore';
 import toast from 'react-hot-toast';
 import ShareToTimelineModal from './ShareToTimelineModal';
@@ -15,6 +15,7 @@ const PostCard = ({ post, onDeleted, onCommentClick }) => {
     const shareMutation = useSharePost();
     const createPostMutation = useCreatePost();
     const deleteMutation = useDeletePost();
+    const updateMutation = useUpdatePost();
     const [shareOpen, setShareOpen] = useState(false);
     const [shareOpenInner, setShareOpenInner] = useState(false);
     const [shareToTimelinePost, setShareToTimelinePost] = useState(null);
@@ -30,6 +31,23 @@ const PostCard = ({ post, onDeleted, onCommentClick }) => {
                 onDeleted?.();
             },
         });
+    };
+
+    const handleArchiveClick = () => {
+        setMoreOpen(false);
+        updateMutation.mutate(
+            { postId: post.id, data: { is_archived: true } },
+            {
+                onSuccess: () => {
+                    onDeleted?.();
+                },
+            }
+        );
+    };
+
+    const handleVisibilityChange = (visibility) => {
+        setMoreOpen(false);
+        updateMutation.mutate({ postId: post.id, data: { visibility } });
     };
 
     const handleLike = () => {
@@ -88,8 +106,21 @@ const PostCard = ({ post, onDeleted, onCommentClick }) => {
                     >
                         {post.user?.name}
                     </Link>
-                    <p className="text-sm text-[#9CA3AF]">
+                    <p className="text-sm text-[#9CA3AF] flex items-center gap-1.5">
                         {[post.user?.location, formatDateUppercase(post.created_at)].filter(Boolean).join(', ')}
+                        <span
+                            className="inline-flex shrink-0 text-[#9CA3AF]/70"
+                            title={post.visibility === 'followers' ? 'Friends only' : post.visibility === 'private' ? 'Private' : 'Public'}
+                            aria-label={post.visibility === 'followers' ? 'Friends only' : post.visibility === 'private' ? 'Private' : 'Public'}
+                        >
+                            {post.visibility === 'followers' ? (
+                                <UilUsersAlt size={12} color="currentColor" />
+                            ) : post.visibility === 'private' ? (
+                                <UilLock size={12} color="currentColor" />
+                            ) : (
+                                <UilGlobe size={12} color="currentColor" />
+                            )}
+                        </span>
                     </p>
                 </div>
                 {isAuthor && (
@@ -112,7 +143,49 @@ const PostCard = ({ post, onDeleted, onCommentClick }) => {
                                     aria-hidden="true"
                                     onClick={() => setMoreOpen(false)}
                                 />
-                                <div className="absolute right-0 top-full mt-1 z-20 py-1 w-44 theme-surface rounded-lg border border-[#2A2A2A] shadow-xl">
+                                <div className="absolute right-0 top-full mt-1 z-20 py-1 w-52 theme-surface rounded-lg border border-[#2A2A2A] shadow-xl">
+                                    <button
+                                        type="button"
+                                        onClick={handleArchiveClick}
+                                        disabled={updateMutation.isPending}
+                                        className="w-full px-4 py-2 text-left text-sm text-gray-300 hover:bg-white/10 flex items-center gap-2 cursor-pointer"
+                                    >
+                                        <UilArchive size={18} color="currentColor" />
+                                        Archive post
+                                    </button>
+                                    <div className="border-t border-[#2A2A2A] my-1" />
+                                    <p className="px-4 py-1.5 text-xs text-[#9CA3AF] font-medium">Change visibility</p>
+                                    <button
+                                        type="button"
+                                        onClick={() => handleVisibilityChange('public')}
+                                        disabled={updateMutation.isPending}
+                                        className={`w-full px-4 py-2 text-left text-sm flex items-center gap-2 cursor-pointer ${(post.visibility || 'public') === 'public' ? 'text-[var(--theme-accent)]' : 'text-gray-300 hover:bg-white/10'}`}
+                                    >
+                                        <UilGlobe size={18} color="currentColor" />
+                                        Public
+                                        {(post.visibility || 'public') === 'public' && ' ✓'}
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => handleVisibilityChange('followers')}
+                                        disabled={updateMutation.isPending}
+                                        className={`w-full px-4 py-2 text-left text-sm flex items-center gap-2 cursor-pointer ${post.visibility === 'followers' ? 'text-[var(--theme-accent)]' : 'text-gray-300 hover:bg-white/10'}`}
+                                    >
+                                        <UilUsersAlt size={18} color="currentColor" />
+                                        Friends only
+                                        {post.visibility === 'followers' && ' ✓'}
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => handleVisibilityChange('private')}
+                                        disabled={updateMutation.isPending}
+                                        className={`w-full px-4 py-2 text-left text-sm flex items-center gap-2 cursor-pointer ${post.visibility === 'private' ? 'text-[var(--theme-accent)]' : 'text-gray-300 hover:bg-white/10'}`}
+                                    >
+                                        <UilLock size={18} color="currentColor" />
+                                        Private
+                                        {post.visibility === 'private' && ' ✓'}
+                                    </button>
+                                    <div className="border-t border-[#2A2A2A] my-1" />
                                     <button
                                         type="button"
                                         onClick={handleDeleteClick}
