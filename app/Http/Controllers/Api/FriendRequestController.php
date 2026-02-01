@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\FriendRequestResource;
 use App\Models\FriendRequest;
 use App\Models\User;
+use App\Notifications\FriendRequestAcceptedNotification;
 use App\Notifications\FriendRequestNotification;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
@@ -165,6 +166,10 @@ class FriendRequestController extends Controller
 
         // Accept the request
         $friendRequest->accept();
+
+        // Notify the sender that their request was accepted
+        $sender = $friendRequest->sender;
+        $sender->notify(new FriendRequestAcceptedNotification($user));
 
         // Create mutual follow relationship
         $sender = $friendRequest->sender;

@@ -38,6 +38,9 @@ class CommentNotification extends Notification
     public function toArray(object $notifiable): array
     {
         $contentPreview = \Str::limit(strip_tags($this->comment->content), 80);
+        $postPreview = $this->post->content
+            ? \Str::limit(strip_tags($this->post->content), 80)
+            : null;
 
         return [
             'type' => 'comment',
@@ -49,6 +52,11 @@ class CommentNotification extends Notification
             'actor_profile_picture' => $this->commenter->profile_picture,
             'message' => $this->commenter->name . ' commented on your post',
             'comment_preview' => $contentPreview,
+            'post_preview' => $postPreview,
+            'media_url' => $this->post->media_url,
+            'media_type' => $this->post->media_type,
+            'likes_count' => $this->post->likes()->count(),
+            'comments_count' => $this->post->allComments()->count(),
         ];
     }
 }

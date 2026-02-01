@@ -39,6 +39,21 @@ class LikeNotification extends Notification
             ? \Str::limit(strip_tags($this->post->content), 80)
             : 'your post';
 
+        $likesCount = $this->post->likes()->count();
+        $recentLikers = $this->post->likes()
+            ->with('user:id,name,username,profile_picture')
+            ->latest()
+            ->limit(3)
+            ->get()
+            ->map(fn ($like) => [
+                'id' => $like->user->id,
+                'name' => $like->user->name,
+                'username' => $like->user->username,
+                'profile_picture' => $like->user->profile_picture,
+            ])
+            ->values()
+            ->toArray();
+
         return [
             'type' => 'like',
             'post_id' => $this->post->id,
@@ -48,6 +63,11 @@ class LikeNotification extends Notification
             'actor_profile_picture' => $this->liker->profile_picture,
             'message' => $this->liker->name . ' liked your post',
             'post_preview' => $preview,
+            'likes_count' => $likesCount,
+            'recent_likers' => $recentLikers,
+            'media_url' => $this->post->media_url,
+            'media_type' => $this->post->media_type,
+            'comments_count' => $this->post->allComments()->count(),
         ];
     }
 }

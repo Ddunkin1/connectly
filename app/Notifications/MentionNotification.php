@@ -55,6 +55,10 @@ class MentionNotification extends Notification
             'message' => $message,
             'post_preview' => $preview,
             'context' => $this->context,
+            'media_url' => $this->post->media_url,
+            'media_type' => $this->post->media_type,
+            'likes_count' => $this->post->likes()->count(),
+            'comments_count' => $this->post->allComments()->count(),
         ];
     }
 }

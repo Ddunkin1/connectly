@@ -1,7 +1,7 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
 import { useNotifications, useMarkNotificationAsRead, useMarkAllNotificationsAsRead } from '../hooks/useNotifications';
 import NotificationItem from '../components/notifications/NotificationItem';
+import StoriesRow from '../components/feed/StoriesRow';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import Button from '../components/common/Button';
 
@@ -18,16 +18,19 @@ const Notifications = () => {
     };
 
     return (
-        <div className="max-w-2xl mx-auto">
-            <div className="bg-[#252538] rounded-xl border border-gray-700/50 shadow-sm">
-                <div className="p-4 border-b border-gray-700 flex items-center justify-between">
-                    <h1 className="text-xl font-bold text-white">Notifications</h1>
+        <div className="w-full max-w-[720px]">
+            <StoriesRow />
+
+            <div className="theme-surface rounded-[16px] border border-[#2A2A2A] overflow-hidden card-shadow">
+                <div className="px-4 py-3 border-b border-[#2A2A2A] flex items-center justify-between">
+                    <h1 className="text-lg font-semibold text-white">Notifications</h1>
                     {unreadCount > 0 && (
                         <Button
                             variant="ghost"
                             size="sm"
                             onClick={() => markAllAsReadMutation.mutate()}
                             disabled={markAllAsReadMutation.isPending}
+                            className="text-[var(--theme-accent)] hover:bg-[var(--theme-accent)]/10"
                         >
                             Mark all as read
                         </Button>
@@ -39,17 +42,14 @@ const Notifications = () => {
                         <LoadingSpinner />
                     </div>
                 ) : notifications.length === 0 ? (
-                    <div className="p-12 text-center text-gray-400">
-                        <span className="material-symbols-outlined text-5xl text-gray-500 mb-4 block">
-                            notifications
-                        </span>
-                        <p className="text-lg">No notifications yet</p>
+                    <div className="p-12 text-center text-[#9CA3AF]">
+                        <p className="text-base font-medium text-white/80">No notifications yet</p>
                         <p className="text-sm mt-1">
-                            When someone likes your post, comments, mentions you, or sends a friend request, you'll see it here.
+                            When someone likes your post, comments, mentions you, or accepts your friend request, you'll see it here.
                         </p>
                     </div>
                 ) : (
-                    <div className="divide-y divide-gray-700">
+                    <div className="divide-y divide-[#2A2A2A]">
                         {notifications.map((notification) => (
                             <NotificationItem
                                 key={notification.id}
