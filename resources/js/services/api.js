@@ -1,6 +1,19 @@
 import axios from 'axios';
+import useAuthStore from '../store/authStore';
 
 const API_URL = import.meta.env.VITE_API_URL || '/api';
+
+// Read token from auth-storage (Zustand persist) - single source of truth
+function getAuthToken() {
+    try {
+        const raw = localStorage.getItem('auth-storage');
+        if (!raw) return null;
+        const parsed = JSON.parse(raw);
+        return parsed?.state?.token ?? null;
+    } catch {
+        return null;
+    }
+}
 
 // Create axios instance
 const api = axios.create({
@@ -14,7 +27,7 @@ const api = axios.create({
 // Request interceptor - Add auth token to requests and handle FormData
 api.interceptors.request.use(
     (config) => {
-        const token = localStorage.getItem('auth_token');
+        const token = getAuthToken();
         if (token) {
             config.headers.Authorization = `Bearer ${token}`;
         }
@@ -36,9 +49,7 @@ api.interceptors.response.use(
     (response) => response,
     (error) => {
         if (error.response?.status === 401) {
-            // Unauthorized - clear token and redirect to login
-            localStorage.removeItem('auth_token');
-            localStorage.removeItem('user');
+            useAuthStore.getState().logout();
             window.location.href = '/login';
         }
         return Promise.reject(error);

@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Post;
 use App\Models\User;
+use App\Notifications\ShareNotification;
 use App\Services\SupabaseService;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
@@ -152,9 +153,15 @@ class PostService
             'shared_post_id' => $data['shared_post_id'] ?? null,
         ]);
 
-        // When sharing a post, increment the original post's shares_count
+        // When sharing a post, increment the original post's shares_count and notify owner
         if (!empty($post->shared_post_id)) {
-            Post::where('id', $post->shared_post_id)->increment('shares_count');
+            $originalPost = Post::with('user')->find($post->shared_post_id);
+            if ($originalPost) {
+                $originalPost->increment('shares_count');
+                if ($originalPost->user_id !== $user->id) {
+                    $originalPost->user->notify(new ShareNotification($originalPost->fresh(), $user));
+                }
+            }
         }
 
         // Sync hashtags (only if content exists)

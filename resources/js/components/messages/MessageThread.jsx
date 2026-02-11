@@ -1,5 +1,7 @@
 import React, { useEffect, useRef } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { useMessages } from '../../hooks/useMessages';
+import { getEcho } from '../../echo';
 import Avatar from '../common/Avatar';
 import LoadingSpinner from '../common/LoadingSpinner';
 import { formatDate } from '../../utils/formatDate';
@@ -7,6 +9,7 @@ import useAuthStore from '../../store/authStore';
 
 const MessageThread = ({ conversationId }) => {
     const user = useAuthStore((state) => state.user);
+    const queryClient = useQueryClient();
     const {
         data,
         fetchNextPage,
@@ -20,6 +23,52 @@ const MessageThread = ({ conversationId }) => {
     const messagesContainerRef = useRef(null);
 
     const messages = data?.pages.flatMap((page) => page.data.messages).reverse() || [];
+
+    // Subscribe to real-time messages via Reverb
+    useEffect(() => {
+        if (!conversationId) return;
+        const echo = getEcho();
+        if (!echo) return;
+
+        const channel = echo.private(`conversation.${conversationId}`);
+        channel.listen('.MessageSent', (payload) => {
+            const newMessage = payload?.message;
+            if (!newMessage) return;
+            // Skip if from current user (added optimistically from send response)
+            const currentUser = useAuthStore.getState().user;
+            if (newMessage.sender?.id === currentUser?.id) return;
+
+            queryClient.setQueryData(['messages', conversationId], (old) => {
+                if (!old?.pages?.length) {
+                    queryClient.invalidateQueries({ queryKey: ['messages', conversationId] });
+                    return old;
+                }
+                const pages = [...old.pages];
+                const firstPage = pages[0];
+                if (firstPage?.data?.messages) {
+                    const exists = firstPage.data.messages.some((m) => m.id === newMessage.id);
+                    if (!exists) {
+                        pages[0] = {
+                            ...firstPage,
+                            data: {
+                                ...firstPage.data,
+                                messages: [newMessage, ...firstPage.data.messages],
+                            },
+                        };
+                    }
+                }
+                return { ...old, pages };
+            });
+
+            // Refresh conversation list so unread badge and order update
+            queryClient.invalidateQueries({ queryKey: ['conversations'] });
+        });
+
+        return () => {
+            channel.stopListening('.MessageSent');
+            echo.leave(`conversation.${conversationId}`);
+        };
+    }, [conversationId, queryClient]);
 
     // Scroll to bottom on new messages
     useEffect(() => {
@@ -101,11 +150,18 @@ const MessageThread = ({ conversationId }) => {
                                 >
                                     <p className="text-sm whitespace-pre-wrap">{message.message}</p>
                                 </div>
-                                <p className="text-xs text-gray-500 mt-1">
+                                <p className="text-xs text-gray-500 mt-1 flex items-center gap-1">
                                     {formatDate(message.created_at)}
-                                    {message.is_read && isOwnMessage && (
-                                        <span className="ml-1">✓✓</span>
+                                    {isOwnMessage && (
+                                        <span className="text-[var(--theme-accent)]" title={message.is_read ? 'Read' : 'Delivered'}>
+                                            {message.is_read ? '✓✓' : '✓'}
+                                        </span>
                                     )}
+                                    {!isOwnMessage && (() => {
+                                        const created = message.created_at ? new Date(message.created_at).getTime() : 0;
+                                        const isJustNow = Date.now() - created < 15000;
+                                        return isJustNow && <span className="text-[var(--theme-accent)] text-[10px] font-medium">· Just now</span>;
+                                    })()}
                                 </p>
                             </div>
                         </div>

@@ -16,6 +16,7 @@ const NotificationItem = ({ notification, onMarkAsRead }) => {
             case 'like':
             case 'comment':
             case 'mention':
+            case 'share':
                 return `/post/${data.post_id}`;
             default:
                 return '#';
@@ -24,14 +25,14 @@ const NotificationItem = ({ notification, onMarkAsRead }) => {
 
     const showPostButton = () => {
         if (['friend_request_accepted'].includes(type)) return true;
-        return ['like', 'comment', 'mention'].includes(type) && data.post_id;
+        return ['like', 'comment', 'mention', 'share'].includes(type) && data.post_id;
     };
 
     const actorName = data.actor_name || data.sender_name;
 
     const likesCount = data.likes_count ?? 0;
     const commentsCount = data.comments_count ?? 0;
-    const hasPostPreview = data.media_url || (likesCount > 0 && type === 'like') || (type === 'like' && data.post_preview);
+    const hasPostPreview = data.media_url || (likesCount > 0 && (type === 'like' || type === 'share')) || ((type === 'like' || type === 'share') && data.post_preview);
 
     const handleClick = () => {
         if (isUnread && onMarkAsRead) {
@@ -63,6 +64,7 @@ const NotificationItem = ({ notification, onMarkAsRead }) => {
                                     {type === 'friend_request_accepted' && 'accepted your friend request'}
                                     {type === 'like' && likesCount <= 1 && 'liked your post'}
                                     {type === 'comment' && 'commented on your post'}
+                                    {type === 'share' && 'shared your post'}
                                     {type === 'mention' && (data.context === 'comment' ? 'mentioned you in a comment' : 'mentioned you in a post')}
                                 </span>
                             </>

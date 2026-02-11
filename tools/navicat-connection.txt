@@ -1,0 +1,15 @@
+Connectly (Laravel Sail) - MySQL Connection for Navicat
+========================================================
+
+Copy these values when creating a new MySQL connection in Navicat:
+
+  Connection Name:  Connectly (Sail)
+  Host:            127.0.0.1
+  Port:            3306
+  User Name:       sail
+  Password:        password
+  Database:        connectly_app
+
+Important: Use 127.0.0.1 (or localhost), NOT "mysql" - "mysql" only works inside Docker.
+
+Make sure Sail is running: ./vendor/bin/sail up -d

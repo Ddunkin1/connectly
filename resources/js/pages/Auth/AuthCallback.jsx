@@ -9,6 +9,7 @@ const AuthCallback = () => {
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const setAuth = useAuthStore((state) => state.setAuth);
+    const logout = useAuthStore((state) => state.logout);
 
     useEffect(() => {
         const token = searchParams.get('token');
@@ -26,8 +27,8 @@ const AuthCallback = () => {
             return;
         }
 
-        localStorage.setItem('auth_token', token);
-
+        // Persist token so api interceptor can use it, then fetch full user
+        setAuth({}, token);
         authAPI.getUser()
             .then((res) => {
                 setAuth(res.data.user, token);
@@ -35,11 +36,11 @@ const AuthCallback = () => {
                 navigate('/home', { replace: true });
             })
             .catch(() => {
-                localStorage.removeItem('auth_token');
+                logout();
                 toast.error('Authentication failed.');
                 navigate('/login', { replace: true });
             });
-    }, [searchParams, setAuth, navigate]);
+    }, [searchParams, setAuth, logout, navigate]);
 
     return (
         <div className="min-h-screen flex items-center justify-center theme-bg-main">

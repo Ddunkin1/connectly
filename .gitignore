@@ -22,3 +22,10 @@
 Homestead.json
 Homestead.yaml
 Thumbs.db
+
+# Navicat AppImage (large binary, use install script)
+/tools/navicat/*.AppImage
+
+# Misc / legacy
+/connectly_app
+/dist

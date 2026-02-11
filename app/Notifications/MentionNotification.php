@@ -22,7 +22,7 @@ class MentionNotification extends Notification
 
     public function via(object $notifiable): array
     {
-        return ['database'];
+        return ['database', 'broadcast'];
     }
 
     public function toMail(object $notifiable): MailMessage

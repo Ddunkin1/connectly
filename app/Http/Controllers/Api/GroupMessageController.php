@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Events\GroupMessageSent;
 use App\Http\Controllers\Controller;
 use App\Models\GroupConversation;
 use App\Models\GroupMessage;
@@ -33,6 +34,7 @@ class GroupMessageController extends Controller
         ]);
 
         $message->load('sender');
+        broadcast(new GroupMessageSent($message))->toOthers();
 
         return response()->json([
             'message' => $message,

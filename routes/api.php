@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\AnalyticsController;
+use Illuminate\Broadcasting\BroadcastController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\BlockController;
 use App\Http\Controllers\Api\BookmarkController;
@@ -19,7 +20,6 @@ use App\Http\Controllers\Api\PushSubscriptionController;
 use App\Http\Controllers\Api\ReportController;
 use App\Http\Controllers\Api\SearchController;
 use App\Http\Controllers\Api\SocialAuthController;
-use App\Http\Controllers\Api\TestSupabaseController;
 use App\Http\Controllers\Api\TrendingController;
 use App\Http\Controllers\Api\TwoFactorController;
 use App\Http\Controllers\Api\UserController;
@@ -51,11 +51,11 @@ Route::middleware('throttle:60,1')->group(function () {
     Route::get('/email/verify/{id}/{hash}', [AuthController::class, 'verifyEmail'])
         ->middleware('signed')
         ->name('api.verification.verify');
-
-    // Test Supabase connection (development only - remove in production)
-    Route::get('/test/supabase', [TestSupabaseController::class, 'testConnection']);
-    Route::get('/test/supabase/upload', [TestSupabaseController::class, 'testUpload']);
 });
+
+// Broadcast auth (Bearer token, no CSRF) - must be in API for SPA
+Route::post('/broadcasting/auth', [BroadcastController::class, 'authenticate'])
+    ->middleware(['auth:sanctum']);
 
 // Protected routes (with rate limiting)
 Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function () {

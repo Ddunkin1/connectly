@@ -22,7 +22,6 @@ import EditProfile from './pages/EditProfile';
 import Search from './pages/Search';
 import Messages from './pages/Messages';
 import Notifications from './pages/Notifications';
-import TestUpload from './pages/TestUpload';
 import Bookmarks from './pages/Bookmarks';
 import Analytics from './pages/Analytics';
 import Settings from './pages/Settings';
@@ -32,6 +31,7 @@ import useAuthStore from './store/authStore';
 import useThemeStore from './store/themeStore';
 import EmailVerificationBanner from './components/auth/EmailVerificationBanner';
 import ThemeCustomizer from './components/layout/ThemeCustomizer';
+import RealtimeMessagesProvider from './components/realtime/RealtimeMessagesProvider';
 
 const queryClient = new QueryClient({
     defaultOptions: {
@@ -145,6 +145,7 @@ function AppContent() {
 
     // Render protected pages - 3-column grid: [Sidebar 300px] | [Main flex-1] | [Messages 380px]
     return (
+        <RealtimeMessagesProvider>
         <div className="h-screen overflow-hidden theme-bg-main flex flex-col" id="app-root">
             <EmailVerificationBanner />
             <AppTopBar />
@@ -227,14 +228,6 @@ function AppContent() {
                             }
                         />
                         <Route
-                            path="/test-upload"
-                            element={
-                                <ProtectedRoute>
-                                    <TestUpload />
-                                </ProtectedRoute>
-                            }
-                        />
-                        <Route
                             path="/bookmarks"
                             element={
                                 <ProtectedRoute>
@@ -308,6 +301,7 @@ function AppContent() {
                 }}
             />
         </div>
+        </RealtimeMessagesProvider>
     );
 }
 

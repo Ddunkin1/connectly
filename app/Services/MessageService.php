@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use App\Events\MessageReceived;
+use App\Events\MessageSent;
 use App\Models\Conversation;
 use App\Models\Message;
 use App\Models\User;
@@ -30,7 +32,12 @@ class MessageService
             'last_message_at' => now(),
         ]);
 
-        return $messageModel->load(['sender', 'receiver']);
+        $messageModel->load(['sender', 'receiver']);
+        broadcast(new MessageSent($messageModel))->toOthers();
+        // Notify receiver on their user channel so they get it anywhere in the app
+        broadcast(new MessageReceived($messageModel));
+
+        return $messageModel;
     }
 
     /**

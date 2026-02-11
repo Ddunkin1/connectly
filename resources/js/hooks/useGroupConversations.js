@@ -53,7 +53,24 @@ export const useSendGroupMessage = () => {
         mutationFn: (data) => groupMessagesAPI.send(data),
         onSuccess: (response, variables) => {
             const groupId = variables.group_conversation_id;
-            queryClient.invalidateQueries({ queryKey: ['group-conversation', groupId] });
+            const messageData = response?.data?.message;
+
+            if (groupId && messageData) {
+                queryClient.setQueryData(['group-conversation', groupId], (old) => {
+                    if (!old?.data) return old;
+                    const existing = old.data.messages || [];
+                    const exists = existing.some((m) => m.id === messageData.id);
+                    if (exists) return old;
+                    return {
+                        ...old,
+                        data: {
+                            ...old.data,
+                            messages: [...existing, messageData],
+                        },
+                    };
+                });
+            }
+
             queryClient.invalidateQueries({ queryKey: ['group-conversations'] });
             toast.success('Message sent');
         },

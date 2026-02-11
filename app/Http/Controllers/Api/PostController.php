@@ -8,6 +8,7 @@ use App\Http\Requests\Post\UpdatePostRequest;
 use App\Http\Resources\PostResource;
 use App\Models\Like;
 use App\Models\Post;
+use App\Notifications\ShareNotification;
 use App\Services\PostService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -187,6 +188,11 @@ class PostController extends Controller
     public function share(Request $request, Post $post): JsonResponse
     {
         $post->increment('shares_count');
+
+        if ($post->user_id !== $request->user()->id) {
+            $post->load('user');
+            $post->user->notify(new ShareNotification($post->fresh(), $request->user()));
+        }
 
         return response()->json([
             'message' => 'Share recorded',
