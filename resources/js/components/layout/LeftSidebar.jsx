@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import useAuthStore from '../../store/authStore';
 import useThemeStore from '../../store/themeStore';
 import Avatar from '../common/Avatar';
-import { UilHome, UilCompass, UilBell, UilEnvelope, UilBookmark, UilAnalytics, UilPalette, UilSetting, UilPlus } from '../common/Icons';
+import { UilHome, UilCompass, UilBell, UilEnvelope, UilBookmark, UilAnalytics, UilPalette, UilSetting, UilPlus, UilShieldCheck } from '../common/Icons';
 import { useUnreadNotificationsCount } from '../../hooks/useNotifications';
 import { useConversations } from '../../hooks/useConversations';
 
@@ -28,6 +28,7 @@ const LeftSidebar = () => {
         { Icon: UilAnalytics, label: 'Analytics', path: '/analytics' },
         { Icon: UilPalette, label: 'Theme', path: null, isTheme: true },
         { Icon: UilSetting, label: 'Settings', path: '/settings' },
+        ...(user?.role === 'admin' ? [{ Icon: UilShieldCheck, label: 'Admin', path: '/admin/reports' }] : []),
     ];
 
     const openThemeCustomizer = useThemeStore((s) => s.openCustomizer);

@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { authAPI } from '../services/api';
+import { authAPI, twoFactorAPI } from '../services/api';
 import useAuthStore from '../store/authStore';
 import toast from 'react-hot-toast';
 
@@ -10,13 +10,33 @@ export const useLogin = () => {
     return useMutation({
         mutationFn: (credentials) => authAPI.login(credentials),
         onSuccess: (response) => {
+            const { user, token, requires_two_factor } = response.data;
+            setAuth(user, token);
+            queryClient.setQueryData(['user'], user);
+            if (!requires_two_factor) {
+                toast.success('Login successful!');
+            }
+        },
+        onError: (error) => {
+            toast.error(error.response?.data?.message || 'Login failed');
+        },
+    });
+};
+
+export const useTwoFactorChallenge = () => {
+    const queryClient = useQueryClient();
+    const setAuth = useAuthStore((state) => state.setAuth);
+
+    return useMutation({
+        mutationFn: (code) => twoFactorAPI.challenge(code),
+        onSuccess: (response) => {
             const { user, token } = response.data;
             setAuth(user, token);
             queryClient.setQueryData(['user'], user);
             toast.success('Login successful!');
         },
         onError: (error) => {
-            toast.error(error.response?.data?.message || 'Login failed');
+            toast.error(error.response?.data?.message || 'Invalid verification code');
         },
     });
 };

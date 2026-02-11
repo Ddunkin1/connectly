@@ -8,12 +8,19 @@ use App\Http\Requests\Community\UpdateCommunityRequest;
 use App\Http\Resources\CommunityResource;
 use App\Http\Resources\PostResource;
 use App\Models\Community;
+use App\Models\CommunityPost;
 use App\Models\Post;
+use App\Services\PostService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class CommunityController extends Controller
 {
+    public function __construct(
+        private PostService $postService
+    ) {
+    }
+
     /**
      * List all communities with pagination.
      *
@@ -88,6 +95,7 @@ class CommunityController extends Controller
             'name' => $request->name,
             'description' => $request->description,
             'privacy' => $request->privacy,
+            'requires_approval' => $request->boolean('requires_approval'),
             'creator_id' => $user->id,
         ]);
 
@@ -230,17 +238,27 @@ class CommunityController extends Controller
             }
         }
 
-        // Get member IDs
         $memberIds = $community->members()->pluck('user_id')->toArray();
-        $memberIds[] = $community->creator_id; // Include creator
+        $memberIds[] = $community->creator_id;
 
-        // Get posts from members
-        $posts = \App\Models\Post::with(['user', 'hashtags', 'likes'])
-            ->whereIn('user_id', $memberIds)
-            ->where('visibility', 'public') // Only public posts in communities
-            ->withCount(['likes', 'allComments as comments_count'])
-            ->latest()
-            ->paginate(15);
+        // When requires_approval: show only approved community posts
+        if ($community->requires_approval ?? false) {
+            $postIds = $community->communityPosts()
+                ->where('status', CommunityPost::STATUS_APPROVED)
+                ->pluck('post_id');
+            $posts = Post::with(['user', 'hashtags', 'likes'])
+                ->whereIn('id', $postIds)
+                ->withCount(['likes', 'allComments as comments_count'])
+                ->latest()
+                ->paginate(15);
+        } else {
+            $posts = Post::with(['user', 'hashtags', 'likes'])
+                ->whereIn('user_id', $memberIds)
+                ->where('visibility', 'public')
+                ->withCount(['likes', 'allComments as comments_count'])
+                ->latest()
+                ->paginate(15);
+        }
 
         // Check if current user liked each post (likes table is polymorphic: likeable_id, likeable_type)
         if ($user) {
@@ -263,6 +281,117 @@ class CommunityController extends Controller
                 'last_page' => $posts->lastPage(),
                 'per_page' => $posts->perPage(),
                 'total' => $posts->total(),
+            ],
+        ]);
+    }
+
+    /**
+     * Submit a post to a community.
+     */
+    public function submitPost(Request $request, Community $community): JsonResponse
+    {
+        $user = $request->user();
+
+        $isMember = $community->members()->where('user_id', $user->id)->exists()
+            || $community->creator_id === $user->id;
+        if (!$isMember) {
+            return response()->json(['message' => 'You must be a member to post'], 403);
+        }
+
+        $request->validate([
+            'content' => 'nullable|string|max:5000',
+            'media' => 'nullable|file|max:51200',
+        ]);
+        if (empty(trim($request->input('content', ''))) && !$request->hasFile('media')) {
+            return response()->json(['message' => 'Content or media is required'], 422);
+        }
+
+        $post = $this->postService->createPost($user, array_merge($request->all(), ['visibility' => 'public']));
+
+        $status = $community->requires_approval ? CommunityPost::STATUS_PENDING : CommunityPost::STATUS_APPROVED;
+        CommunityPost::create([
+            'community_id' => $community->id,
+            'post_id' => $post->id,
+            'user_id' => $user->id,
+            'status' => $status,
+        ]);
+
+        return response()->json([
+            'message' => $status === CommunityPost::STATUS_PENDING
+                ? 'Post submitted and is pending approval'
+                : 'Post added to community',
+            'post' => new PostResource($post->load(['user', 'hashtags'])),
+        ], 201);
+    }
+
+    /**
+     * Approve a pending community post (moderators only).
+     */
+    public function approvePost(Request $request, Community $community, Post $post): JsonResponse
+    {
+        if (!$community->isModerator($request->user())) {
+            return response()->json(['message' => 'Forbidden'], 403);
+        }
+
+        $cp = CommunityPost::where('community_id', $community->id)->where('post_id', $post->id)->first();
+        if (!$cp || $cp->status !== CommunityPost::STATUS_PENDING) {
+            return response()->json(['message' => 'Post not found or not pending'], 404);
+        }
+
+        $cp->update([
+            'status' => CommunityPost::STATUS_APPROVED,
+            'reviewed_by' => $request->user()->id,
+            'reviewed_at' => now(),
+        ]);
+
+        return response()->json(['message' => 'Post approved']);
+    }
+
+    /**
+     * Reject a pending community post (moderators only).
+     */
+    public function rejectPost(Request $request, Community $community, Post $post): JsonResponse
+    {
+        if (!$community->isModerator($request->user())) {
+            return response()->json(['message' => 'Forbidden'], 403);
+        }
+
+        $cp = CommunityPost::where('community_id', $community->id)->where('post_id', $post->id)->first();
+        if (!$cp || $cp->status !== CommunityPost::STATUS_PENDING) {
+            return response()->json(['message' => 'Post not found or not pending'], 404);
+        }
+
+        $cp->update([
+            'status' => CommunityPost::STATUS_REJECTED,
+            'reviewed_by' => $request->user()->id,
+            'reviewed_at' => now(),
+        ]);
+
+        return response()->json(['message' => 'Post rejected']);
+    }
+
+    /**
+     * List pending posts for moderators.
+     */
+    public function pendingPosts(Request $request, Community $community): JsonResponse
+    {
+        if (!$community->isModerator($request->user())) {
+            return response()->json(['message' => 'Forbidden'], 403);
+        }
+
+        $items = $community->communityPosts()
+            ->where('status', CommunityPost::STATUS_PENDING)
+            ->with(['post.user', 'user'])
+            ->latest()
+            ->paginate(15);
+
+        return response()->json([
+            'posts' => PostResource::collection($items->pluck('post')),
+            'pagination' => [
+                'current_page' => $items->currentPage(),
+                'last_page' => $items->lastPage(),
+                'per_page' => $items->perPage(),
+                'total' => $items->total(),
             ],
         ]);
     }

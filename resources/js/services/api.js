@@ -45,6 +45,15 @@ api.interceptors.response.use(
     }
 );
 
+// Two-factor API
+export const twoFactorAPI = {
+    getStatus: () => api.get('/two-factor/status'),
+    setup: () => api.post('/two-factor/setup'),
+    confirm: (code) => api.post('/two-factor/confirm', { code }),
+    disable: (password) => api.post('/two-factor/disable', { password }),
+    challenge: (code) => api.post('/two-factor/challenge', { code }),
+};
+
 // Auth API
 export const authAPI = {
     register: (data) => api.post('/register', data),
@@ -75,11 +84,30 @@ export const userAPI = {
         return api.post('/user/profile-picture', data, config);
     },
     getSuggested: () => api.get('/users/suggested'),
+    getNotificationPreferences: () => api.get('/user/notification-preferences'),
+    updateNotificationPreferences: (data) => api.put('/user/notification-preferences', data),
+    getAnalytics: () => api.get('/user/analytics'),
+    exportData: () => api.get('/user/export-data'),
+    deleteAccount: (data) => api.delete('/user/account', { data }),
+};
+
+// Trending API
+export const trendingAPI = {
+    getHashtags: (params = {}) => api.get('/trending/hashtags', { params }),
+    getPosts: (params = {}) => api.get('/trending/posts', { params }),
+};
+
+// Bookmarks API
+export const bookmarksAPI = {
+    getBookmarks: (page = 1) => api.get('/bookmarks', { params: { page } }),
+    addBookmark: (postId) => api.post(`/posts/${postId}/bookmark`),
+    removeBookmark: (postId) => api.delete(`/posts/${postId}/bookmark`),
 };
 
 // Posts API
 export const postsAPI = {
     getFeed: (page = 1) => api.get('/posts', { params: { page } }),
+    getSuggestedPosts: () => api.get('/posts/suggested'),
     getPost: (postId) => api.get(`/posts/${postId}`),
     createPost: (data) => api.post('/posts', data),
     updatePost: (postId, data) => api.put(`/posts/${postId}`, data),
@@ -102,6 +130,14 @@ export const followAPI = {
     unfollow: (userId) => api.delete(`/users/${userId}/unfollow`),
 };
 
+// Block API
+export const blocksAPI = {
+    getBlockedUsers: (page = 1) => api.get('/blocks', { params: { page } }),
+    blockUser: (userId) => api.post(`/users/${userId}/block`),
+    unblockUser: (userId) => api.delete(`/users/${userId}/block`),
+    getBlockStatus: (userId) => api.get(`/users/${userId}/block-status`),
+};
+
 // Friend Requests API
 export const friendRequestAPI = {
     getFriendRequests: () => api.get('/friend-requests'),
@@ -116,6 +152,13 @@ export const searchAPI = {
     search: (query, type = 'all') => api.get('/search', { params: { q: query, type } }),
 };
 
+// Reports API
+export const reportsAPI = {
+    submitReport: (data) => api.post('/reports', data),
+    getReportStatus: (reportableType, reportableId) =>
+        api.get('/reports/status', { params: { reportable_type: reportableType, reportable_id: reportableId } }),
+};
+
 // Communities API
 export const communityAPI = {
     getAll: (params = {}) => api.get('/communities', { params }),
@@ -126,6 +169,13 @@ export const communityAPI = {
     join: (id) => api.post(`/communities/${id}/join`),
     leave: (id) => api.delete(`/communities/${id}/leave`),
     getPosts: (id, params = {}) => api.get(`/communities/${id}/posts`, { params }),
+    submitPost: (communityId, data) => {
+        const config = data instanceof FormData ? { headers: { 'Content-Type': undefined } } : {};
+        return api.post(`/communities/${communityId}/posts`, data, config);
+    },
+    getPendingPosts: (communityId) => api.get(`/communities/${communityId}/posts/pending`),
+    approvePost: (communityId, postId) => api.post(`/communities/${communityId}/posts/${postId}/approve`),
+    rejectPost: (communityId, postId) => api.post(`/communities/${communityId}/posts/${postId}/reject`),
 };
 
 // Conversations API
@@ -140,6 +190,24 @@ export const messagesAPI = {
     sendMessage: (data) => api.post('/messages', data),
     getMessages: (conversationId, page = 1) => api.get(`/conversations/${conversationId}/messages`, { params: { page } }),
     markAsRead: (conversationId) => api.post(`/conversations/${conversationId}/read`),
+};
+
+// Group Conversations API
+export const groupConversationsAPI = {
+    getList: (page = 1) => api.get('/group-conversations', { params: { page } }),
+    create: (data) => api.post('/group-conversations', data),
+    getOne: (id) => api.get(`/group-conversations/${id}`),
+};
+
+// Group Messages API
+export const groupMessagesAPI = {
+    send: (data) => api.post('/group-messages', data),
+};
+
+// Push Subscriptions API
+export const pushAPI = {
+    subscribe: (subscription) => api.post('/user/push-subscription', subscription),
+    unsubscribe: (endpoint) => api.delete('/user/push-subscription', { data: { endpoint } }),
 };
 
 // Notifications API

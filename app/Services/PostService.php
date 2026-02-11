@@ -26,8 +26,11 @@ class PostService
         $followingIds = $user->following()->pluck('following_id')->toArray();
         $followingIds[] = $user->id; // Include user's own posts
 
+        $blockedIds = array_merge($user->blockedUserIds(), $user->blockedByUserIds());
+
         return Post::with(['user', 'hashtags', 'likes', 'sharedPost.user'])
             ->whereIn('user_id', $followingIds)
+            ->whereNotIn('user_id', $blockedIds)
             ->where('is_archived', false)
             ->where(function ($query) use ($user) {
                 $query->where('visibility', 'public')
@@ -42,10 +45,40 @@ class PostService
     }
 
     /**
+     * Get suggested posts (from non-followed users with high engagement).
+     */
+    public function getSuggestedPosts(User $user, int $limit = 5): Collection
+    {
+        $followingIds = $user->following()->pluck('following_id')->toArray();
+        $followingIds[] = $user->id;
+
+        $blockedIds = array_merge($user->blockedUserIds(), $user->blockedByUserIds());
+
+        $posts = Post::with(['user', 'hashtags', 'likes', 'sharedPost.user'])
+            ->whereNotIn('user_id', $followingIds)
+            ->whereNotIn('user_id', $blockedIds)
+            ->where('is_archived', false)
+            ->where('visibility', 'public')
+            ->withCount(['likes', 'allComments'])
+            ->orderBy('created_at', 'desc')
+            ->limit($limit * 3) // Get more, then sort by engagement
+            ->get();
+
+        return $posts->sortByDesc(fn ($p) => ($p->likes_count ?? 0) + ($p->all_comments_count ?? 0))->take($limit)->values();
+    }
+
+    /**
      * Get posts by a specific user.
      */
     public function getUserPosts(User $user, ?User $viewer = null, int $perPage = 15): LengthAwarePaginator
     {
+        // If viewer exists and there's a block relationship, return empty
+        if ($viewer && $viewer->id !== $user->id) {
+            if ($viewer->hasBlocked($user) || $user->hasBlocked($viewer)) {
+                return Post::whereRaw('1 = 0')->paginate($perPage);
+            }
+        }
+
         $query = Post::with(['user', 'hashtags', 'likes'])
             ->where('user_id', $user->id)
             ->where('is_archived', false);

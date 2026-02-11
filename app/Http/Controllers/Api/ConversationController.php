@@ -102,8 +102,25 @@ class ConversationController extends Controller
             ], 404);
         }
 
+        // Check block status
+        if ($currentUser->hasBlocked($otherUser)) {
+            return response()->json([
+                'message' => 'You cannot message a user you have blocked',
+            ], 403);
+        }
+        if ($otherUser->hasBlocked($currentUser)) {
+            return response()->json([
+                'message' => 'You cannot message this user',
+            ], 403);
+        }
+
         // Get or create conversation
         $conversation = $this->conversationService->getOrCreateConversation($currentUser, $otherUser);
+        if (!$conversation) {
+            return response()->json([
+                'message' => 'Cannot create conversation',
+            ], 403);
+        }
         $conversation->load(['userOne', 'userTwo']);
 
         // Load messages

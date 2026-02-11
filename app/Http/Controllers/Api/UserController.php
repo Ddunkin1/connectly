@@ -31,6 +31,17 @@ class UserController extends Controller
      */
     public function profile(Request $request, User $user): JsonResponse
     {
+        $currentUser = $request->user();
+
+        // Hide profile if blocked either way
+        if ($currentUser && $currentUser->id !== $user->id) {
+            if ($currentUser->hasBlocked($user) || $user->hasBlocked($currentUser)) {
+                return response()->json([
+                    'message' => 'User not found',
+                ], 404);
+            }
+        }
+
         $user->loadCount(['followers', 'following', 'posts']);
 
         return response()->json([
@@ -48,13 +59,24 @@ class UserController extends Controller
     public function posts(Request $request, User $user): JsonResponse
     {
         try {
+            $currentUser = $request->user();
+            if ($currentUser && $currentUser->id !== $user->id) {
+                if ($currentUser->hasBlocked($user) || $user->hasBlocked($currentUser)) {
+                    return response()->json([
+                        'message' => 'User not found',
+                        'posts' => [],
+                        'pagination' => ['current_page' => 1, 'last_page' => 1, 'per_page' => 15, 'total' => 0],
+                    ], 404);
+                }
+            }
+
             $posts = $user->posts()
                 ->with(['user', 'hashtags', 'likes', 'sharedPost.user'])
                 ->withCount(['likes', 'allComments as comments_count'])
                 ->latest()
                 ->paginate(15);
 
-            // Check if current user liked each post (likes table is polymorphic: likeable_id, likeable_type)
+            // Check if current user liked/bookmarked each post
             if ($request->user()) {
                 $likedPostIds = $request->user()
                     ->likes()
@@ -62,9 +84,15 @@ class UserController extends Controller
                     ->whereIn('likeable_id', $posts->pluck('id'))
                     ->pluck('likeable_id')
                     ->toArray();
+                $bookmarkedIds = $request->user()
+                    ->bookmarkedPosts()
+                    ->whereIn('posts.id', $posts->pluck('id'))
+                    ->pluck('posts.id')
+                    ->toArray();
 
-                $posts->getCollection()->transform(function ($post) use ($likedPostIds) {
+                $posts->getCollection()->transform(function ($post) use ($likedPostIds, $bookmarkedIds) {
                     $post->is_liked = in_array($post->id, $likedPostIds);
+                    $post->is_bookmarked = in_array($post->id, $bookmarkedIds);
                     return $post;
                 });
             }
@@ -199,8 +227,12 @@ class UserController extends Controller
         $followingIds = $user->following()->pluck('following_id')->toArray();
         $followingIds[] = $user->id; // Exclude current user
 
-        // Get users not in the following list
+        // Exclude blocked users
+        $blockedIds = array_merge($user->blockedUserIds(), $user->blockedByUserIds());
+
+        // Get users not in the following list and not blocked
         $suggestedUsers = User::whereNotIn('id', $followingIds)
+            ->when(!empty($blockedIds), fn ($q) => $q->whereNotIn('id', $blockedIds))
             ->withCount(['followers', 'following'])
             ->limit(10)
             ->get();
@@ -208,5 +240,99 @@ class UserController extends Controller
         return response()->json([
             'users' => UserResource::collection($suggestedUsers),
         ]);
+    }
+
+    /**
+     * Get notification preferences for the authenticated user.
+     */
+    public function notificationPreferences(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        $prefs = $user->notification_preferences ?? User::defaultNotificationPreferences();
+
+        return response()->json([
+            'notification_preferences' => array_merge(User::defaultNotificationPreferences(), $prefs),
+        ]);
+    }
+
+    /**
+     * Update notification preferences for the authenticated user.
+     */
+    public function updateNotificationPreferences(Request $request): JsonResponse
+    {
+        $request->validate([
+            'notification_preferences' => 'array',
+            'notification_preferences.likes' => 'boolean',
+            'notification_preferences.comments' => 'boolean',
+            'notification_preferences.follows' => 'boolean',
+            'notification_preferences.mentions' => 'boolean',
+            'notification_preferences.messages' => 'boolean',
+        ]);
+
+        $user = $request->user();
+        $prefs = $user->notification_preferences ?? User::defaultNotificationPreferences();
+        $updated = array_merge($prefs, $request->input('notification_preferences', []));
+        $user->update(['notification_preferences' => $updated]);
+
+        return response()->json([
+            'message' => 'Notification preferences updated',
+            'notification_preferences' => $user->fresh()->notification_preferences,
+        ]);
+    }
+
+    /**
+     * Export user data (GDPR/CCPA).
+     */
+    public function exportData(Request $request): JsonResponse
+    {
+        $user = $request->user()->load([
+            'posts', 'comments', 'likes', 'followers', 'following',
+            'communities', 'bookmarkedPosts',
+        ]);
+
+        $data = [
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'username' => $user->username,
+                'bio' => $user->bio,
+                'location' => $user->location,
+                'website' => $user->website,
+                'created_at' => $user->created_at?->toIso8601String(),
+            ],
+            'posts_count' => $user->posts->count(),
+            'posts' => $user->posts->map(fn ($p) => [
+                'id' => $p->id,
+                'content' => $p->content,
+                'created_at' => $p->created_at?->toIso8601String(),
+            ])->toArray(),
+            'followers_count' => $user->followers->count(),
+            'following_count' => $user->following->count(),
+        ];
+
+        return response()->json(['data' => $data]);
+    }
+
+    /**
+     * Delete user account (GDPR/CCPA).
+     */
+    public function deleteAccount(Request $request): JsonResponse
+    {
+        $request->validate([
+            'password' => 'required|string',
+            'confirmation' => 'required|in:DELETE',
+        ]);
+
+        $user = $request->user();
+
+        if (!\Illuminate\Support\Facades\Hash::check($request->password, $user->password)) {
+            return response()->json(['message' => 'Invalid password'], 422);
+        }
+
+        $user->tokens()->delete();
+        $user->delete();
+
+        return response()->json(['message' => 'Account deleted']);
     }
 }

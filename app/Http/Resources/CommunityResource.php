@@ -20,9 +20,11 @@ class CommunityResource extends JsonResource
             'slug' => $this->slug,
             'description' => $this->description,
             'privacy' => $this->privacy,
+            'requires_approval' => $this->requires_approval ?? false,
             'creator' => new UserResource($this->whenLoaded('creator')),
             'members_count' => $this->whenCounted('members', fn() => $this->members()->count()),
             'is_member' => $this->is_member ?? false,
+            'is_moderator' => $request->user() ? $this->resource->isModerator($request->user()) : false,
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
         ];

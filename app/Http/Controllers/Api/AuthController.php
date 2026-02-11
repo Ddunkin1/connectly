@@ -66,7 +66,10 @@ class AuthController extends Controller
      */
     public function login(LoginRequest $request): JsonResponse
     {
-        $user = User::where('email', $request->email)->first();
+        $login = $request->input('email');
+        $user = str_contains($login, '@')
+            ? User::where('email', $login)->first()
+            : User::where('username', $login)->first();
 
         if (!$user || !Hash::check($request->password, $user->password)) {
             throw ValidationException::withMessages([
@@ -74,7 +77,22 @@ class AuthController extends Controller
             ]);
         }
 
+        if ($user->isSuspended()) {
+            throw ValidationException::withMessages([
+                'email' => ['Your account has been suspended. Please contact support.'],
+            ]);
+        }
+
         $token = $user->createToken('auth_token')->plainTextToken;
+
+        if ($user->hasTwoFactorEnabled()) {
+            return response()->json([
+                'message' => 'Two-factor authentication required',
+                'requires_two_factor' => true,
+                'user' => new UserResource($user),
+                'token' => $token,
+            ]);
+        }
 
         return response()->json([
             'message' => 'Login successful',

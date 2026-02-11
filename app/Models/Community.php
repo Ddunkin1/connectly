@@ -18,11 +18,13 @@ class Community extends Model
         'description',
         'creator_id',
         'privacy',
+        'requires_approval',
     ];
 
     protected function casts(): array
     {
         return [
+            'requires_approval' => 'boolean',
             'created_at' => 'datetime',
             'updated_at' => 'datetime',
         ];
@@ -58,5 +60,17 @@ class Community extends Model
         return $this->belongsToMany(User::class, 'community_members')
             ->withPivot('role', 'joined_at')
             ->withTimestamps();
+    }
+
+    public function communityPosts(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(CommunityPost::class);
+    }
+
+    public function isModerator(User $user): bool
+    {
+        return $user->isModerator()
+            || $this->creator_id === $user->id
+            || $this->members()->where('user_id', $user->id)->wherePivotIn('role', ['admin', 'moderator'])->exists();
     }
 }

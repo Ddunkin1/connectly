@@ -7,6 +7,7 @@ use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
@@ -24,16 +25,24 @@ class User extends Authenticatable implements MustVerifyEmail
      *
      * @var list<string>
      */
+    public const ROLE_ADMIN = 'admin';
+    public const ROLE_MODERATOR = 'moderator';
+    public const ROLE_USER = 'user';
+
     protected $fillable = [
         'name',
         'email',
         'username',
+        'role',
         'password',
+        'provider',
+        'provider_id',
         'bio',
         'profile_picture',
         'location',
         'website',
         'privacy_settings',
+        'notification_preferences',
     ];
 
     /**
@@ -44,6 +53,7 @@ class User extends Authenticatable implements MustVerifyEmail
     protected $hidden = [
         'password',
         'remember_token',
+        'two_factor_secret',
     ];
 
     /**
@@ -55,7 +65,33 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         return [
             'email_verified_at' => 'datetime',
+            'suspended_at' => 'datetime',
             'password' => 'hashed',
+            'notification_preferences' => 'array',
+            'two_factor_recovery_codes' => 'array',
+            'two_factor_confirmed_at' => 'datetime',
+        ];
+    }
+
+    /**
+     * Default notification preferences.
+     */
+    /**
+     * Check if two-factor authentication is enabled.
+     */
+    public function hasTwoFactorEnabled(): bool
+    {
+        return !empty($this->two_factor_secret) && !empty($this->two_factor_confirmed_at);
+    }
+
+    public static function defaultNotificationPreferences(): array
+    {
+        return [
+            'likes' => true,
+            'comments' => true,
+            'follows' => true,
+            'mentions' => true,
+            'messages' => true,
         ];
     }
 
@@ -232,6 +268,115 @@ class User extends Authenticatable implements MustVerifyEmail
                   ->where('receiver_id', $this->id)
                   ->where('status', 'pending');
         })->exists();
+    }
+
+    /**
+     * Get posts bookmarked by this user.
+     */
+    public function bookmarkedPosts(): BelongsToMany
+    {
+        return $this->belongsToMany(Post::class, 'bookmarks')
+            ->withTimestamps();
+    }
+
+    /**
+     * Get users blocked by this user.
+     */
+    public function blockedUsers(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'blocks', 'blocker_id', 'blocked_id')
+            ->withTimestamps();
+    }
+
+    /**
+     * Get users who have blocked this user.
+     */
+    public function blockedBy(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'blocks', 'blocked_id', 'blocker_id')
+            ->withTimestamps();
+    }
+
+    /**
+     * Check if this user has blocked another user.
+     */
+    public function hasBlocked(User $user): bool
+    {
+        return $this->blockedUsers()->where('blocked_id', $user->id)->exists();
+    }
+
+    /**
+     * Check if this user is blocked by another user.
+     */
+    public function isBlockedBy(User $user): bool
+    {
+        return $this->blockedBy()->where('blocker_id', $user->id)->exists();
+    }
+
+    /**
+     * Get IDs of users this user has blocked.
+     */
+    public function blockedUserIds(): array
+    {
+        return $this->blockedUsers()->pluck('blocked_id')->toArray();
+    }
+
+    /**
+     * Get IDs of users who have blocked this user.
+     */
+    public function blockedByUserIds(): array
+    {
+        return $this->blockedBy()->pluck('blocker_id')->toArray();
+    }
+
+    /**
+     * Get push subscriptions for this user.
+     */
+    public function pushSubscriptions(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(PushSubscription::class);
+    }
+
+    /**
+     * Get group conversations the user is in.
+     */
+    public function groupConversations(): BelongsToMany
+    {
+        return $this->belongsToMany(GroupConversation::class, 'group_conversation_members', 'user_id', 'group_conversation_id')
+            ->withPivot('role')
+            ->withTimestamps();
+    }
+
+    /**
+     * Get all reports for this user.
+     */
+    public function reports(): MorphMany
+    {
+        return $this->morphMany(Report::class, 'reportable');
+    }
+
+    /**
+     * Check if user is suspended.
+     */
+    public function isSuspended(): bool
+    {
+        return $this->suspended_at !== null;
+    }
+
+    /**
+     * Check if user is an admin.
+     */
+    public function isAdmin(): bool
+    {
+        return $this->role === self::ROLE_ADMIN;
+    }
+
+    /**
+     * Check if user is a moderator or admin.
+     */
+    public function isModerator(): bool
+    {
+        return in_array($this->role, [self::ROLE_ADMIN, self::ROLE_MODERATOR], true);
     }
 
     /**

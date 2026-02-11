@@ -11,6 +11,7 @@ import Login from './pages/Auth/Login';
 import Register from './pages/Auth/Register';
 import ForgotPassword from './pages/Auth/ForgotPassword';
 import ResetPassword from './pages/Auth/ResetPassword';
+import AuthCallback from './pages/Auth/AuthCallback';
 import Landing from './pages/Landing';
 import Home from './pages/Home';
 import Profile from './pages/Profile';
@@ -25,6 +26,8 @@ import TestUpload from './pages/TestUpload';
 import Bookmarks from './pages/Bookmarks';
 import Analytics from './pages/Analytics';
 import Settings from './pages/Settings';
+import AdminReports from './pages/Admin/AdminReports';
+import AdminUsers from './pages/Admin/AdminUsers';
 import useAuthStore from './store/authStore';
 import useThemeStore from './store/themeStore';
 import EmailVerificationBanner from './components/auth/EmailVerificationBanner';
@@ -68,7 +71,7 @@ function AppContent() {
     useEffect(() => {
         useThemeStore.getState().applyToDom();
     }, []);
-    const isPublicPage = ['/', '/login', '/register', '/forgot-password', '/reset-password'].includes(location.pathname) ||
+    const isPublicPage = ['/', '/login', '/register', '/forgot-password', '/auth/callback'].includes(location.pathname) ||
         location.pathname.startsWith('/reset-password');
 
     // Render public pages (Landing, Login, Register) without layout wrapper
@@ -109,6 +112,7 @@ function AppContent() {
                             </PublicRoute>
                         }
                     />
+                    <Route path="/auth/callback" element={<AuthCallback />} />
                     <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>
                 <Toaster
@@ -251,6 +255,22 @@ function AppContent() {
                             element={
                                 <ProtectedRoute>
                                     <Settings />
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/admin/reports"
+                            element={
+                                <ProtectedRoute>
+                                    <AdminReports />
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/admin/users"
+                            element={
+                                <ProtectedRoute>
+                                    <AdminUsers />
                                 </ProtectedRoute>
                             }
                         />

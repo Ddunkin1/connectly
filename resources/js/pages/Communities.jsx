@@ -1,16 +1,26 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { useCommunities, useJoinCommunity, useLeaveCommunity } from '../hooks/useCommunities';
+import { Link, useNavigate } from 'react-router-dom';
+import { useCommunities, useJoinCommunity, useLeaveCommunity, useCreateCommunity } from '../hooks/useCommunities';
 import useAuthStore from '../store/authStore';
 import Avatar from '../components/common/Avatar';
 import Button from '../components/common/Button';
 import LoadingSpinner from '../components/common/LoadingSpinner';
+import Modal from '../components/common/Modal';
 
 const Communities = () => {
+    const navigate = useNavigate();
     const user = useAuthStore((state) => state.user);
     const { data, isLoading, error } = useCommunities();
     const joinMutation = useJoinCommunity();
     const leaveMutation = useLeaveCommunity();
+    const createMutation = useCreateCommunity();
+    const [createModalOpen, setCreateModalOpen] = useState(false);
+    const [createForm, setCreateForm] = useState({
+        name: '',
+        description: '',
+        privacy: 'public',
+        requires_approval: false,
+    });
 
     // Separate communities into joined and suggested
     const joinedCommunities = data?.communities?.filter((community) => {
@@ -31,6 +41,20 @@ const Communities = () => {
         e.preventDefault();
         e.stopPropagation();
         leaveMutation.mutate(communityId);
+    };
+
+    const handleCreateSubmit = (e) => {
+        e.preventDefault();
+        createMutation.mutate(createForm, {
+            onSuccess: (res) => {
+                setCreateModalOpen(false);
+                setCreateForm({ name: '', description: '', privacy: 'public', requires_approval: false });
+                const community = res?.data?.community;
+                if (community?.id) {
+                    navigate(`/communities/${community.id}`);
+                }
+            },
+        });
     };
 
     if (isLoading) {
@@ -58,7 +82,7 @@ const Communities = () => {
                     <h1 className="text-2xl font-bold text-gray-900">Communities</h1>
                     <p className="text-gray-500 mt-1">Discover and join communities</p>
                 </div>
-                <Button variant="primary" size="sm">
+                <Button variant="primary" size="sm" onClick={() => setCreateModalOpen(true)}>
                     Create Community
                 </Button>
             </div>
@@ -140,6 +164,65 @@ const Communities = () => {
                     </div>
                 )}
             </div>
+
+            <Modal isOpen={createModalOpen} onClose={() => setCreateModalOpen(false)} title="Create Community" size="md">
+                <form onSubmit={handleCreateSubmit} className="space-y-4">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-300 mb-1">Name</label>
+                        <input
+                            type="text"
+                            value={createForm.name}
+                            onChange={(e) => setCreateForm((f) => ({ ...f, name: e.target.value }))}
+                            required
+                            maxLength={255}
+                            placeholder="Community name"
+                            className="w-full px-4 py-2 rounded-lg bg-[#1A1A1A] border border-gray-600 text-white placeholder-gray-500"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-300 mb-1">Description</label>
+                        <textarea
+                            value={createForm.description}
+                            onChange={(e) => setCreateForm((f) => ({ ...f, description: e.target.value }))}
+                            rows={3}
+                            maxLength={1000}
+                            placeholder="What is this community about?"
+                            className="w-full px-4 py-2 rounded-lg bg-[#1A1A1A] border border-gray-600 text-white placeholder-gray-500 resize-none"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-300 mb-1">Privacy</label>
+                        <select
+                            value={createForm.privacy}
+                            onChange={(e) => setCreateForm((f) => ({ ...f, privacy: e.target.value }))}
+                            className="w-full px-4 py-2 rounded-lg bg-[#1A1A1A] border border-gray-600 text-white"
+                        >
+                            <option value="public">Public</option>
+                            <option value="private">Private</option>
+                        </select>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <input
+                            type="checkbox"
+                            id="requires_approval"
+                            checked={createForm.requires_approval}
+                            onChange={(e) => setCreateForm((f) => ({ ...f, requires_approval: e.target.checked }))}
+                            className="w-4 h-4 rounded border-gray-600 text-[var(--theme-accent)] focus:ring-[var(--theme-accent)]"
+                        />
+                        <label htmlFor="requires_approval" className="text-sm text-gray-300">
+                            Posts require moderator approval
+                        </label>
+                    </div>
+                    <div className="flex justify-end gap-2 pt-2">
+                        <Button type="button" variant="ghost" onClick={() => setCreateModalOpen(false)}>
+                            Cancel
+                        </Button>
+                        <Button type="submit" disabled={createMutation.isPending || !createForm.name.trim()}>
+                            {createMutation.isPending ? 'Creating...' : 'Create Community'}
+                        </Button>
+                    </div>
+                </form>
+            </Modal>
         </div>
     );
 };

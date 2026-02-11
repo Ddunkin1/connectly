@@ -32,4 +32,5 @@ export {
     UilArchive,
     UilLock,
     UilEye,
+    UilShieldCheck,
 } from '@iconscout/react-unicons';

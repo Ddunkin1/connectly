@@ -48,10 +48,17 @@ class UserResource extends JsonResource
                 ->exists()
         );
 
+        $isBlocked = $currentUser && $currentUser->id !== $this->id && $currentUser->hasBlocked($this->resource);
+        $hasBlockedYou = $currentUser && $currentUser->id !== $this->id && $this->resource->hasBlocked($currentUser);
+
         return [
             'id' => $this->id,
             'name' => $this->name,
             'username' => $this->username,
+            'role' => $this->when($currentUser?->isAdmin() || $currentUser?->id === $this->id, $this->role),
+            'suspended_at' => $this->when($currentUser?->isAdmin(), $this->suspended_at),
+            'is_blocked' => $this->when($currentUser && $currentUser->id !== $this->id, $isBlocked ?? false),
+            'has_blocked_you' => $this->when($currentUser && $currentUser->id !== $this->id, $hasBlockedYou ?? false),
             'email' => $this->when($request->user()?->id === $this->id, $this->email),
             'bio' => $this->bio,
             'profile_picture' => $this->profile_picture ? (filter_var($this->profile_picture, FILTER_VALIDATE_URL) ? $this->profile_picture : asset('storage/' . $this->profile_picture)) : null,

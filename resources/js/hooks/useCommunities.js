@@ -117,3 +117,67 @@ export const useLeaveCommunity = () => {
         },
     });
 };
+
+export const useSubmitCommunityPost = (communityId) => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: (data) => communityAPI.submitPost(communityId, data),
+        onSuccess: (response) => {
+            queryClient.invalidateQueries({ queryKey: ['community-posts', communityId] });
+            queryClient.invalidateQueries({ queryKey: ['community-posts-pending', communityId] });
+            queryClient.invalidateQueries({ queryKey: ['community', communityId] });
+            toast.success(response?.data?.message || 'Post submitted');
+        },
+        onError: (error) => {
+            const message = error.response?.data?.message || 'Failed to submit post';
+            const errors = error.response?.data?.errors;
+            if (errors) {
+                Object.values(errors).flat().forEach((err) => toast.error(err));
+            } else {
+                toast.error(message);
+            }
+        },
+    });
+};
+
+export const usePendingCommunityPosts = (communityId, enabled = true) => {
+    return useQuery({
+        queryKey: ['community-posts-pending', communityId],
+        queryFn: () => communityAPI.getPendingPosts(communityId),
+        enabled: !!communityId && enabled,
+        select: (data) => data.data,
+    });
+};
+
+export const useApproveCommunityPost = (communityId) => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: (postId) => communityAPI.approvePost(communityId, postId),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['community-posts', communityId] });
+            queryClient.invalidateQueries({ queryKey: ['community-posts-pending', communityId] });
+            toast.success('Post approved');
+        },
+        onError: (error) => {
+            toast.error(error.response?.data?.message || 'Failed to approve post');
+        },
+    });
+};
+
+export const useRejectCommunityPost = (communityId) => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: (postId) => communityAPI.rejectPost(communityId, postId),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['community-posts', communityId] });
+            queryClient.invalidateQueries({ queryKey: ['community-posts-pending', communityId] });
+            toast.success('Post rejected');
+        },
+        onError: (error) => {
+            toast.error(error.response?.data?.message || 'Failed to reject post');
+        },
+    });
+};

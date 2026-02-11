@@ -47,13 +47,22 @@ class SearchController extends Controller
             'hashtags' => [],
         ];
 
+        $currentUser = $request->user();
+        $blockedIds = $currentUser
+            ? array_merge($currentUser->blockedUserIds(), $currentUser->blockedByUserIds())
+            : [];
+
         // Search Users
         if ($type === 'all' || $type === 'users') {
-            $users = User::where(function ($q) use ($searchTerm) {
+            $usersQuery = User::where(function ($q) use ($searchTerm) {
                 $q->where('name', 'LIKE', $searchTerm)
                     ->orWhere('username', 'LIKE', $searchTerm)
                     ->orWhere('bio', 'LIKE', $searchTerm);
-            })
+            });
+            if (!empty($blockedIds)) {
+                $usersQuery->whereNotIn('id', $blockedIds);
+            }
+            $users = $usersQuery
                 ->withCount(['followers', 'following'])
                 ->paginate($perPage, ['*'], 'users_page', $page);
 
@@ -62,11 +71,14 @@ class SearchController extends Controller
 
         // Search Posts
         if ($type === 'all' || $type === 'posts') {
-            $posts = Post::where('content', 'LIKE', $searchTerm)
+            $postsQuery = Post::where('content', 'LIKE', $searchTerm)
                 ->with(['user', 'hashtags'])
                 ->withCount(['likes', 'allComments'])
-                ->orderBy('created_at', 'desc')
-                ->paginate($perPage, ['*'], 'posts_page', $page);
+                ->orderBy('created_at', 'desc');
+            if (!empty($blockedIds)) {
+                $postsQuery->whereNotIn('user_id', $blockedIds);
+            }
+            $posts = $postsQuery->paginate($perPage, ['*'], 'posts_page', $page);
 
             $results['posts'] = PostResource::collection($posts->items());
         }

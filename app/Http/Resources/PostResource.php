@@ -29,6 +29,10 @@ class PostResource extends JsonResource
                 $request->user(),
                 fn () => isset($this->is_liked) ? (bool) $this->is_liked : $this->isLikedBy($request->user())
             ),
+            'is_bookmarked' => $this->when(
+                $request->user() && isset($this->is_bookmarked),
+                fn () => (bool) $this->is_bookmarked
+            ),
             'hashtags' => HashtagResource::collection($this->whenLoaded('hashtags')),
             'shared_post' => new PostResource($this->whenLoaded('sharedPost')),
             'recent_likers' => UserResource::collection($this->recent_likers ?? collect()),

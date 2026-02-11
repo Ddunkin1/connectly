@@ -1,5 +1,5 @@
 import React, { useRef, useCallback, useState, useEffect } from 'react';
-import { useFeed } from '../hooks/usePosts';
+import { useFeed, useSuggestedPosts } from '../hooks/usePosts';
 import PostInput from '../components/posts/PostInput';
 import StoriesRow from '../components/feed/StoriesRow';
 import PostCard from '../components/posts/PostCard';
@@ -16,6 +16,7 @@ const Home = () => {
         isLoading,
         isError,
     } = useFeed();
+    const { data: suggestedPosts = [] } = useSuggestedPosts();
 
     useEffect(() => {
         const handler = () => {
@@ -95,14 +96,29 @@ const Home = () => {
                     </div>
                 ) : (
                     posts.map((post, index) => {
-                        if (posts.length === index + 1) {
-                            return (
-                                <div key={post.id} ref={lastPostElementRef}>
+                        const isLast = posts.length === index + 1;
+                        const showSuggestedAfter = index === 2 && suggestedPosts.length > 0;
+                        return (
+                            <React.Fragment key={post.id}>
+                                {isLast ? (
+                                    <div ref={lastPostElementRef}>
+                                        <PostCard post={post} onCommentClick={() => {}} />
+                                    </div>
+                                ) : (
                                     <PostCard post={post} onCommentClick={() => {}} />
-                                </div>
-                            );
-                        }
-                        return <PostCard key={post.id} post={post} onCommentClick={() => {}} />;
+                                )}
+                                {showSuggestedAfter && (
+                                    <div className="mt-6">
+                                        <p className="text-sm font-medium text-gray-400 mb-3 px-1">Suggested for you</p>
+                                        <div className="space-y-4">
+                                            {suggestedPosts.map((sp) => (
+                                                <PostCard key={sp.id} post={sp} onCommentClick={() => {}} />
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                            </React.Fragment>
+                        );
                     })
                 )}
                 {isFetchingNextPage && (

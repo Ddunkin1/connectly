@@ -19,6 +19,7 @@ class UserSeeder extends Seeder
             [
                 'name' => 'Admin User',
                 'username' => 'admin',
+                'role' => User::ROLE_ADMIN,
                 'password' => Hash::make('password'),
                 'bio' => 'Administrator of Connectly',
                 'privacy_settings' => 'public',

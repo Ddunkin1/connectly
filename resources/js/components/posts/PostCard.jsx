@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import Avatar from '../common/Avatar';
-import { UilHeart, UilHeartAlt, UilComment, UilShare, UilBookmark, UilEllipsisH, UilTrash, UilMegaphone, UilArchive, UilGlobe, UilUsersAlt, UilLock } from '../common/Icons';
+import { UilHeart, UilHeartAlt, UilComment, UilShare, UilBookmark, UilBookmarkFull, UilEllipsisH, UilTrash, UilMegaphone, UilArchive, UilGlobe, UilUsersAlt, UilLock } from '../common/Icons';
 import { formatDateUppercase } from '../../utils/formatDate';
 import { useLikePost, useUnlikePost, useSharePost, useCreatePost, useDeletePost, useUpdatePost } from '../../hooks/usePosts';
+import { useAddBookmark, useRemoveBookmark } from '../../hooks/useBookmarks';
+import ReportModal from '../common/ReportModal';
 import useAuthStore from '../../store/authStore';
 import toast from 'react-hot-toast';
 import ShareToTimelineModal from './ShareToTimelineModal';
@@ -13,6 +15,8 @@ const PostCard = ({ post, onDeleted, onCommentClick }) => {
     const likeMutation = useLikePost();
     const unlikeMutation = useUnlikePost();
     const shareMutation = useSharePost();
+    const addBookmarkMutation = useAddBookmark();
+    const removeBookmarkMutation = useRemoveBookmark();
     const createPostMutation = useCreatePost();
     const deleteMutation = useDeletePost();
     const updateMutation = useUpdatePost();
@@ -20,6 +24,7 @@ const PostCard = ({ post, onDeleted, onCommentClick }) => {
     const [shareOpenInner, setShareOpenInner] = useState(false);
     const [shareToTimelinePost, setShareToTimelinePost] = useState(null);
     const [moreOpen, setMoreOpen] = useState(false);
+    const [reportModalOpen, setReportModalOpen] = useState(false);
 
     const isAuthor = user?.id === post.user?.id;
 
@@ -72,6 +77,19 @@ const PostCard = ({ post, onDeleted, onCommentClick }) => {
         (likeMutation.isPending && likeMutation.variables === postId) ||
         (unlikeMutation.isPending && unlikeMutation.variables === postId);
 
+    const handleBookmark = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const bookmarked = post.is_bookmarked ?? false;
+        if (bookmarked) {
+            removeBookmarkMutation.mutate(post.id);
+        } else {
+            addBookmarkMutation.mutate(post.id);
+        }
+    };
+
+    const isBookmarkPending = addBookmarkMutation.isPending || removeBookmarkMutation.isPending;
+
     const highlightHashtags = (text) => {
         const parts = text.split(/(#\w+)/g);
         return parts.map((part, index) => {
@@ -123,7 +141,7 @@ const PostCard = ({ post, onDeleted, onCommentClick }) => {
                         </span>
                     </p>
                 </div>
-                {isAuthor && (
+                {(isAuthor || user) && (
                     <div className="relative flex-shrink-0">
                         <button
                             type="button"
@@ -144,6 +162,21 @@ const PostCard = ({ post, onDeleted, onCommentClick }) => {
                                     onClick={() => setMoreOpen(false)}
                                 />
                                 <div className="absolute right-0 top-full mt-1 z-20 py-1 w-52 theme-surface rounded-lg border border-[#2A2A2A] shadow-xl">
+                                    {!isAuthor && (
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setMoreOpen(false);
+                                                setReportModalOpen(true);
+                                            }}
+                                            className="w-full px-4 py-2 text-left text-sm text-red-400 hover:bg-red-500/20 flex items-center gap-2 cursor-pointer"
+                                        >
+                                            <UilMegaphone size={18} color="currentColor" />
+                                            Report post
+                                        </button>
+                                    )}
+                                    {isAuthor && (
+                                    <>
                                     <button
                                         type="button"
                                         onClick={handleArchiveClick}
@@ -195,6 +228,8 @@ const PostCard = ({ post, onDeleted, onCommentClick }) => {
                                         <UilTrash size={18} color="currentColor" />
                                         Delete post
                                     </button>
+                                    </>
+                                    )}
                                 </div>
                             </>
                         )}
@@ -398,8 +433,19 @@ const PostCard = ({ post, onDeleted, onCommentClick }) => {
                         </div>
                     </div>
 
-                    <button className="flex items-center flex-shrink-0 text-gray-400 hover:text-[var(--theme-accent)] transition-colors cursor-pointer">
-                        <UilBookmark size={22} color="currentColor" />
+                    <button
+                        type="button"
+                        onClick={handleBookmark}
+                        disabled={isBookmarkPending}
+                        className={`flex items-center flex-shrink-0 transition-colors cursor-pointer disabled:opacity-60 ${
+                            post.is_bookmarked ? 'text-[var(--theme-accent)]' : 'text-gray-400 hover:text-[var(--theme-accent)]'
+                        }`}
+                    >
+                        {(post.is_bookmarked ?? false) ? (
+                            <UilBookmarkFull size={22} color="currentColor" />
+                        ) : (
+                            <UilBookmark size={22} color="currentColor" />
+                        )}
                     </button>
                 </div>
 
@@ -476,6 +522,14 @@ const PostCard = ({ post, onDeleted, onCommentClick }) => {
                     </Link>
                 )}
             </div>
+
+            <ReportModal
+                isOpen={reportModalOpen}
+                onClose={() => setReportModalOpen(false)}
+                reportableType="post"
+                reportableId={post.id}
+                title="Report post"
+            />
         </article>
     );
 };

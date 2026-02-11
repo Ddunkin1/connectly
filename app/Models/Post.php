@@ -116,4 +116,21 @@ class Post extends Model
     {
         return $this->allComments()->count();
     }
+
+    /**
+     * Get users who bookmarked this post.
+     */
+    public function bookmarkedBy(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'bookmarks')
+            ->withTimestamps();
+    }
+
+    /**
+     * Get all reports for this post.
+     */
+    public function reports(): MorphMany
+    {
+        return $this->morphMany(Report::class, 'reportable');
+    }
 }

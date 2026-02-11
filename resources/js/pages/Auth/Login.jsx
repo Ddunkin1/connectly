@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
-import { useLogin } from '../../hooks/useAuth';
+import { useLogin, useTwoFactorChallenge, useLogout } from '../../hooks/useAuth';
 import Button from '../../components/common/Button';
 import toast from 'react-hot-toast';
 
@@ -9,7 +9,11 @@ const Login = () => {
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const loginMutation = useLogin();
+    const twoFactorMutation = useTwoFactorChallenge();
+    const logoutMutation = useLogout();
     const [showPassword, setShowPassword] = useState(false);
+    const [showTwoFactor, setShowTwoFactor] = useState(false);
+    const [twoFactorCode, setTwoFactorCode] = useState('');
 
     useEffect(() => {
         if (searchParams.get('verified') === '1') {
@@ -24,7 +28,21 @@ const Login = () => {
 
     const onSubmit = async (data) => {
         try {
-            await loginMutation.mutateAsync(data);
+            const res = await loginMutation.mutateAsync(data);
+            if (res.data?.requires_two_factor) {
+                setShowTwoFactor(true);
+            } else {
+                navigate('/home');
+            }
+        } catch (error) {
+            // Error handled by mutation
+        }
+    };
+
+    const onTwoFactorSubmit = async (e) => {
+        e.preventDefault();
+        try {
+            await twoFactorMutation.mutateAsync(twoFactorCode);
             navigate('/home');
         } catch (error) {
             // Error handled by mutation
@@ -75,28 +93,65 @@ const Login = () => {
 
                     {/* Form Header */}
                     <div className="mb-8">
-                        <h1 className="text-3xl font-bold text-gray-900 mb-2">Sign in to your account</h1>
-                        <p className="text-gray-600">Welcome back! Please enter your details.</p>
+                        <h1 className="text-3xl font-bold text-gray-900 mb-2">
+                            {showTwoFactor ? 'Two-factor authentication' : 'Sign in to your account'}
+                        </h1>
+                        <p className="text-gray-600">
+                            {showTwoFactor
+                                ? 'Enter the 6-digit code from your authenticator app.'
+                                : 'Welcome back! Please enter your details.'}
+                        </p>
                     </div>
 
-                    {/* Login Form */}
+                    {showTwoFactor ? (
+                        <form onSubmit={onTwoFactorSubmit} className="space-y-5">
+                            <div>
+                                <label htmlFor="code" className="block text-sm font-medium text-gray-700 mb-2">
+                                    Verification code
+                                </label>
+                                <input
+                                    type="text"
+                                    id="code"
+                                    value={twoFactorCode}
+                                    onChange={(e) => setTwoFactorCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                                    placeholder="000000"
+                                    maxLength={6}
+                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#359EFF] focus:border-transparent text-center text-lg tracking-widest"
+                                />
+                            </div>
+                            <Button
+                                type="submit"
+                                disabled={twoFactorCode.length !== 6 || twoFactorMutation.isPending}
+                                className="w-full"
+                            >
+                                {twoFactorMutation.isPending ? 'Verifying...' : 'Verify'}
+                            </Button>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    logoutMutation.mutate();
+                                    setShowTwoFactor(false);
+                                    setTwoFactorCode('');
+                                }}
+                                className="w-full text-sm text-gray-500 hover:text-gray-700"
+                            >
+                                Use different credentials
+                            </button>
+                        </form>
+                    ) : (
+                    <>
                     <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
                         <div>
                             <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                                Email Address
+                                Email or Username
                             </label>
                             <input
-                                {...register('email', {
-                                    required: 'Email is required',
-                                    pattern: {
-                                        value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-                                        message: 'Invalid email address',
-                                    },
-                                })}
-                                type="email"
+                                {...register('email', { required: 'Email or username is required' })}
+                                type="text"
                                 id="email"
+                                autoComplete="username"
                                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#359EFF] focus:border-transparent transition-colors"
-                                placeholder="name@company.com"
+                                placeholder="name@company.com or username"
                             />
                             {errors.email && (
                                 <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>
@@ -168,9 +223,9 @@ const Login = () => {
                     </div>
 
                     {/* Google Sign In */}
-                    <button
-                        type="button"
-                        className="w-full flex items-center justify-center space-x-3 px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors font-medium text-gray-700"
+                    <a
+                        href={`${import.meta.env.VITE_API_URL || '/api'}/auth/google`}
+                        className="w-full flex items-center justify-center space-x-3 px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors font-medium text-gray-700 no-underline"
                     >
                         <svg className="w-5 h-5" viewBox="0 0 24 24">
                             <path
@@ -191,7 +246,18 @@ const Login = () => {
                             />
                         </svg>
                         <span>Continue with Google</span>
-                    </button>
+                    </a>
+
+                    {/* Facebook Sign In */}
+                    <a
+                        href={`${import.meta.env.VITE_API_URL || '/api'}/auth/facebook`}
+                        className="w-full flex items-center justify-center space-x-3 px-4 py-3 mt-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors font-medium text-gray-700 no-underline"
+                    >
+                        <svg className="w-5 h-5" viewBox="0 0 24 24" fill="#1877F2">
+                            <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+                        </svg>
+                        <span>Continue with Facebook</span>
+                    </a>
 
                     {/* Sign Up Link */}
                     <div className="mt-6 text-center">
@@ -202,6 +268,8 @@ const Login = () => {
                             </Link>
                         </p>
                     </div>
+                    </>
+                    )}
 
                     {/* Terms and Privacy */}
                     <div className="mt-8 text-center">

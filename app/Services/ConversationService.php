@@ -12,8 +12,13 @@ class ConversationService
     /**
      * Get or create a conversation between two users.
      */
-    public function getOrCreateConversation(User $user1, User $user2): Conversation
+    public function getOrCreateConversation(User $user1, User $user2): ?Conversation
     {
+        // Prevent conversation if either user has blocked the other
+        if ($user1->hasBlocked($user2) || $user2->hasBlocked($user1)) {
+            return null;
+        }
+
         // Ensure consistent ordering (smaller ID first)
         $ids = [$user1->id, $user2->id];
         sort($ids);
@@ -38,7 +43,15 @@ class ConversationService
      */
     public function getUserConversations(User $user, int $perPage = 20): LengthAwarePaginator
     {
-        $conversations = Conversation::forUser($user)
+        $blockedIds = array_merge($user->blockedUserIds(), $user->blockedByUserIds());
+
+        $query = Conversation::forUser($user);
+        if (!empty($blockedIds)) {
+            $query->whereNotIn('user_one_id', $blockedIds)
+                  ->whereNotIn('user_two_id', $blockedIds);
+        }
+
+        $conversations = $query
             ->with(['userOne', 'userTwo'])
             ->withCount([
                 'messages as unread_count' => function ($query) use ($user) {

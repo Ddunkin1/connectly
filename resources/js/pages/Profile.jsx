@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useUserProfile, useUserPosts, useFollow, useUnfollow } from '../hooks/useUsers';
 import { useFriendRequests, useAcceptFriendRequest, useRejectFriendRequest, useCancelFriendRequest } from '../hooks/useFriendRequests';
+import { useBlockUser } from '../hooks/useBlocks';
+import ReportModal from '../components/common/ReportModal';
 import useAuthStore from '../store/authStore';
 import Avatar from '../components/common/Avatar';
 import PostCard from '../components/posts/PostCard';
@@ -11,10 +13,14 @@ import { formatDate } from '../utils/formatDate';
 
 const Profile = () => {
     const { username } = useParams();
+    const navigate = useNavigate();
     const currentUser = useAuthStore((state) => state.user);
     const [activeTab, setActiveTab] = useState('posts');
+    const [showBlockMenu, setShowBlockMenu] = useState(false);
+    const [reportModalOpen, setReportModalOpen] = useState(false);
     
     const { data: profile, isLoading: profileLoading } = useUserProfile(username);
+    const blockMutation = useBlockUser();
     const { data: postsData, isLoading: postsLoading, refetch: refetchPosts } = useUserPosts(username);
     const { data: friendRequestsData } = useFriendRequests();
     const followMutation = useFollow();
@@ -186,11 +192,68 @@ const Profile = () => {
                                         <span className="material-symbols-outlined text-lg">mail</span>
                                         <span>Message</span>
                                     </Link>
+                                    <div className="relative">
+                                        <button
+                                            onClick={() => setShowBlockMenu(!showBlockMenu)}
+                                            className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-gray-700"
+                                            aria-label="More options"
+                                        >
+                                            <span className="material-symbols-outlined text-lg">more_horiz</span>
+                                        </button>
+                                        {showBlockMenu && (
+                                            <>
+                                                <div
+                                                    className="fixed inset-0 z-10"
+                                                    onClick={() => setShowBlockMenu(false)}
+                                                    aria-hidden="true"
+                                                />
+                                                <div className="absolute right-0 mt-1 w-48 bg-white border border-gray-200 rounded-lg shadow-lg py-1 z-20">
+                                                    <button
+                                                        onClick={() => {
+                                                            setShowBlockMenu(false);
+                                                            setReportModalOpen(true);
+                                                        }}
+                                                        className="w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-50 flex items-center space-x-2"
+                                                    >
+                                                        <span className="material-symbols-outlined text-lg">flag</span>
+                                                        <span>Report user</span>
+                                                    </button>
+                                                    <button
+                                                        onClick={() => {
+                                                            if (window.confirm('Block this user? They will no longer be able to see your profile, message you, or see your posts.')) {
+                                                                blockMutation.mutate(profile.id, {
+                                                                    onSuccess: () => {
+                                                                        setShowBlockMenu(false);
+                                                                        navigate('/');
+                                                                    },
+                                                                });
+                                                            }
+                                                        }}
+                                                        disabled={blockMutation.isPending}
+                                                        className="w-full text-left px-4 py-2 text-red-600 hover:bg-red-50 flex items-center space-x-2"
+                                                    >
+                                                        <span className="material-symbols-outlined text-lg">block</span>
+                                                        <span>Block user</span>
+                                                    </button>
+                                                </div>
+                                            </>
+                                        )}
+                                    </div>
                                 </>
                             )}
                         </div>
                     </div>
                 </div>
+
+                {profile && !isOwnProfile && (
+                    <ReportModal
+                        isOpen={reportModalOpen}
+                        onClose={() => setReportModalOpen(false)}
+                        reportableType="user"
+                        reportableId={profile.id}
+                        title="Report user"
+                    />
+                )}
 
                 {/* Profile Navigation Tabs */}
                 <div className="border-t border-gray-200 px-8">

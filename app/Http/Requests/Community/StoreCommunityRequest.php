@@ -25,6 +25,7 @@ class StoreCommunityRequest extends FormRequest
             'name' => ['required', 'string', 'max:255', 'unique:communities,name'],
             'description' => ['nullable', 'string', 'max:1000'],
             'privacy' => ['required', 'in:public,private'],
+            'requires_approval' => ['nullable', 'boolean'],
         ];
     }
 }

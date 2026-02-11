@@ -3,6 +3,14 @@ import { postsAPI } from '../services/api';
 import toast from 'react-hot-toast';
 import useAuthStore from '../store/authStore';
 
+export const useSuggestedPosts = () => {
+    return useQuery({
+        queryKey: ['posts', 'suggested'],
+        queryFn: () => postsAPI.getSuggestedPosts(),
+        select: (data) => data.data?.posts ?? [],
+    });
+};
+
 export const useFeed = () => {
     return useInfiniteQuery({
         queryKey: ['posts', 'feed'],

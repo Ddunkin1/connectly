@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import { trendingAPI } from '../services/api';
 import { useSearch } from '../hooks/useSearch';
 import PostCard from '../components/posts/PostCard';
 import Avatar from '../components/common/Avatar';
@@ -32,16 +34,40 @@ const Search = () => {
         { id: 'communities', label: 'Communities' },
     ];
 
+    const { data: trendingData } = useQuery({
+        queryKey: ['trending-hashtags'],
+        queryFn: () => trendingAPI.getHashtags({ limit: 10 }),
+        select: (res) => res.data?.hashtags ?? [],
+        enabled: !query,
+    });
+    const trendingHashtags = trendingData ?? [];
+
     if (!query) {
         return (
             <div className="max-w-4xl mx-auto">
-                <div className="bg-[#252538] rounded-xl border border-gray-700/50 p-8 text-center">
+                <div className="bg-[#252538] rounded-xl border border-gray-700/50 p-8 text-center mb-6">
                     <span className="material-symbols-outlined text-6xl text-gray-500 mb-4">
                         search
                     </span>
                     <h2 className="text-xl font-semibold text-white mb-2">Search connectly</h2>
                     <p className="text-gray-400">Enter a search query to find users, posts, and communities</p>
                 </div>
+                {trendingHashtags.length > 0 && (
+                    <div className="bg-[#252538] rounded-xl border border-gray-700/50 p-6">
+                        <h3 className="text-lg font-semibold text-white mb-4">Trending hashtags</h3>
+                        <div className="flex flex-wrap gap-2">
+                            {trendingHashtags.map((h) => (
+                                <Link
+                                    key={h.id}
+                                    to={`/search?q=%23${encodeURIComponent(h.name)}&type=hashtags`}
+                                    className="px-4 py-2 rounded-full bg-[#1A1A2E] text-[var(--theme-accent)] hover:bg-[#252538]"
+                                >
+                                    #{h.name} <span className="text-gray-500 text-sm">({h.posts_count})</span>
+                                </Link>
+                            ))}
+                        </div>
+                    </div>
+                )}
             </div>
         );
     }

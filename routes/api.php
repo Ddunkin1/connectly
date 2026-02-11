@@ -1,17 +1,27 @@
 <?php
 
+use App\Http\Controllers\Api\AnalyticsController;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\BlockController;
+use App\Http\Controllers\Api\BookmarkController;
 use App\Http\Controllers\Api\CommentController;
 use App\Http\Controllers\Api\CommunityController;
 use App\Http\Controllers\Api\ConversationController;
 use App\Http\Controllers\Api\FollowController;
+use App\Http\Controllers\Api\GroupConversationController;
+use App\Http\Controllers\Api\GroupMessageController;
 use App\Http\Controllers\Api\FriendRequestController;
 use App\Http\Controllers\Api\LikeController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\MessageController;
 use App\Http\Controllers\Api\PostController;
+use App\Http\Controllers\Api\PushSubscriptionController;
+use App\Http\Controllers\Api\ReportController;
 use App\Http\Controllers\Api\SearchController;
+use App\Http\Controllers\Api\SocialAuthController;
 use App\Http\Controllers\Api\TestSupabaseController;
+use App\Http\Controllers\Api\TrendingController;
+use App\Http\Controllers\Api\TwoFactorController;
 use App\Http\Controllers\Api\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -25,6 +35,12 @@ use Illuminate\Support\Facades\Route;
 | be assigned to the "api" middleware group. Make something great!
 |
 */
+
+// OAuth routes (no auth required)
+Route::get('/auth/google', [SocialAuthController::class, 'redirectToGoogle']);
+Route::get('/auth/google/callback', [SocialAuthController::class, 'handleGoogleCallback']);
+Route::get('/auth/facebook', [SocialAuthController::class, 'redirectToFacebook']);
+Route::get('/auth/facebook/callback', [SocialAuthController::class, 'handleFacebookCallback']);
 
 // Public routes (with rate limiting)
 Route::middleware('throttle:60,1')->group(function () {
@@ -48,15 +64,30 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function () {
     Route::get('/user', [AuthController::class, 'user']);
     Route::post('/email/verification-notification', [AuthController::class, 'resendVerification']);
 
+    // Two-factor authentication
+    Route::get('/two-factor/status', [TwoFactorController::class, 'status']);
+    Route::post('/two-factor/setup', [TwoFactorController::class, 'setup']);
+    Route::post('/two-factor/confirm', [TwoFactorController::class, 'confirm']);
+    Route::post('/two-factor/disable', [TwoFactorController::class, 'disable']);
+    Route::post('/two-factor/challenge', [TwoFactorController::class, 'challenge']);
+
     // User Profile
     Route::get('/users/{user}/profile', [UserController::class, 'profile']);
     Route::get('/users/{user}/posts', [UserController::class, 'posts']);
     Route::put('/user/profile', [UserController::class, 'updateProfile']);
     Route::post('/user/profile-picture', [UserController::class, 'uploadProfilePicture']);
     Route::get('/users/suggested', [UserController::class, 'suggested']);
+    Route::get('/user/notification-preferences', [UserController::class, 'notificationPreferences']);
+    Route::put('/user/notification-preferences', [UserController::class, 'updateNotificationPreferences']);
+    Route::post('/user/push-subscription', [PushSubscriptionController::class, 'store']);
+    Route::delete('/user/push-subscription', [PushSubscriptionController::class, 'destroy']);
+    Route::get('/user/analytics', [AnalyticsController::class, 'index']);
+    Route::get('/user/export-data', [UserController::class, 'exportData']);
+    Route::delete('/user/account', [UserController::class, 'deleteAccount']);
 
     // Posts
     Route::get('/posts', [PostController::class, 'index']); // Feed
+    Route::get('/posts/suggested', [PostController::class, 'suggested']);
     Route::post('/posts', [PostController::class, 'store']);
     Route::get('/posts/{post}', [PostController::class, 'show']);
     Route::put('/posts/{post}', [PostController::class, 'update']);
@@ -69,6 +100,11 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function () {
     // Post Share (increment share count)
     Route::post('/posts/{post}/share', [PostController::class, 'share']);
 
+    // Bookmarks
+    Route::get('/bookmarks', [BookmarkController::class, 'index']);
+    Route::post('/posts/{post}/bookmark', [BookmarkController::class, 'store']);
+    Route::delete('/posts/{post}/bookmark', [BookmarkController::class, 'destroy']);
+
     // Comments
     Route::get('/posts/{post}/comments', [CommentController::class, 'index']);
     Route::post('/posts/{post}/comments', [CommentController::class, 'store']);
@@ -77,6 +113,12 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function () {
     // Follow/Unfollow (now sends friend requests)
     Route::post('/users/{id}/follow', [FollowController::class, 'follow']);
     Route::delete('/users/{id}/unfollow', [FollowController::class, 'unfollow']);
+
+    // Block users
+    Route::get('/blocks', [BlockController::class, 'index']);
+    Route::post('/users/{id}/block', [BlockController::class, 'store']);
+    Route::delete('/users/{id}/block', [BlockController::class, 'destroy']);
+    Route::get('/users/{id}/block-status', [BlockController::class, 'status']);
 
     // Friend Requests
     Route::get('/friend-requests', [FriendRequestController::class, 'index']);
@@ -88,6 +130,14 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function () {
     // Search
     Route::get('/search', [SearchController::class, 'search']);
 
+    // Trending
+    Route::get('/trending/hashtags', [TrendingController::class, 'hashtags']);
+    Route::get('/trending/posts', [TrendingController::class, 'posts']);
+
+    // Reports
+    Route::post('/reports', [ReportController::class, 'store']);
+    Route::get('/reports/status', [ReportController::class, 'status']);
+
     // Communities
     Route::get('/communities', [CommunityController::class, 'index']);
     Route::post('/communities', [CommunityController::class, 'store']);
@@ -97,9 +147,19 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function () {
     Route::post('/communities/{community}/join', [CommunityController::class, 'join']);
     Route::delete('/communities/{community}/leave', [CommunityController::class, 'leave']);
     Route::get('/communities/{community}/posts', [CommunityController::class, 'posts']);
+    Route::get('/communities/{community}/posts/pending', [CommunityController::class, 'pendingPosts']);
+    Route::post('/communities/{community}/posts', [CommunityController::class, 'submitPost']);
+    Route::post('/communities/{community}/posts/{post}/approve', [CommunityController::class, 'approvePost']);
+    Route::post('/communities/{community}/posts/{post}/reject', [CommunityController::class, 'rejectPost']);
 
     // Conversations
     Route::get('/conversations', [ConversationController::class, 'index']);
+
+    // Group conversations
+    Route::get('/group-conversations', [GroupConversationController::class, 'index']);
+    Route::post('/group-conversations', [GroupConversationController::class, 'store']);
+    Route::get('/group-conversations/{groupConversation}', [GroupConversationController::class, 'show']);
+    Route::post('/group-messages', [GroupMessageController::class, 'store']);
     Route::get('/conversations/by-username/{username}', [ConversationController::class, 'getByUsername']);
     Route::get('/conversations/{conversation}', [ConversationController::class, 'show']);
 
@@ -114,4 +174,16 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function () {
     Route::post('/notifications/read-all', [NotificationController::class, 'markAllAsRead']);
     Route::post('/notifications/{id}/read', [NotificationController::class, 'markAsRead']);
 
+    // Admin routes
+    Route::prefix('admin')->middleware('admin')->group(function () {
+        Route::get('/users', [\App\Http\Controllers\Api\Admin\AdminUserController::class, 'index']);
+        Route::put('/users/{user}/role', [\App\Http\Controllers\Api\Admin\AdminUserController::class, 'updateRole']);
+        Route::post('/users/{user}/suspend', [\App\Http\Controllers\Api\Admin\AdminUserController::class, 'suspend']);
+        Route::post('/users/{user}/unsuspend', [\App\Http\Controllers\Api\Admin\AdminUserController::class, 'unsuspend']);
+
+        Route::get('/reports', [\App\Http\Controllers\Api\Admin\AdminReportController::class, 'index']);
+        Route::post('/reports/{report}/dismiss', [\App\Http\Controllers\Api\Admin\AdminReportController::class, 'dismiss']);
+        Route::post('/reports/{report}/action-taken', [\App\Http\Controllers\Api\Admin\AdminReportController::class, 'actionTaken']);
+        Route::post('/reports/{report}/remove-post', [\App\Http\Controllers\Api\Admin\AdminReportController::class, 'removePost']);
+    });
 });

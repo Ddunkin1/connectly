@@ -30,6 +30,13 @@ class FollowController extends Controller
             ], 422);
         }
 
+        // Check block status
+        if ($sender->hasBlocked($receiver) || $receiver->hasBlocked($sender)) {
+            return response()->json([
+                'message' => 'Cannot send friend request to this user',
+            ], 403);
+        }
+
         // Check if already friends (mutual follow)
         if ($sender->isFollowing($receiver) && $receiver->isFollowing($sender)) {
             return response()->json([
