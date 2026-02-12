@@ -100,27 +100,27 @@ const Messages = () => {
     const showGroupContent = activeTab === 'groups';
 
     return (
-        <div className="flex-1 flex min-h-0 overflow-hidden bg-[#0A0A0B]">
+        <div className="flex-1 flex min-h-0 overflow-hidden bg-[var(--theme-bg-main)]">
             <NewGroupModal
                 isOpen={newGroupModalOpen}
                 onClose={() => setNewGroupModalOpen(false)}
                 onCreated={handleGroupCreated}
             />
-            <div className="flex flex-1 min-h-0 overflow-hidden bg-[#0A0A0B]">
+            <div className="flex flex-1 min-h-0 overflow-hidden bg-[var(--theme-bg-main)]">
                 {/* Left panel - conversation list (slim w-64 for wider chat) */}
-                <section className="w-64 shrink-0 border-r border-[#26262E] flex flex-col bg-[#0A0A0B]">
+                <section className="w-64 shrink-0 border-r border-[var(--theme-border)] flex flex-col bg-[var(--theme-bg-main)]">
                     <div className="p-6">
                         <div className="flex items-center justify-between mb-6">
                             <h2 className="text-xl font-bold text-white">Messages</h2>
-                            <Link to="/messages" className="p-2 rounded-lg hover:bg-[#16161E] text-slate-400 transition-colors" aria-label="Compose">
+                            <Link to="/messages" className="p-2 rounded-lg hover:bg-[var(--theme-surface-hover)] text-slate-400 transition-colors" aria-label="Compose">
                                 <span className="material-symbols-outlined">edit_note</span>
                             </Link>
                         </div>
                         <div className="relative mb-6">
                             <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg">search</span>
-                            <input type="text" placeholder="Search messages" className="w-full bg-[#16161E] border-none rounded-xl pl-10 py-2.5 text-sm text-white placeholder:text-slate-500 focus:ring-2 focus:ring-primary/50" />
+                            <input type="text" placeholder="Search messages" className="w-full bg-[var(--theme-surface-hover)] border-none rounded-xl pl-10 py-2.5 text-sm text-white placeholder:text-slate-500 focus:ring-2 focus:ring-primary/50" />
                         </div>
-                        <div className="flex p-1 bg-[#16161E] rounded-xl mb-4">
+                        <div className="flex p-1 bg-[var(--theme-surface-hover)] rounded-xl mb-4">
                             <button type="button" onClick={() => setActiveTab('direct')} className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all ${activeTab === 'direct' ? 'bg-white dark:bg-slate-800 text-white shadow-sm' : 'text-slate-500 hover:text-slate-200'}`}>Direct</button>
                             <button type="button" onClick={() => setActiveTab('groups')} className={`flex-1 py-1.5 text-xs font-medium rounded-lg transition-all ${activeTab === 'groups' ? 'bg-white dark:bg-slate-800 text-white shadow-sm' : 'text-slate-500 hover:text-slate-200'}`}>Groups</button>
                         </div>
@@ -145,7 +145,7 @@ const Messages = () => {
                 </section>
 
                 {/* Center - chat: header fixed top, messages scroll, input fixed bottom */}
-                <main className="flex-1 flex flex-col min-h-0 min-w-0 overflow-hidden bg-[#0A0A0B]/50">
+                <main className="flex-1 flex flex-col min-h-0 min-w-0 overflow-hidden bg-[var(--theme-bg-main)]/50">
                     {showDirectContent && (
                         <>
                             {isLoadingConversation ? (
@@ -187,7 +187,7 @@ const Messages = () => {
                         <>
                             {selectedGroup ? (
                                 <>
-                                    <div className="shrink-0 px-6 py-4 border-b border-[#26262E]">
+                                    <div className="shrink-0 px-6 py-4 border-b border-[var(--theme-border)]">
                                         <h3 className="text-lg font-semibold text-white">{selectedGroup.name}</h3>
                                         <p className="text-sm text-slate-500">{selectedGroup.members?.length || 0} members</p>
                                     </div>

@@ -30,7 +30,7 @@ const StoriesRow = () => {
                 <Link key={story.id} to="/home" className={`flex flex-col items-center space-y-2 flex-shrink-0 cursor-pointer ${!story.hasRing ? 'opacity-50' : ''}`} aria-label={`View ${story.name}'s story`}>
                     {story.hasRing ? (
                         <div className="story-ring rounded-xl p-[2px] shrink-0">
-                            <img alt={story.name} className="w-16 h-16 rounded-xl object-cover border-2 border-[#121214]" src={`https://i.pravatar.cc/128?u=${story.id}`} />
+                            <img alt={story.name} className="w-16 h-16 rounded-xl object-cover border-2 border-[var(--theme-bg-sidebar)]" src={`https://i.pravatar.cc/128?u=${story.id}`} />
                         </div>
                     ) : (
                         <div className="rounded-xl p-[2px] border border-slate-700 shrink-0">

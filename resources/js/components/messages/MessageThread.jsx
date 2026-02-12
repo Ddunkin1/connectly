@@ -159,7 +159,7 @@ const MessageThread = ({ conversationId, onMediaFromMessages }) => {
                     if (item.type === 'separator') {
                         return (
                             <div key={`sep-${idx}`} className="flex flex-col items-center mb-4">
-                                <span className="px-3 py-1 bg-[#16161E] text-[10px] font-bold text-slate-500 rounded-full uppercase tracking-tighter">
+                                <span className="px-3 py-1 bg-[var(--theme-surface-hover)] text-[10px] font-bold text-slate-500 rounded-full uppercase tracking-tighter">
                                     {formatDateSeparator(item.date)}
                                 </span>
                             </div>
@@ -174,7 +174,7 @@ const MessageThread = ({ conversationId, onMediaFromMessages }) => {
                             )}
                             <div className={`flex flex-col ${isOwnMessage ? 'items-end' : 'items-start'}`}>
                                 <div className={`p-4 rounded-2xl shadow-sm ${
-                                    isOwnMessage ? 'message-gradient text-white rounded-br-none shadow-lg shadow-primary/20' : 'bg-[#16161E] text-white border border-[#26262E] rounded-bl-none'
+                                    isOwnMessage ? 'message-gradient text-white rounded-br-none shadow-lg shadow-primary/20' : 'bg-[var(--theme-surface-hover)] text-white border border-[var(--theme-border)] rounded-bl-none'
                                 }`}>
                                     {message.attachment_url && (
                                         <div className="mb-2">

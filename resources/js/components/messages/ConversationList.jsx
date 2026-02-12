@@ -79,7 +79,7 @@ const ConversationList = ({ onSelectConversation, selectedConversationId }) => {
                                         className={`w-full p-3 rounded-2xl flex gap-3 cursor-pointer transition-all text-left mb-2 ${
                                             isSelected
                                                 ? 'bg-primary/10 border border-primary/20'
-                                                : 'hover:bg-[#16161E] border border-transparent'
+                                                : 'hover:bg-[var(--theme-surface-hover)] border border-transparent'
                                         }`}
                                     >
                                         <div className="relative shrink-0">
@@ -104,7 +104,7 @@ const ConversationList = ({ onSelectConversation, selectedConversationId }) => {
                             <h4 className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Requests</h4>
                         </div>
                         <div className="px-4 py-4">
-                            <div className="p-4 border-2 border-dashed border-[#26262E] rounded-2xl text-center">
+                            <div className="p-4 border-2 border-dashed border-[var(--theme-border)] rounded-2xl text-center">
                                 <p className="text-xs text-slate-400">No pending requests</p>
                             </div>
                         </div>
@@ -112,7 +112,7 @@ const ConversationList = ({ onSelectConversation, selectedConversationId }) => {
                 )}
             </div>
             {isFetchingNextPage && (
-                <div className="flex justify-center py-2 border-t border-[#2A2A2A]">
+                <div className="flex justify-center py-2 border-t border-[var(--theme-border)]">
                     <LoadingSpinner size="sm" />
                 </div>
             )}

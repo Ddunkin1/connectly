@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import useAuthStore from '../../store/authStore';
 import useThemeStore from '../../store/themeStore';
+import { useLogout } from '../../hooks/useAuth';
 import Avatar from '../common/Avatar';
 import { useUnreadNotificationsCount } from '../../hooks/useNotifications';
 import { useConversations } from '../../hooks/useConversations';
@@ -32,13 +33,31 @@ const LeftSidebar = ({ className = '', onNavigate, positionBelowNav = false }) =
 
     const openThemeCustomizer = useThemeStore((s) => s.openCustomizer);
     const isThemeCustomizerOpen = useThemeStore((s) => s.isCustomizerOpen);
+    const logoutMutation = useLogout();
+    const [showUserMenu, setShowUserMenu] = useState(false);
+    const userMenuRef = useRef(null);
+
+    useEffect(() => {
+        const handleClickOutside = (e) => {
+            if (userMenuRef.current && !userMenuRef.current.contains(e.target)) setShowUserMenu(false);
+        };
+        document.addEventListener('click', handleClickOutside);
+        return () => document.removeEventListener('click', handleClickOutside);
+    }, []);
+
+    const handleLogout = () => {
+        setShowUserMenu(false);
+        logoutMutation.mutate(undefined, {
+            onSettled: () => navigate('/login', { replace: true }),
+        });
+    };
 
     const handleCreatePost = () => {
         navigate('/home');
         setTimeout(() => window.dispatchEvent(new CustomEvent('open-create-post')), 100);
     };
 
-    const wrapperClass = `w-[250px] fixed left-10 border-r border-white/5 flex flex-col p-4 bg-[#121214] z-30 overflow-y-auto
+    const wrapperClass = `w-[250px] fixed left-10 border-r border-white/5 flex flex-col p-4 bg-[var(--theme-bg-sidebar)] z-30 overflow-y-auto
         ${positionBelowNav ? 'top-[60px] h-[calc(100vh-60px)]' : 'top-0 h-screen'}
         ${className}`.trim();
 
@@ -56,17 +75,49 @@ const LeftSidebar = ({ className = '', onNavigate, positionBelowNav = false }) =
             </div>
 
             {user && (
-                <Link
-                    to={`/profile/${user.username}`}
-                    className="mb-8 px-2 flex items-center gap-3 p-3 rounded-xl hover:bg-white/5 transition-colors cursor-pointer"
-                    onClick={handleNavClick}
-                >
-                    <Avatar src={user.profile_picture} alt={user.name} size="md" className="w-10 h-10 rounded-full shrink-0" />
-                    <div className="flex flex-col overflow-hidden">
-                        <span className="text-sm font-bold text-white truncate">{user.name}</span>
-                        <span className="text-xs text-slate-500 truncate">@{user.username}</span>
-                    </div>
-                </Link>
+                <div className="mb-8 px-2 relative" ref={userMenuRef}>
+                    <button
+                        type="button"
+                        onClick={() => setShowUserMenu((v) => !v)}
+                        className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-white/5 transition-colors cursor-pointer text-left"
+                    >
+                        <Avatar src={user.profile_picture} alt={user.name} size="md" className="w-10 h-10 rounded-full shrink-0" />
+                        <div className="flex flex-col overflow-hidden">
+                            <span className="text-sm font-bold text-white truncate">{user.name}</span>
+                            <span className="text-xs text-slate-500 truncate">@{user.username}</span>
+                        </div>
+                        <span className="material-symbols-outlined text-slate-500 ml-auto">expand_more</span>
+                    </button>
+                    {showUserMenu && (
+                        <div className="absolute left-2 right-2 mt-1 py-1 rounded-xl theme-surface border border-[var(--theme-border)] shadow-xl z-50">
+                            <Link
+                                to={`/profile/${user.username}`}
+                                className="flex items-center gap-2 px-4 py-2.5 text-sm text-[var(--text-primary)] hover:bg-[var(--theme-surface-hover)]"
+                                onClick={() => { setShowUserMenu(false); handleNavClick(); }}
+                            >
+                                <span className="material-symbols-outlined text-lg">person</span>
+                                Profile
+                            </Link>
+                            <Link
+                                to="/settings"
+                                className="flex items-center gap-2 px-4 py-2.5 text-sm text-[var(--text-primary)] hover:bg-[var(--theme-surface-hover)]"
+                                onClick={() => { setShowUserMenu(false); handleNavClick(); }}
+                            >
+                                <span className="material-symbols-outlined text-lg">settings</span>
+                                Settings
+                            </Link>
+                            <button
+                                type="button"
+                                onClick={handleLogout}
+                                disabled={logoutMutation.isPending}
+                                className="flex items-center gap-2 w-full px-4 py-2.5 text-sm text-red-400 hover:bg-red-500/10 text-left"
+                            >
+                                <span className="material-symbols-outlined text-lg">logout</span>
+                                {logoutMutation.isPending ? 'Logging out...' : 'Log out'}
+                            </button>
+                        </div>
+                    )}
+                </div>
             )}
 
             <nav className="flex-1 space-y-1.5 mb-4" aria-label="Main navigation">

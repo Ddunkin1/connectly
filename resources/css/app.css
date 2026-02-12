@@ -45,15 +45,24 @@
     --border-dark: #27272A;
 }
 
-/* Force dark theme when html.dark - guarantees reference look regardless of Tailwind dark: variant */
+/* Dark mode: use theme-driven variables; keep html.dark for dark: variant utilities */
 html.dark,
 html.dark body,
 html.dark #app,
 html.dark #app-root {
-    background-color: #0A0A0B !important;
-    color: #f1f5f9 !important;
+    background-color: var(--theme-bg-main, #0A0A0B);
+    color: var(--text-primary, #f1f5f9);
 }
 html.dark .text-inherit { color: inherit; }
+
+/* Light mode: explicit overrides when not dark */
+html:not(.dark),
+html:not(.dark) body,
+html:not(.dark) #app,
+html:not(.dark) #app-root {
+    background-color: var(--theme-bg-main, #f5f7f8);
+    color: var(--text-primary, #1a1a1a);
+}
 
 /* Theme customization - CSS variables (set by themeStore) */
 /* Layout overhaul design tokens (per spec) */
@@ -75,13 +84,13 @@ html.dark .text-inherit { color: inherit; }
     --accent-primary: #8A2BE2;
     --accent-gradient: linear-gradient(135deg, #8B5CF6 0%, #6366F1 100%);
     --border-color: #2A2A2A;
-    /* Typography */
-    --text-xl: 24px;
-    --text-lg: 20px;
-    --text-md: 16px;
-    --text-sm: 14px;
-    --text-xs: 12px;
-    --text-2xs: 10px;
+    /* Typography - rem so they scale with root font-size (html[data-font-size] on #app-root) */
+    --text-xl: 1.5rem;
+    --text-lg: 1.25rem;
+    --text-md: 1rem;
+    --text-sm: 0.875rem;
+    --text-xs: 0.75rem;
+    --text-2xs: 0.625rem;
     /* Spacing (aligned with spec) */
     --space-xs: 4px;
     --space-sm: 8px;
@@ -145,52 +154,66 @@ html[data-font-size="lg"] #app-root { font-size: 18px; }
 .card-shadow { box-shadow: var(--shadow-card); }
 .card-shadow-hover:hover { box-shadow: var(--shadow-card-hover); }
 
-/* Glass-morphism / glass-effect (Stitch AI reference) */
-.glass-morphism,
-.glass-effect {
-    background: rgba(26, 26, 29, 0.6);
+/* Glass-morphism / glass-effect - theme-aware */
+html.dark .glass-morphism,
+html.dark .glass-effect {
+    background: var(--glass-bg, rgba(26, 26, 29, 0.6));
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
     border: 1px solid rgba(255, 255, 255, 0.05);
 }
-
-/* Mesh gradient for Create Post button (Stitch AI reference) */
-.mesh-gradient {
-    background: linear-gradient(45deg, #8A2BE2 0%, #4B0082 100%);
+html:not(.dark) .glass-morphism,
+html:not(.dark) .glass-effect {
+    background: var(--glass-bg, rgba(255, 255, 255, 0.8));
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(0, 0, 0, 0.08);
 }
 
-/* Story ring gradient (purple to pink) */
+/* Mesh gradient for Create Post button - uses theme accent */
+.mesh-gradient {
+    background: linear-gradient(45deg, var(--theme-accent) 0%, color-mix(in srgb, var(--theme-accent) 60%, #000) 100%);
+}
+
+/* Story ring gradient - uses theme accent */
 .story-ring {
     padding: 2px;
-    background: linear-gradient(45deg, #8B5CF6, #EC4899);
+    background: linear-gradient(45deg, var(--theme-accent), color-mix(in srgb, var(--theme-accent) 80%, #EC4899));
 }
 
-/* Active tab glow */
+/* Active tab glow - uses theme accent */
 .active-tab-glow {
-    box-shadow: 0 0 15px rgba(139, 92, 246, 0.3);
+    box-shadow: 0 0 15px color-mix(in srgb, var(--theme-accent) 30%, transparent);
 }
 
-/* Message gradient (messaging UI) */
+/* Message gradient (messaging UI) - uses theme accent */
 .message-gradient {
-    background: linear-gradient(135deg, #8B5CF6 0%, #6366F1 100%);
+    background: linear-gradient(135deg, var(--theme-accent) 0%, color-mix(in srgb, var(--theme-accent) 85%, #6366F1) 100%);
 }
 
-/* Custom scrollbar (Stitch AI reference - dark theme) */
+/* Custom scrollbar - theme-aware */
 .custom-scrollbar::-webkit-scrollbar { width: 4px; }
 .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-.custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 10px; }
+html.dark .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 10px; }
+html:not(.dark) .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(0, 0, 0, 0.2); border-radius: 10px; }
 
-/* Glass for Quick Chat */
-.glass {
+/* Glass for Quick Chat - theme-aware */
+html.dark .glass {
     background: rgba(255, 255, 255, 0.03);
     backdrop-filter: blur(10px);
     border: 1px solid rgba(255, 255, 255, 0.05);
 }
+html:not(.dark) .glass {
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+}
 
-/* Custom scrollbar (general) */
+/* Custom scrollbar (general) - theme-aware */
 .scrollbar-styled::-webkit-scrollbar { width: 6px; }
 .scrollbar-styled::-webkit-scrollbar-track { background: transparent; }
-.scrollbar-styled::-webkit-scrollbar-thumb { background: #27272A; border-radius: 10px; }
+html.dark .scrollbar-styled::-webkit-scrollbar-thumb { background: var(--theme-border, #27272A); border-radius: 10px; }
+html:not(.dark) .scrollbar-styled::-webkit-scrollbar-thumb { background: rgba(0, 0, 0, 0.25); border-radius: 10px; }
 
 /* Story card - exact spec from guide */
 .story-card {

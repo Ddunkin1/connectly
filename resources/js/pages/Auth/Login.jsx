@@ -19,6 +19,15 @@ const Login = () => {
         if (searchParams.get('verified') === '1') {
             toast.success('Your email has been verified. You can sign in now.');
         }
+        const error = searchParams.get('error');
+        if (error) {
+            try {
+                const decoded = decodeURIComponent(error);
+                toast.error(decoded);
+            } catch {
+                toast.error('An error occurred during sign in.');
+            }
+        }
     }, [searchParams]);
     const {
         register,
@@ -35,7 +44,8 @@ const Login = () => {
                 navigate('/home');
             }
         } catch (error) {
-            // Error handled by mutation
+            const msg = error?.response?.data?.message || error?.message || 'Login failed. Please try again.';
+            toast.error(msg);
         }
     };
 
@@ -45,7 +55,8 @@ const Login = () => {
             await twoFactorMutation.mutateAsync(twoFactorCode);
             navigate('/home');
         } catch (error) {
-            // Error handled by mutation
+            const msg = error?.response?.data?.message || error?.message || 'Verification failed. Please try again.';
+            toast.error(msg);
         }
     };
 
@@ -90,6 +101,22 @@ const Login = () => {
                         </div>
                         <span className="ml-2 text-xl font-bold text-gray-900">Connectly</span>
                     </div>
+
+                    {/* Error banner from URL (e.g. Google OAuth redirect) */}
+                    {searchParams.get('error') && (
+                        <div
+                            role="alert"
+                            className="mb-6 p-4 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm"
+                        >
+                            {(() => {
+                                try {
+                                    return decodeURIComponent(searchParams.get('error'));
+                                } catch {
+                                    return 'An error occurred during sign in.';
+                                }
+                            })()}
+                        </div>
+                    )}
 
                     {/* Form Header */}
                     <div className="mb-8">

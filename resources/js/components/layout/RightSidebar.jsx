@@ -30,7 +30,7 @@ const RightSidebar = () => {
     const requestsCount = receivedRequests.length;
 
     return (
-        <aside className="w-[320px] fixed right-10 top-[60px] h-[calc(100vh-60px)] border-l border-white/5 p-4 bg-[#121214] z-10 overflow-y-auto">
+        <aside className="w-[320px] fixed right-10 top-[60px] h-[calc(100vh-60px)] border-l border-white/5 p-4 bg-[var(--theme-bg-sidebar)] z-10 overflow-y-auto">
             <div className="flex items-center justify-between mb-6">
                 <h3 className="text-lg font-bold text-white">Messages</h3>
                 <Link to="/messages" className="p-1.5 rounded-lg hover:bg-white/5 text-slate-400 transition-colors" aria-label="Compose message">
@@ -80,7 +80,7 @@ const RightSidebar = () => {
             {conversationsLoading ? (
                 <div className="flex justify-center py-4"><LoadingSpinner size="sm" /></div>
             ) : recentConversations.length === 0 ? (
-                <div className="p-4 rounded-2xl bg-[#161618] text-center">
+                <div className="p-4 rounded-2xl bg-[var(--theme-surface)] text-center">
                     <p className="text-sm text-slate-500">No conversations yet</p>
                     <Link to="/messages" className="text-sm text-primary hover:underline mt-2 inline-block">Start a conversation</Link>
                 </div>
@@ -100,7 +100,7 @@ const RightSidebar = () => {
                             >
                                 <div className="relative shrink-0">
                                     <Avatar src={otherUser?.profile_picture} alt={otherUser?.name} size="md" className="w-11 h-11 rounded-full object-cover" />
-                                    <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-[#121214] rounded-full" />
+                                    <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-[var(--theme-bg-sidebar)] rounded-full" />
                                     {conversation.unread_count > 0 && (
                                         <span className="absolute -top-0.5 -right-0.5 bg-red-500 text-white text-[10px] rounded-full w-4 h-4 flex items-center justify-center">{conversation.unread_count > 9 ? '9+' : conversation.unread_count}</span>
                                     )}

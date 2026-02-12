@@ -17,14 +17,15 @@ const ThemeCustomizer = ({ isOpen, onClose }) => {
             onClick={onClose}
         >
             <div
-                className="theme-surface rounded-2xl shadow-2xl max-w-md w-full border border-gray-700 overflow-hidden"
+                className="rounded-2xl shadow-2xl max-w-md w-full overflow-hidden"
+                style={{ backgroundColor: 'var(--theme-surface)', borderColor: 'var(--theme-border)', borderWidth: '1px', borderStyle: 'solid' }}
                 onClick={(e) => e.stopPropagation()}
             >
-                <div className="p-6 border-b border-gray-700">
+                <div className="p-6" style={{ borderBottom: '1px solid var(--theme-border)' }}>
                     <div className="flex items-center justify-between">
                         <div>
-                            <h2 className="text-xl font-bold text-white">Customize your view</h2>
-                            <p className="text-sm text-gray-400 mt-1">
+                            <h2 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>Customize your view</h2>
+                            <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>
                                 Manage your font size, color, and background.
                             </p>
                         </div>
@@ -42,9 +43,9 @@ const ThemeCustomizer = ({ isOpen, onClose }) => {
                 <div className="p-6 space-y-6">
                     {/* Font Size */}
                     <div>
-                        <label className="block text-sm font-medium text-white mb-3">Font Size</label>
+                        <label className="block text-sm font-medium mb-3" style={{ color: 'var(--text-primary)' }}>Font Size</label>
                         <div className="flex items-center gap-4">
-                            <span className="text-gray-400 text-sm">Aa</span>
+                            <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>Aa</span>
                             <div className="flex-1 flex gap-2">
                                 {FONT_SIZES.map((size) => (
                                     <button
@@ -53,26 +54,26 @@ const ThemeCustomizer = ({ isOpen, onClose }) => {
                                         onClick={() => setFontSize(size)}
                                         className={`flex-1 py-2.5 rounded-lg font-medium transition-all ${
                                             fontSize === size
-                                                ? 'bg-[var(--theme-accent,#8B5CF6)] text-white'
-                                                : 'bg-[#1A1A2E] text-gray-400 hover:bg-white/5 hover:text-white'
+                                                ? 'text-white'
+                                                : 'hover:opacity-90'
                                         }`}
                                         style={
                                             fontSize === size
                                                 ? { backgroundColor: 'var(--theme-accent)' }
-                                                : undefined
+                                                : { backgroundColor: 'var(--theme-surface-hover)', color: 'var(--text-secondary)' }
                                         }
                                     >
                                         {size === 'sm' ? 'Small' : size === 'md' ? 'Medium' : 'Large'}
                                     </button>
                                 ))}
                             </div>
-                            <span className="text-gray-400 text-sm">Aa</span>
+                            <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>Aa</span>
                         </div>
                     </div>
 
                     {/* Color */}
                     <div>
-                        <label className="block text-sm font-medium text-white mb-3">Color</label>
+                        <label className="block text-sm font-medium mb-3" style={{ color: 'var(--text-primary)' }}>Color</label>
                         <div className="flex gap-3 flex-wrap">
                             {Object.entries(ACCENT_COLORS).map(([key, { hex }]) => (
                                 <button
@@ -81,7 +82,7 @@ const ThemeCustomizer = ({ isOpen, onClose }) => {
                                     onClick={() => setAccentColor(key)}
                                     className={`w-10 h-10 rounded-full transition-all ${
                                         accentColor === key
-                                            ? 'ring-2 ring-white ring-offset-2 ring-offset-[#252538] scale-110'
+                                            ? 'ring-2 ring-white ring-offset-2 ring-offset-[var(--theme-surface)] scale-110'
                                             : 'hover:scale-105'
                                     }`}
                                     style={{ backgroundColor: hex }}
@@ -94,24 +95,21 @@ const ThemeCustomizer = ({ isOpen, onClose }) => {
 
                     {/* Background */}
                     <div>
-                        <label className="block text-sm font-medium text-white mb-3">Background</label>
+                        <label className="block text-sm font-medium mb-3" style={{ color: 'var(--text-primary)' }}>Background</label>
                         <div className="grid grid-cols-3 gap-3">
                             {Object.entries(BACKGROUND_THEMES).map(([key, { name, bg }]) => (
                                 <button
                                     key={key}
                                     type="button"
                                     onClick={() => setBackground(key)}
-                                    className={`flex flex-col items-center gap-2 py-3 px-4 rounded-xl border-2 transition-all ${
-                                        background === key
-                                            ? 'border-[var(--theme-accent)]'
-                                            : 'border-gray-600 hover:border-gray-500'
-                                    }`}
+                                    className="flex flex-col items-center gap-2 py-3 px-4 rounded-xl border-2 transition-all hover:opacity-90"
+                                    style={{ borderColor: background === key ? 'var(--theme-accent)' : 'var(--theme-border)' }}
                                 >
                                     <div
                                         className="w-full h-8 rounded-lg"
                                         style={{ backgroundColor: bg }}
                                     />
-                                    <span className="text-sm font-medium text-white">{name}</span>
+                                    <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{name}</span>
                                 </button>
                             ))}
                         </div>

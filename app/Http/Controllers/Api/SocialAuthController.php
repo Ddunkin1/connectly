@@ -55,23 +55,29 @@ class SocialAuthController extends Controller
             return $this->redirectToFrontendWithError('Could not authenticate with ' . $provider);
         }
 
+        $email = $socialUser->getEmail();
+        if (empty($email)) {
+            return $this->redirectToFrontendWithError('Your ' . $provider . ' account must have an email address to sign in.');
+        }
+
         $user = User::where('provider', $provider)
             ->where('provider_id', $socialUser->getId())
             ->first();
 
         if (!$user) {
-            $existingUser = User::where('email', $socialUser->getEmail())->first();
+            $existingUser = User::where('email', $email)->first();
 
             if ($existingUser) {
                 $existingUser->update([
                     'provider' => $provider,
                     'provider_id' => $socialUser->getId(),
+                    'email_verified_at' => $existingUser->email_verified_at ?? now(),
                 ]);
                 $user = $existingUser;
             } else {
                 $user = User::create([
                     'name' => $socialUser->getName() ?? $socialUser->getNickname() ?? 'User',
-                    'email' => $socialUser->getEmail(),
+                    'email' => $email,
                     'username' => $this->uniqueUsername(Str::slug($socialUser->getName() ?? $socialUser->getId())),
                     'provider' => $provider,
                     'provider_id' => $socialUser->getId(),

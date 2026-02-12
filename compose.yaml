@@ -65,6 +65,27 @@ services:
         depends_on:
             - laravel.test
         command: php artisan queue:work --queue=default,broadcasting --tries=3
+    vite:
+        build:
+            context: ./vendor/laravel/sail/runtimes/8.5
+            dockerfile: Dockerfile
+            args:
+                WWWGROUP: '${WWWGROUP}'
+        image: sail-8.5/app
+        env_file:
+            - .env
+        environment:
+            WWWUSER: '${WWWUSER}'
+            LARAVEL_SAIL: 1
+        volumes:
+            - '.:/var/www/html'
+        networks:
+            - sail
+        depends_on:
+            - laravel.test
+        ports:
+            - '${VITE_PORT:-5174}:5174'
+        command: npx vite --host 0.0.0.0 --port 5174
     mysql:
         image: 'mysql:8.4'
         ports:

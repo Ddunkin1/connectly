@@ -1,14 +1,33 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Avatar from '../common/Avatar';
 import useAuthStore from '../../store/authStore';
 import useThemeStore from '../../store/themeStore';
+import { useLogout } from '../../hooks/useAuth';
 
 const AppTopBar = ({ onMenuToggle, showMenuButton = false }) => {
     const navigate = useNavigate();
     const user = useAuthStore((s) => s.user);
     const openThemeCustomizer = useThemeStore((s) => s.openCustomizer);
     const [searchQuery, setSearchQuery] = useState('');
+    const [showProfileMenu, setShowProfileMenu] = useState(false);
+    const menuRef = useRef(null);
+    const logoutMutation = useLogout();
+
+    useEffect(() => {
+        const handleClickOutside = (e) => {
+            if (menuRef.current && !menuRef.current.contains(e.target)) setShowProfileMenu(false);
+        };
+        document.addEventListener('click', handleClickOutside);
+        return () => document.removeEventListener('click', handleClickOutside);
+    }, []);
+
+    const handleLogout = () => {
+        setShowProfileMenu(false);
+        logoutMutation.mutate(undefined, {
+            onSettled: () => navigate('/login', { replace: true }),
+        });
+    };
 
     const handleSearch = (e) => {
         e.preventDefault();
@@ -78,9 +97,46 @@ const AppTopBar = ({ onMenuToggle, showMenuButton = false }) => {
                         <span className="material-symbols-outlined">dark_mode</span>
                     </button>
                     {user && (
-                        <Link to={`/profile/${user.username}`} className="rounded-xl border-2 border-primary/20" aria-label="Profile">
-                            <Avatar src={user.profile_picture} alt={user.name} size="sm" className="w-9 h-9 rounded-xl object-cover" />
-                        </Link>
+                        <div className="relative" ref={menuRef}>
+                            <button
+                                type="button"
+                                onClick={() => setShowProfileMenu((v) => !v)}
+                                className="rounded-xl border-2 border-primary/20 focus:outline-none focus:ring-2 focus:ring-primary/50"
+                                aria-label="Profile menu"
+                                aria-expanded={showProfileMenu}
+                            >
+                                <Avatar src={user.profile_picture} alt={user.name} size="sm" className="w-9 h-9 rounded-xl object-cover" />
+                            </button>
+                            {showProfileMenu && (
+                                <div className="absolute right-0 mt-2 w-48 py-1 rounded-xl theme-surface border border-[var(--theme-border)] shadow-xl z-50">
+                                    <Link
+                                        to={`/profile/${user.username}`}
+                                        className="flex items-center gap-2 px-4 py-2.5 text-sm text-[var(--text-primary)] hover:bg-[var(--theme-surface-hover)]"
+                                        onClick={() => setShowProfileMenu(false)}
+                                    >
+                                        <span className="material-symbols-outlined text-lg">person</span>
+                                        Profile
+                                    </Link>
+                                    <Link
+                                        to="/settings"
+                                        className="flex items-center gap-2 px-4 py-2.5 text-sm text-[var(--text-primary)] hover:bg-[var(--theme-surface-hover)]"
+                                        onClick={() => setShowProfileMenu(false)}
+                                    >
+                                        <span className="material-symbols-outlined text-lg">settings</span>
+                                        Settings
+                                    </Link>
+                                    <button
+                                        type="button"
+                                        onClick={handleLogout}
+                                        disabled={logoutMutation.isPending}
+                                        className="flex items-center gap-2 w-full px-4 py-2.5 text-sm text-red-400 hover:bg-red-500/10 text-left"
+                                    >
+                                        <span className="material-symbols-outlined text-lg">logout</span>
+                                        {logoutMutation.isPending ? 'Logging out...' : 'Log out'}
+                                    </button>
+                                </div>
+                            )}
+                        </div>
                     )}
                 </div>
             </div>

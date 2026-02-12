@@ -155,7 +155,7 @@ const PostCard = ({ post, onDeleted, onCommentClick }) => {
                                     aria-hidden="true"
                                     onClick={() => setMoreOpen(false)}
                                 />
-                                <div className="absolute right-0 top-full mt-1 z-20 py-1 w-52 theme-surface rounded-lg border border-[#2A2A2A] shadow-xl">
+                                <div className="absolute right-0 top-full mt-1 z-20 py-1 w-52 theme-surface rounded-lg border border-[var(--theme-border)] shadow-xl">
                                     {!isAuthor && (
                                         <button
                                             type="button"
@@ -180,8 +180,8 @@ const PostCard = ({ post, onDeleted, onCommentClick }) => {
                                         <UilArchive size={18} color="currentColor" />
                                         Archive post
                                     </button>
-                                    <div className="border-t border-[#2A2A2A] my-1" />
-                                    <p className="px-4 py-1.5 text-xs text-[#9CA3AF] font-medium">Change visibility</p>
+                                    <div className="border-t border-[var(--theme-border)] my-1" />
+                                    <p className="px-4 py-1.5 text-xs text-[var(--text-secondary)] font-medium">Change visibility</p>
                                     <button
                                         type="button"
                                         onClick={() => handleVisibilityChange('public')}
@@ -212,7 +212,7 @@ const PostCard = ({ post, onDeleted, onCommentClick }) => {
                                         Private
                                         {post.visibility === 'private' && ' ✓'}
                                     </button>
-                                    <div className="border-t border-[#2A2A2A] my-1" />
+                                    <div className="border-t border-[var(--theme-border)] my-1" />
                                     <button
                                         type="button"
                                         onClick={handleDeleteClick}
@@ -240,7 +240,7 @@ const PostCard = ({ post, onDeleted, onCommentClick }) => {
 
             {/* Original post embed (when this is a share) – content clickable to post; like/comment/share on embed */}
             {post.shared_post && (
-                <div className="mb-2 rounded-lg border border-gray-600 overflow-hidden bg-[#1A1A2E]">
+                <div className="mb-2 rounded-lg border border-gray-600 overflow-hidden bg-[var(--theme-surface)]">
                     <Link
                         to={`/post/${post.shared_post.id}`}
                         className="block p-3 hover:bg-white/5 transition-colors"
@@ -263,7 +263,7 @@ const PostCard = ({ post, onDeleted, onCommentClick }) => {
                             </div>
                         )}
                     </Link>
-                    <div className="flex items-center gap-4 px-3 py-2 border-t border-gray-600 bg-[#252538]/50">
+                    <div className="flex items-center gap-4 px-3 py-2 border-t border-gray-600 bg-[var(--theme-surface-hover)]/50">
                         <button
                             type="button"
                             onClick={handleLikeInner(post.shared_post)}
@@ -306,7 +306,7 @@ const PostCard = ({ post, onDeleted, onCommentClick }) => {
                                         aria-hidden="true"
                                         onClick={() => setShareOpenInner(false)}
                                     />
-                                    <div className="absolute left-0 top-full mt-1 z-20 py-1 w-52 theme-surface rounded-lg border border-[#2A2A2A] shadow-xl">
+                                    <div className="absolute left-0 top-full mt-1 z-20 py-1 w-52 theme-surface rounded-lg border border-[var(--theme-border)] shadow-xl">
                                         <button
                                             type="button"
                                             onClick={() => {
@@ -408,7 +408,7 @@ const PostCard = ({ post, onDeleted, onCommentClick }) => {
                                     aria-hidden="true"
                                     onClick={() => setShareOpen(false)}
                                 />
-                                <div className="absolute left-0 top-full mt-1 z-20 py-1 w-52 theme-surface rounded-lg border border-[#2A2A2A] shadow-xl">
+                                <div className="absolute left-0 top-full mt-1 z-20 py-1 w-52 theme-surface rounded-lg border border-[var(--theme-border)] shadow-xl">
                                     <button
                                         type="button"
                                         onClick={() => {
@@ -476,14 +476,14 @@ const PostCard = ({ post, onDeleted, onCommentClick }) => {
                                                 <Link
                                                     key={l?.id}
                                                     to={`/profile/${l?.username}`}
-                                                    className="block rounded-full ring-2 ring-[#1A1A1A] w-5 h-5 overflow-hidden shrink-0"
+                                                    className="block rounded-full ring-2 ring-[var(--theme-surface)] w-5 h-5 overflow-hidden shrink-0"
                                                 >
                                                     <Avatar src={l?.profile_picture} alt={l?.name} size="xs" className="w-5 h-5" />
                                                 </Link>
                                             ))}
                                         </div>
                                     )}
-                                    <span className="text-sm text-[#9CA3AF]">
+                                    <span className="text-sm text-[var(--text-secondary)]">
                                         {post.is_liked && user
                                             ? `Liked by you${othersCount > 0 ? ` and ${othersCount} others` : ''}`
                                             : firstLiker

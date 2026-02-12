@@ -61,7 +61,7 @@ const MessageInput = ({ conversationId, receiverId, onMessageSent }) => {
     };
 
     return (
-        <div className="px-6 py-4 bg-[#0A0A0B]">
+        <div className="px-6 py-4 bg-[var(--theme-bg-main)]">
             <form onSubmit={handleSubmit(onSubmit)}>
                 {mediaPreview && (
                     <div className="mb-3 relative inline-block">
@@ -75,7 +75,7 @@ const MessageInput = ({ conversationId, receiverId, onMessageSent }) => {
                         </button>
                     </div>
                 )}
-                <div className="bg-[#16161E] rounded-2xl p-2 flex items-center gap-2 border border-[#26262E]">
+                <div className="bg-[var(--theme-surface-hover)] rounded-2xl p-2 flex items-center gap-2 border border-[var(--theme-border)]">
                     <input ref={fileInputRef} type="file" accept="image/*,video/*" onChange={handleFileChange} className="hidden" />
                     <button type="button" onClick={() => fileInputRef.current?.click()} className="w-10 h-10 flex items-center justify-center text-slate-500 hover:text-primary transition-colors shrink-0" aria-label="Attach">
                         <span className="material-symbols-outlined">add_circle_outline</span>

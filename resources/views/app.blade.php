@@ -1,6 +1,22 @@
 <!DOCTYPE html>
-<html class="dark" lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 <head>
+    <script>
+        (function() {
+            try {
+                var raw = localStorage.getItem('connectly-theme');
+                if (!raw) return;
+                var state = JSON.parse(raw);
+                var s = state?.state ?? state;
+                if (!s) return;
+                var root = document.documentElement;
+                if (s.fontSize && ['sm','md','lg'].includes(s.fontSize)) root.setAttribute('data-font-size', s.fontSize);
+                if (s.accentColor) root.setAttribute('data-accent', s.accentColor);
+                if (s.background) root.setAttribute('data-background', s.background);
+                if (['stitch','dim','dark'].includes(s.background)) root.classList.add('dark');
+            } catch (e) {}
+        })();
+    </script>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">

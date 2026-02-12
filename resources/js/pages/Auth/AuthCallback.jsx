@@ -16,30 +16,38 @@ const AuthCallback = () => {
         const error = searchParams.get('error');
 
         if (error) {
-            toast.error(error);
-            navigate('/login', { replace: true });
+            try {
+                toast.error(decodeURIComponent(error));
+            } catch {
+                toast.error('An error occurred during sign in.');
+            }
+            navigate('/login?error=' + encodeURIComponent(error), { replace: true });
             return;
         }
 
         if (!token) {
-            toast.error('Authentication failed. No token received.');
-            navigate('/login', { replace: true });
+            const errMsg = 'Authentication failed. No token received.';
+            toast.error(errMsg);
+            navigate('/login?error=' + encodeURIComponent(errMsg), { replace: true });
             return;
         }
 
-        // Persist token so api interceptor can use it, then fetch full user
-        setAuth({}, token);
-        authAPI.getUser()
-            .then((res) => {
+        const finishAuth = async () => {
+            try {
+                setAuth({}, token);
+                const res = await authAPI.getUser();
                 setAuth(res.data.user, token);
                 toast.success('Signed in successfully!');
                 navigate('/home', { replace: true });
-            })
-            .catch(() => {
+            } catch (err) {
                 logout();
-                toast.error('Authentication failed.');
-                navigate('/login', { replace: true });
-            });
+                const msg = err?.response?.data?.message || err?.message || 'Authentication failed.';
+                toast.error(msg);
+                navigate('/login?error=' + encodeURIComponent(msg), { replace: true });
+            }
+        };
+
+        finishAuth();
     }, [searchParams, setAuth, logout, navigate]);
 
     return (

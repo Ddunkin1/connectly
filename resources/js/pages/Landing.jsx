@@ -201,9 +201,9 @@ const Landing = () => {
 
                         {/* Social Login Buttons */}
                         <div className="space-y-3">
-                            <button
-                                type="button"
-                                className="w-full flex items-center justify-center space-x-3 px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors font-medium text-gray-700"
+                            <a
+                                href={`${import.meta.env.VITE_API_URL || '/api'}/auth/google`}
+                                className="w-full flex items-center justify-center space-x-3 px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors font-medium text-gray-700 no-underline"
                             >
                                 <svg className="w-5 h-5" viewBox="0 0 24 24">
                                     <path
@@ -224,7 +224,7 @@ const Landing = () => {
                                     />
                                 </svg>
                                 <span>Google</span>
-                            </button>
+                            </a>
                             <button
                                 type="button"
                                 className="w-full flex items-center justify-center space-x-3 px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors font-medium text-gray-700"

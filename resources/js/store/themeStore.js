@@ -13,10 +13,62 @@ export const ACCENT_COLORS = {
     blue: { name: 'Blue', hex: '#3B82F6' },
 };
 export const BACKGROUND_THEMES = {
-    light: { name: 'Light', bg: '#f5f7f8', sidebar: '#ffffff', surface: '#ffffff' },
-    stitch: { name: 'Stitch AI', bg: '#0A0A0B', sidebar: '#161618', surface: '#161618' },
-    dim: { name: 'Dim', bg: '#121212', sidebar: '#161616', surface: '#1A1A1A' },
-    dark: { name: 'Lights Out', bg: '#0F0F0F', sidebar: '#121212', surface: '#1A1A1A' },
+    light: {
+        name: 'Light',
+        bg: '#f5f7f8',
+        sidebar: '#ffffff',
+        surface: '#ffffff',
+        surfaceHover: '#f0f2f4',
+        feedBg: '#f5f7f8',
+        feedMuted: '#eef0f2',
+        textPrimary: '#1a1a1a',
+        textSecondary: '#6b7280',
+        border: 'rgba(0,0,0,0.1)',
+        cardShadow: '0 1px 3px rgba(0,0,0,0.08)',
+        glassBg: 'rgba(255,255,255,0.9)',
+    },
+    stitch: {
+        name: 'Stitch AI',
+        bg: '#0A0A0B',
+        sidebar: '#121214',
+        surface: '#161618',
+        surfaceHover: '#16161E',
+        feedBg: '#0A0A0B',
+        feedMuted: '#141414',
+        textPrimary: '#ffffff',
+        textSecondary: '#a0a0a0',
+        border: '#26262E',
+        cardShadow: '0 2px 8px rgba(0,0,0,0.2)',
+        glassBg: 'rgba(26,26,29,0.6)',
+    },
+    dim: {
+        name: 'Dim',
+        bg: '#121212',
+        sidebar: '#161616',
+        surface: '#1A1A1A',
+        surfaceHover: '#16161E',
+        feedBg: '#121212',
+        feedMuted: '#141414',
+        textPrimary: '#ffffff',
+        textSecondary: '#a0a0a0',
+        border: '#26262E',
+        cardShadow: '0 2px 8px rgba(0,0,0,0.2)',
+        glassBg: 'rgba(26,26,29,0.6)',
+    },
+    dark: {
+        name: 'Lights Out',
+        bg: '#0F0F0F',
+        sidebar: '#121212',
+        surface: '#1A1A1A',
+        surfaceHover: '#16161E',
+        feedBg: '#0F0F0F',
+        feedMuted: '#141414',
+        textPrimary: '#ffffff',
+        textSecondary: '#a0a0a0',
+        border: '#26262E',
+        cardShadow: '0 2px 8px rgba(0,0,0,0.2)',
+        glassBg: 'rgba(26,26,29,0.6)',
+    },
 };
 
 const useThemeStore = create(
@@ -46,18 +98,32 @@ const useThemeStore = create(
                 root.setAttribute('data-font-size', state.fontSize);
                 root.setAttribute('data-accent', state.accentColor);
                 root.setAttribute('data-background', state.background);
-                const bg = BACKGROUND_THEMES[state.background];
-                if (bg) {
-                    root.style.setProperty('--theme-bg-main', bg.bg);
-                    root.style.setProperty('--theme-bg-sidebar', bg.sidebar);
-                    root.style.setProperty('--theme-surface', bg.surface);
+                const theme = BACKGROUND_THEMES[state.background];
+                if (theme) {
+                    root.style.setProperty('--theme-bg-main', theme.bg);
+                    root.style.setProperty('--theme-bg-sidebar', theme.sidebar);
+                    root.style.setProperty('--theme-surface', theme.surface);
+                    root.style.setProperty('--theme-surface-hover', theme.surfaceHover ?? theme.surface);
+                    root.style.setProperty('--bg-primary', theme.bg);
+                    root.style.setProperty('--bg-secondary', theme.feedMuted);
+                    root.style.setProperty('--bg-feed', theme.surface);
+                    root.style.setProperty('--bg-feed-muted', theme.feedBg);
+                    root.style.setProperty('--text-primary', theme.textPrimary);
+                    root.style.setProperty('--text-secondary', theme.textSecondary);
+                    root.style.setProperty('--theme-border', theme.border);
+                    root.style.setProperty('--border-color', theme.border);
+                    root.style.setProperty('--shadow-card', theme.cardShadow);
+                    root.style.setProperty('--glass-bg', theme.glassBg);
                 }
                 const accent = ACCENT_COLORS[state.accentColor];
                 if (accent) {
+                    const accentHover = adjustBrightness(accent.hex, -15);
                     root.style.setProperty('--theme-accent', accent.hex);
-                    root.style.setProperty('--theme-accent-hover', adjustBrightness(accent.hex, -15));
+                    root.style.setProperty('--theme-accent-hover', accentHover);
+                    root.style.setProperty('--color-primary', accent.hex);
+                    root.style.setProperty('--color-primary-dark', accentHover);
+                    root.style.setProperty('--accent-primary', accent.hex);
                 }
-                // Enable dark: variants to match reference HTML (class="dark" on html)
                 const isDark = ['stitch', 'dim', 'dark'].includes(state.background);
                 root.classList.toggle('dark', isDark);
             },
