@@ -1,73 +1,98 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { useSendMessage } from '../../hooks/useMessages';
 import Button from '../common/Button';
 
 const MessageInput = ({ conversationId, receiverId, onMessageSent }) => {
-    const { register, handleSubmit, reset, watch, formState: { errors } } = useForm();
+    const { register, handleSubmit, reset, watch } = useForm({ defaultValues: { message: '' } });
     const sendMessageMutation = useSendMessage();
     const message = watch('message', '');
+    const [mediaFile, setMediaFile] = useState(null);
+    const [mediaPreview, setMediaPreview] = useState(null);
+    const fileInputRef = useRef(null);
 
-    const onSubmit = async (data) => {
-        if (!data.message.trim()) {
+    const canSend = message.trim() || mediaFile;
+
+    const handleFileChange = (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        const maxSize = 50 * 1024 * 1024; // 50MB
+        if (file.size > maxSize) {
             return;
         }
+        const isVideo = file.type.startsWith('video/');
+        const isImage = file.type.startsWith('image/');
+        if (!isVideo && !isImage) return;
+        setMediaFile(file);
+        if (isImage) {
+            const reader = new FileReader();
+            reader.onloadend = () => setMediaPreview(reader.result);
+            reader.readAsDataURL(file);
+        } else {
+            setMediaPreview(URL.createObjectURL(file));
+        }
+    };
+
+    const removeMedia = () => {
+        if (mediaPreview && mediaFile?.type.startsWith('video/')) {
+            URL.revokeObjectURL(mediaPreview);
+        }
+        setMediaFile(null);
+        setMediaPreview(null);
+        if (fileInputRef.current) fileInputRef.current.value = '';
+    };
+
+    const onSubmit = async (data) => {
+        if (!canSend) return;
 
         try {
-            await sendMessageMutation.mutateAsync({
-                receiver_id: receiverId,
-                message: data.message.trim(),
-            });
+            const formData = new FormData();
+            formData.append('receiver_id', receiverId);
+            formData.append('message', (data.message || '').trim());
+            if (mediaFile) formData.append('media', mediaFile);
+
+            await sendMessageMutation.mutateAsync(formData);
             reset();
-            if (onMessageSent) {
-                onMessageSent();
-            }
-        } catch (error) {
+            removeMedia();
+            if (onMessageSent) onMessageSent();
+        } catch {
             // Error handled by mutation
         }
     };
 
     return (
-        <form onSubmit={handleSubmit(onSubmit)} className="border-t border-gray-200 p-4">
-            <div className="flex items-end space-x-2">
-                <textarea
-                    {...register('message', {
-                        required: 'Message is required',
-                        maxLength: {
-                            value: 5000,
-                            message: 'Message cannot exceed 5000 characters',
-                        },
-                    })}
-                    placeholder="Type a message..."
-                    rows={1}
-                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#359EFF] focus:border-transparent resize-none"
-                    onKeyDown={(e) => {
-                        if (e.key === 'Enter' && !e.shiftKey) {
-                            e.preventDefault();
-                            handleSubmit(onSubmit)();
-                        }
-                    }}
-                />
-                <Button
-                    type="submit"
-                    size="sm"
-                    disabled={!message.trim() || sendMessageMutation.isPending}
-                    loading={sendMessageMutation.isPending}
-                >
-                    Send
-                </Button>
-            </div>
-            <div className="mt-1">
-                {errors.message && (
-                    <p className="text-xs text-red-500">{errors.message.message}</p>
+        <div className="px-6 py-4 bg-[#0A0A0B]">
+            <form onSubmit={handleSubmit(onSubmit)}>
+                {mediaPreview && (
+                    <div className="mb-3 relative inline-block">
+                        {mediaFile?.type.startsWith('video/') ? (
+                            <video src={mediaPreview} controls className="rounded-lg max-h-32" />
+                        ) : (
+                            <img src={mediaPreview} alt="Preview" className="rounded-lg max-h-32 object-cover" />
+                        )}
+                        <button type="button" onClick={removeMedia} className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600" aria-label="Remove media">
+                            <span className="material-symbols-outlined text-sm">close</span>
+                        </button>
+                    </div>
                 )}
-                {message.length > 0 && (
-                    <p className="text-xs text-gray-500">
-                        {message.length}/5000
-                    </p>
-                )}
-            </div>
-        </form>
+                <div className="bg-[#16161E] rounded-2xl p-2 flex items-center gap-2 border border-[#26262E]">
+                    <input ref={fileInputRef} type="file" accept="image/*,video/*" onChange={handleFileChange} className="hidden" />
+                    <button type="button" onClick={() => fileInputRef.current?.click()} className="w-10 h-10 flex items-center justify-center text-slate-500 hover:text-primary transition-colors shrink-0" aria-label="Attach">
+                        <span className="material-symbols-outlined">add_circle_outline</span>
+                    </button>
+                    <button type="button" onClick={() => fileInputRef.current?.click()} className="w-10 h-10 flex items-center justify-center text-slate-500 hover:text-primary transition-colors shrink-0" aria-label="Image">
+                        <span className="material-symbols-outlined">image</span>
+                    </button>
+                    <input {...register('message')} placeholder="Type a message..." className="flex-1 bg-transparent border-none focus:ring-0 text-sm py-2 text-white placeholder:text-slate-500" onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSubmit(onSubmit)(); } }} />
+                    <button type="button" className="w-10 h-10 flex items-center justify-center text-slate-500 hover:text-primary transition-colors shrink-0" aria-label="Emoji">
+                        <span className="material-symbols-outlined">sentiment_satisfied_alt</span>
+                    </button>
+                    <button type="submit" disabled={!canSend || sendMessageMutation.isPending} className="bg-primary text-white w-10 h-10 flex items-center justify-center rounded-xl shadow-lg shadow-primary/30 hover:scale-105 transition-transform disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 shrink-0" aria-label="Send">
+                        {sendMessageMutation.isPending ? <span className="material-symbols-outlined animate-spin">progress_activity</span> : <span className="material-symbols-outlined">send</span>}
+                    </button>
+                </div>
+            </form>
+        </div>
     );
 };
 

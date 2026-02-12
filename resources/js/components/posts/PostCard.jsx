@@ -109,37 +109,31 @@ const PostCard = ({ post, onDeleted, onCommentClick }) => {
     };
 
     return (
-        <article className="theme-surface rounded-[16px] p-4 mb-4 last:mb-0 lift-on-hover" style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.2)' }}>
-            {/* Post Header - reference: name, location + timestamp, avatar with gradient ring */}
-            <div className="flex items-start space-x-2 mb-2">
-                <Link to={`/profile/${post.user?.username}`} className="shrink-0 block p-[3px] rounded-full bg-gradient-to-r from-yellow-400 via-orange-400 to-green-400">
-                    <div className="rounded-full overflow-hidden w-8 h-8 bg-[#1A1A1A]">
-                        <Avatar src={post.user?.profile_picture} alt={post.user?.name} size="sm" className="w-8 h-8" />
-                    </div>
-                </Link>
-                <div className="flex-1 min-w-0">
-                    <Link
-                        to={`/profile/${post.user?.username}`}
-                        className="font-semibold text-white hover:text-[var(--theme-accent)] block"
-                    >
-                        {post.user?.name}
+        <article className="glass-effect overflow-hidden group mb-4 last:mb-0 p-4 rounded-2xl shadow-xl">
+            {/* Post Header - Stitch: avatar ring-2 ring-primary/20, 1 HOUR AGO, public icon */}
+            <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center space-x-3">
+                    <Link to={`/profile/${post.user?.username}`} className="shrink-0">
+                        <Avatar src={post.user?.profile_picture} alt={post.user?.name} className="w-10 h-10 rounded-full ring-2 ring-primary/20" />
                     </Link>
-                    <p className="text-sm text-[#9CA3AF] flex items-center gap-1.5">
-                        {[post.user?.location, formatDateUppercase(post.created_at)].filter(Boolean).join(', ')}
-                        <span
-                            className="inline-flex shrink-0 text-[#9CA3AF]/70"
-                            title={post.visibility === 'followers' ? 'Friends only' : post.visibility === 'private' ? 'Private' : 'Public'}
-                            aria-label={post.visibility === 'followers' ? 'Friends only' : post.visibility === 'private' ? 'Private' : 'Public'}
+                    <div>
+                        <Link
+                            to={`/profile/${post.user?.username}`}
+                            className="font-bold text-sm text-slate-100 hover:text-primary block"
                         >
-                            {post.visibility === 'followers' ? (
-                                <UilUsersAlt size={12} color="currentColor" />
-                            ) : post.visibility === 'private' ? (
-                                <UilLock size={12} color="currentColor" />
-                            ) : (
-                                <UilGlobe size={12} color="currentColor" />
-                            )}
-                        </span>
-                    </p>
+                            {post.user?.name}
+                        </Link>
+                        <div className="flex items-center gap-1.5 text-xs text-slate-500">
+                            <span>{formatDateUppercase(post.created_at)}</span>
+                            <span>•</span>
+                            <span
+                                className="material-symbols-outlined text-[14px] inline"
+                                title={post.visibility === 'followers' ? 'Friends only' : post.visibility === 'private' ? 'Private' : 'Public'}
+                            >
+                                {post.visibility === 'followers' ? 'group' : post.visibility === 'private' ? 'lock' : 'public'}
+                            </span>
+                        </div>
+                    </div>
                 </div>
                 {(isAuthor || user) && (
                     <div className="relative flex-shrink-0">
@@ -149,10 +143,10 @@ const PostCard = ({ post, onDeleted, onCommentClick }) => {
                                 e.preventDefault();
                                 setMoreOpen((open) => !open);
                             }}
-                            className="p-1 rounded-full text-gray-400 hover:bg-white/10 hover:text-white cursor-pointer"
+                            className="p-2 hover:bg-white/5 rounded-xl transition-colors"
                             aria-label="More options"
                         >
-                            <UilEllipsisH size={20} color="currentColor" />
+                            <span className="material-symbols-outlined text-slate-400">more_horiz</span>
                         </button>
                         {moreOpen && (
                             <>
@@ -240,7 +234,7 @@ const PostCard = ({ post, onDeleted, onCommentClick }) => {
             {/* Sharer's text (when this post is a share) */}
             {post.shared_post && (
                 <div className="mb-3">
-                    <p className="text-white whitespace-pre-wrap">{highlightHashtags(post.content || '')}</p>
+                    <p className="text-slate-100 whitespace-pre-wrap">{highlightHashtags(post.content || '')}</p>
                 </div>
             )}
 
@@ -334,18 +328,18 @@ const PostCard = ({ post, onDeleted, onCommentClick }) => {
 
             {/* Media first (reference order), then text content for text-only posts */}
             {!post.shared_post && post.media_url && (
-                <div className="mb-2 rounded-[12px] overflow-hidden">
+                <div className="my-2 rounded-[12px] overflow-hidden">
                     {post.media_type === 'image' ? (
                         <img
                             src={post.media_url}
                             alt="Post media"
-                            className="w-full h-auto object-contain max-h-[70vh]"
+                            className="w-full h-auto object-contain max-h-[500px]"
                         />
                     ) : (
                         <video
                             src={post.media_url}
                             controls
-                            className="w-full h-auto max-h-[70vh] object-contain"
+                            className="w-full h-auto max-h-[500px] object-contain"
                         >
                             Your browser does not support the video tag.
                         </video>
@@ -355,45 +349,43 @@ const PostCard = ({ post, onDeleted, onCommentClick }) => {
             {/* Text content - for text-only posts (no media) */}
             {!post.shared_post && !post.media_url && post.content && (
                 <Link to={`/post/${post.id}`}>
-                    <p className="text-white text-sm mb-2 whitespace-pre-wrap">{highlightHashtags(post.content)}</p>
+                    <p className="text-slate-100 text-[15px] leading-relaxed mb-4 whitespace-pre-wrap">{highlightHashtags(post.content)}</p>
                 </Link>
             )}
 
-            {/* Post Actions - heart, comment, share left; bookmark right (outline icons, no counts) */}
-            <div className="pt-3 mt-2 border-t border-gray-700/50 space-y-2">
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-6">
-                        <button
-                            type="button"
-                            onClick={handleLike}
-                            disabled={isLikePendingFor(post.id)}
-                            className={`flex items-center flex-shrink-0 transition-colors cursor-pointer disabled:opacity-60 ${
-                                post.is_liked
-                                    ? 'text-red-500 hover:text-red-600'
-                                    : 'text-gray-400 hover:text-white'
+            {/* Post Actions - Stitch: like/comment/share left, bookmark right */}
+            <div className="flex items-center justify-between pt-3 border-t border-white/5">
+                <div className="flex items-center gap-4">
+                    <button
+                        type="button"
+                        onClick={handleLike}
+                        disabled={isLikePendingFor(post.id)}
+                        className={`flex items-center gap-2 text-slate-400 transition-colors group/btn cursor-pointer disabled:opacity-60 ${
+                            post.is_liked
+                                ? 'text-rose-500 hover:text-rose-500'
+                                : 'hover:text-rose-500'
                             }`}
                         >
-                            {post.is_liked ? (
-                                <UilHeartAlt size={22} color="currentColor" />
-                            ) : (
-                                <UilHeart size={22} color="currentColor" />
-                            )}
+                            <span className={`material-symbols-outlined text-[20px] ${post.is_liked ? 'fill-rose-500' : ''}`}>favorite</span>
+                            <span className="text-xs font-medium">{(post.likes_count ?? 0) > 999 ? `${((post.likes_count ?? 0) / 1000).toFixed(1)}k` : post.likes_count ?? 0}</span>
                         </button>
 
                         {onCommentClick ? (
                             <button
                                 type="button"
                                 onClick={onCommentClick}
-                                className="flex items-center flex-shrink-0 text-gray-400 hover:text-[var(--theme-accent)] transition-colors cursor-pointer"
+                                className="flex items-center gap-2 text-slate-400 hover:text-primary transition-colors cursor-pointer"
                             >
-                                <UilComment size={22} color="currentColor" />
+                                <span className="material-symbols-outlined text-[20px]">chat_bubble</span>
+                                <span className="text-xs font-medium">{post.comments_count ?? 0}</span>
                             </button>
                         ) : (
                             <Link
                                 to={`/post/${post.id}`}
-                                className="flex items-center flex-shrink-0 text-gray-400 hover:text-[var(--theme-accent)] transition-colors cursor-pointer"
+                                className="flex items-center gap-2 text-slate-400 hover:text-primary transition-colors cursor-pointer"
                             >
-                                <UilComment size={22} color="currentColor" />
+                                <span className="material-symbols-outlined text-[20px]">chat_bubble</span>
+                                <span className="text-xs font-medium">{post.comments_count ?? 0}</span>
                             </Link>
                         )}
 
@@ -404,9 +396,10 @@ const PostCard = ({ post, onDeleted, onCommentClick }) => {
                                     e.preventDefault();
                                     setShareOpen((open) => !open);
                                 }}
-                                className="flex items-center text-gray-400 hover:text-[var(--theme-accent)] transition-colors cursor-pointer"
+                                className="flex items-center gap-2 text-slate-400 hover:text-sky-500 transition-colors cursor-pointer"
                             >
-                                <UilShare size={22} color="currentColor" />
+                                <span className="material-symbols-outlined text-[20px]">share</span>
+                                <span className="text-xs font-medium">{post.shares_count ?? 0}</span>
                             </button>
                         {shareOpen && (
                             <>
@@ -437,15 +430,11 @@ const PostCard = ({ post, onDeleted, onCommentClick }) => {
                         type="button"
                         onClick={handleBookmark}
                         disabled={isBookmarkPending}
-                        className={`flex items-center flex-shrink-0 transition-colors cursor-pointer disabled:opacity-60 ${
-                            post.is_bookmarked ? 'text-[var(--theme-accent)]' : 'text-gray-400 hover:text-[var(--theme-accent)]'
+                        className={`p-2 transition-colors cursor-pointer disabled:opacity-60 ${
+                            post.is_bookmarked ? 'text-primary' : 'text-slate-400 hover:text-primary'
                         }`}
                     >
-                        {(post.is_bookmarked ?? false) ? (
-                            <UilBookmarkFull size={22} color="currentColor" />
-                        ) : (
-                            <UilBookmark size={22} color="currentColor" />
-                        )}
+                        <span className={`material-symbols-outlined text-[20px] ${post.is_bookmarked ? 'fill-primary' : ''}`}>bookmark</span>
                     </button>
                 </div>
 
@@ -508,7 +497,7 @@ const PostCard = ({ post, onDeleted, onCommentClick }) => {
                 )}
                 {/* Caption for media posts - author + content (reference format) */}
                 {!post.shared_post && post.content && post.media_url && (
-                    <p className="text-sm text-white">
+                    <p className="text-sm text-[var(--text-feed)]">
                         <Link to={`/profile/${post.user?.username}`} className="font-semibold hover:text-[var(--theme-accent)]">
                             {post.user?.name}
                         </Link>
@@ -521,7 +510,6 @@ const PostCard = ({ post, onDeleted, onCommentClick }) => {
                         View all {post.comments_count} comment{post.comments_count !== 1 ? 's' : ''}
                     </Link>
                 )}
-            </div>
 
             <ReportModal
                 isOpen={reportModalOpen}

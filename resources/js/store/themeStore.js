@@ -14,6 +14,7 @@ export const ACCENT_COLORS = {
 };
 export const BACKGROUND_THEMES = {
     light: { name: 'Light', bg: '#f5f7f8', sidebar: '#ffffff', surface: '#ffffff' },
+    stitch: { name: 'Stitch AI', bg: '#0A0A0B', sidebar: '#161618', surface: '#161618' },
     dim: { name: 'Dim', bg: '#121212', sidebar: '#161616', surface: '#1A1A1A' },
     dark: { name: 'Lights Out', bg: '#0F0F0F', sidebar: '#121212', surface: '#1A1A1A' },
 };
@@ -23,7 +24,7 @@ const useThemeStore = create(
         (set) => ({
             fontSize: 'md',
             accentColor: 'peachy',
-            background: 'dim',
+            background: 'stitch',
             isCustomizerOpen: false,
             setFontSize: (fontSize) => {
                 set({ fontSize });
@@ -56,6 +57,9 @@ const useThemeStore = create(
                     root.style.setProperty('--theme-accent', accent.hex);
                     root.style.setProperty('--theme-accent-hover', adjustBrightness(accent.hex, -15));
                 }
+                // Enable dark: variants to match reference HTML (class="dark" on html)
+                const isDark = ['stitch', 'dim', 'dark'].includes(state.background);
+                root.classList.toggle('dark', isDark);
             },
         }),
         {

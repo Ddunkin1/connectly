@@ -53,8 +53,8 @@ const Profile = () => {
 
     if (!profile) {
         return (
-            <div className="text-center py-12">
-                <p className="text-gray-500">User not found</p>
+            <div className="text-center py-12 theme-bg-main">
+                <p className="text-gray-400">User not found</p>
             </div>
         );
     }
@@ -67,10 +67,13 @@ const Profile = () => {
         return `Joined ${month} ${year}`;
     };
 
+    const followersPreview = profile.followers_preview ?? [];
+    const extraCount = Math.max(0, (profile.followers_count ?? 0) - followersPreview.length);
+
     return (
-        <div className="max-w-7xl mx-auto">
+        <div className="max-w-[1400px] mx-auto">
             {/* Profile Banner Section */}
-            <div className="bg-white rounded-lg overflow-hidden mb-4 shadow-sm">
+            <div className="theme-surface rounded-2xl overflow-hidden mb-6 border border-[#2A2A2A] card-shadow">
                 {/* Cover Image */}
                 <div 
                     className="h-64 bg-gradient-to-r from-blue-400 via-purple-500 to-pink-500 relative"
@@ -82,15 +85,18 @@ const Profile = () => {
                         backgroundPosition: 'center',
                     }}
                 >
-                    {/* Profile Picture - Overlapping */}
-                    <div className="absolute bottom-0 left-8 transform translate-y-1/2">
-                        <div className="w-32 h-32 rounded-full border-4 border-white bg-white p-1">
-                            <Avatar 
-                                src={profile.profile_picture} 
-                                alt={profile.name} 
-                                size="2xl"
-                                className="w-full h-full"
-                            />
+                    {/* Profile Picture - Centered, overlapping bottom */}
+                    <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-1/2">
+                        <div className="relative">
+                            <div className="w-32 h-32 rounded-full border-4 border-[var(--theme-surface)] p-1 theme-surface">
+                                <Avatar 
+                                    src={profile.profile_picture} 
+                                    alt={profile.name} 
+                                    size="2xl"
+                                    className="w-full h-full"
+                                />
+                            </div>
+                            <span className="absolute bottom-1 right-1 w-4 h-4 rounded-full bg-emerald-500 border-2 border-[var(--theme-surface)]" title="Online" aria-hidden />
                         </div>
                     </div>
                 </div>
@@ -99,11 +105,14 @@ const Profile = () => {
                 <div className="pt-16 pb-6 px-8">
                     <div className="flex flex-col md:flex-row md:items-start md:justify-between">
                         <div className="flex-1">
-                            <h1 className="text-3xl font-bold text-gray-900 mb-1">{profile.name}</h1>
-                            {profile.bio && (
-                                <p className="text-gray-600 mb-3">{profile.bio}</p>
+                            <h1 className="text-3xl font-bold text-white mb-1">{profile.name}</h1>
+                            {profile.username && (
+                                <p className="text-gray-400 text-base mb-2">@{profile.username}</p>
                             )}
-                            <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600">
+                            {profile.bio && (
+                                <p className="text-gray-400 mb-3">{profile.bio}</p>
+                            )}
+                            <div className="flex flex-wrap items-center gap-4 text-sm text-gray-400">
                                 {profile.location && (
                                     <div className="flex items-center space-x-1">
                                         <span className="material-symbols-outlined text-base">location_on</span>
@@ -120,7 +129,7 @@ const Profile = () => {
                             {isOwnProfile ? (
                                 <Link 
                                     to="/edit-profile"
-                                    className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 font-medium text-gray-700 transition-colors inline-block"
+                                    className="px-6 py-2 border border-[#374151] rounded-xl hover:bg-white/5 font-medium text-white transition-colors inline-block"
                                 >
                                     Edit Profile
                                 </Link>
@@ -128,14 +137,14 @@ const Profile = () => {
                                 <>
                                     {friendRequestStatus === 'sent' ? (
                                         <div className="flex items-center gap-2">
-                                            <span className="px-6 py-2 bg-gray-100 text-gray-600 rounded-lg font-medium flex items-center space-x-2">
+                                            <span className="px-6 py-2 bg-white/10 text-gray-400 rounded-xl font-medium flex items-center space-x-2">
                                                 <span className="material-symbols-outlined text-lg">hourglass_empty</span>
                                                 <span>Request Sent</span>
                                             </span>
                                             <button
                                                 onClick={() => cancelFriendRequestMutation.mutate(sentRequest?.id)}
                                                 disabled={cancelFriendRequestMutation.isPending || !sentRequest?.id || String(sentRequest?.id).startsWith('temp-')}
-                                                className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg font-medium transition-colors hover:bg-gray-50 flex items-center space-x-2 cursor-pointer"
+                                                className="px-6 py-2 border border-[#374151] text-white rounded-xl font-medium transition-colors hover:bg-white/5 flex items-center space-x-2 cursor-pointer"
                                             >
                                                 <span className="material-symbols-outlined text-lg">close</span>
                                                 <span>Cancel request</span>
@@ -146,7 +155,7 @@ const Profile = () => {
                                             <button
                                                 onClick={() => acceptFriendRequestMutation.mutate(receivedRequest?.id)}
                                                 disabled={acceptFriendRequestMutation.isPending}
-                                                className="px-6 py-2 bg-[#359EFF] text-white rounded-lg font-medium transition-colors hover:bg-[#2a8eef] flex items-center space-x-2"
+                                                className="px-6 py-2 bg-[var(--theme-accent)] text-white rounded-xl font-medium transition-colors hover:opacity-90 flex items-center space-x-2"
                                             >
                                                 <span className="material-symbols-outlined text-lg">check</span>
                                                 <span>Accept</span>
@@ -154,7 +163,7 @@ const Profile = () => {
                                             <button
                                                 onClick={() => rejectFriendRequestMutation.mutate(receivedRequest?.id)}
                                                 disabled={rejectFriendRequestMutation.isPending}
-                                                className="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors hover:bg-gray-300 flex items-center space-x-2"
+                                                className="px-6 py-2 bg-white/10 text-gray-400 rounded-xl font-medium transition-colors hover:bg-white/20 flex items-center space-x-2"
                                             >
                                                 <span className="material-symbols-outlined text-lg">close</span>
                                                 <span>Reject</span>
@@ -162,14 +171,14 @@ const Profile = () => {
                                         </div>
                                     ) : isFollowing ? (
                                         <div className="flex items-center gap-2">
-                                            <span className="px-6 py-2 bg-emerald-50 text-emerald-700 rounded-lg font-medium flex items-center space-x-2">
+                                            <span className="px-6 py-2 bg-emerald-500/20 text-emerald-400 rounded-xl font-medium flex items-center space-x-2">
                                                 <span className="material-symbols-outlined text-lg">check_circle</span>
                                                 <span>Connected</span>
                                             </span>
                                             <button
                                                 onClick={() => unfollowMutation.mutate(profile.id)}
                                                 disabled={unfollowMutation.isPending}
-                                                className="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors hover:bg-gray-300 flex items-center space-x-2 cursor-pointer"
+                                                className="px-6 py-2 bg-white/10 text-gray-400 rounded-xl font-medium transition-colors hover:bg-white/20 flex items-center space-x-2 cursor-pointer"
                                             >
                                                 <span className="material-symbols-outlined text-lg">person_remove</span>
                                                 <span>Unfollow</span>
@@ -179,7 +188,7 @@ const Profile = () => {
                                         <button
                                             onClick={() => followMutation.mutate(profile.id)}
                                             disabled={followMutation.isPending}
-                                            className="px-6 py-2 bg-[#359EFF] text-white rounded-lg font-medium transition-colors hover:bg-[#2a8eef] flex items-center space-x-2 cursor-pointer"
+                                            className="px-6 py-2 bg-[var(--theme-accent)] text-white rounded-xl font-medium transition-colors hover:opacity-90 flex items-center space-x-2 cursor-pointer"
                                         >
                                             <span className="material-symbols-outlined text-lg">person_add</span>
                                             <span>Connect</span>
@@ -187,7 +196,7 @@ const Profile = () => {
                                     )}
                                     <Link
                                         to={`/messages/${username}`}
-                                        className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 font-medium text-gray-700 transition-colors flex items-center space-x-2"
+                                        className="px-6 py-2 border border-[#374151] rounded-xl hover:bg-white/5 font-medium text-white transition-colors flex items-center space-x-2"
                                     >
                                         <span className="material-symbols-outlined text-lg">mail</span>
                                         <span>Message</span>
@@ -195,7 +204,7 @@ const Profile = () => {
                                     <div className="relative">
                                         <button
                                             onClick={() => setShowBlockMenu(!showBlockMenu)}
-                                            className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-gray-700"
+                                            className="p-2 border border-[#374151] rounded-xl hover:bg-white/5 text-gray-400"
                                             aria-label="More options"
                                         >
                                             <span className="material-symbols-outlined text-lg">more_horiz</span>
@@ -207,13 +216,13 @@ const Profile = () => {
                                                     onClick={() => setShowBlockMenu(false)}
                                                     aria-hidden="true"
                                                 />
-                                                <div className="absolute right-0 mt-1 w-48 bg-white border border-gray-200 rounded-lg shadow-lg py-1 z-20">
+                                                <div className="absolute right-0 mt-1 w-48 theme-surface border border-[#2A2A2A] rounded-xl shadow-lg py-1 z-20">
                                                     <button
                                                         onClick={() => {
                                                             setShowBlockMenu(false);
                                                             setReportModalOpen(true);
                                                         }}
-                                                        className="w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-50 flex items-center space-x-2"
+                                                        className="w-full text-left px-4 py-2 text-gray-300 hover:bg-white/5 flex items-center space-x-2 rounded-lg mx-1"
                                                     >
                                                         <span className="material-symbols-outlined text-lg">flag</span>
                                                         <span>Report user</span>
@@ -230,7 +239,7 @@ const Profile = () => {
                                                             }
                                                         }}
                                                         disabled={blockMutation.isPending}
-                                                        className="w-full text-left px-4 py-2 text-red-600 hover:bg-red-50 flex items-center space-x-2"
+                                                        className="w-full text-left px-4 py-2 text-red-400 hover:bg-red-500/10 flex items-center space-x-2 rounded-lg mx-1"
                                                     >
                                                         <span className="material-symbols-outlined text-lg">block</span>
                                                         <span>Block user</span>
@@ -256,14 +265,14 @@ const Profile = () => {
                 )}
 
                 {/* Profile Navigation Tabs */}
-                <div className="border-t border-gray-200 px-8">
+                <div className="border-t border-[#2A2A2A] px-8">
                     <div className="flex space-x-8">
                         <button
                             onClick={() => setActiveTab('posts')}
                             className={`py-4 font-medium border-b-2 transition-colors ${
                                 activeTab === 'posts'
-                                    ? 'text-[#359EFF] border-[#359EFF]'
-                                    : 'text-gray-500 border-transparent hover:text-gray-700'
+                                    ? 'text-[var(--theme-accent)] border-[var(--theme-accent)]'
+                                    : 'text-gray-400 border-transparent hover:text-white'
                             }`}
                         >
                             Posts
@@ -272,8 +281,8 @@ const Profile = () => {
                             onClick={() => setActiveTab('media')}
                             className={`py-4 font-medium border-b-2 transition-colors ${
                                 activeTab === 'media'
-                                    ? 'text-[#359EFF] border-[#359EFF]'
-                                    : 'text-gray-500 border-transparent hover:text-gray-700'
+                                    ? 'text-[var(--theme-accent)] border-[var(--theme-accent)]'
+                                    : 'text-gray-400 border-transparent hover:text-white'
                             }`}
                         >
                             Media
@@ -282,8 +291,8 @@ const Profile = () => {
                             onClick={() => setActiveTab('communities')}
                             className={`py-4 font-medium border-b-2 transition-colors ${
                                 activeTab === 'communities'
-                                    ? 'text-[#359EFF] border-[#359EFF]'
-                                    : 'text-gray-500 border-transparent hover:text-gray-700'
+                                    ? 'text-[var(--theme-accent)] border-[var(--theme-accent)]'
+                                    : 'text-gray-400 border-transparent hover:text-white'
                             }`}
                         >
                             Communities
@@ -292,8 +301,8 @@ const Profile = () => {
                             onClick={() => setActiveTab('more')}
                             className={`py-4 font-medium border-b-2 transition-colors ${
                                 activeTab === 'more'
-                                    ? 'text-[#359EFF] border-[#359EFF]'
-                                    : 'text-gray-500 border-transparent hover:text-gray-700'
+                                    ? 'text-[var(--theme-accent)] border-[var(--theme-accent)]'
+                                    : 'text-gray-400 border-transparent hover:text-white'
                             }`}
                         >
                             More
@@ -303,16 +312,16 @@ const Profile = () => {
             </div>
 
             {/* Main Content Area */}
-            <div className="flex flex-col lg:flex-row gap-4">
+            <div className="flex flex-col lg:flex-row gap-6">
                 {/* Left Sidebar */}
-                <div className="lg:w-1/3 space-y-4">
+                <div className="lg:w-1/3 space-y-6">
                     {/* About Section */}
-                    <div className="bg-white rounded-lg border border-gray-200 p-6">
-                        <h2 className="text-xl font-bold text-gray-900 mb-4">About</h2>
+                    <div className="theme-surface rounded-2xl border border-[#2A2A2A] p-6 card-shadow">
+                        <h2 className="text-xl font-bold text-white mb-4">About</h2>
                         {profile.bio && (
                             <div className="mb-6">
-                                <h3 className="text-sm font-semibold text-gray-700 mb-2">Bio</h3>
-                                <p className="text-gray-600 text-sm leading-relaxed">{profile.bio}</p>
+                                <h3 className="text-sm font-semibold text-gray-400 mb-2">Bio</h3>
+                                <p className="text-gray-400 text-sm leading-relaxed">{profile.bio}</p>
                             </div>
                         )}
                         <div className="space-y-3">
@@ -323,7 +332,7 @@ const Profile = () => {
                                         href={profile.website}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="text-sm text-[#359EFF] hover:underline"
+                                        className="text-sm text-[var(--theme-accent)] hover:underline"
                                     >
                                         {profile.website}
                                     </a>
@@ -332,32 +341,42 @@ const Profile = () => {
                             {profile.location && (
                                 <div className="flex items-start space-x-2">
                                     <span className="material-symbols-outlined text-gray-500 text-sm mt-0.5">work</span>
-                                    <span className="text-sm text-gray-600">{profile.location}</span>
+                                    <span className="text-sm text-gray-400">{profile.location}</span>
                                 </div>
                             )}
                         </div>
                     </div>
 
                     {/* Network Section */}
-                    <div className="bg-white rounded-lg border border-gray-200 p-6">
+                    <div className="theme-surface rounded-2xl border border-[#2A2A2A] p-6 card-shadow">
                         <div className="flex items-center justify-between mb-4">
-                            <h2 className="text-xl font-bold text-gray-900">Network</h2>
-                            <Link to={`/profile/${username}/connections`} className="text-sm text-[#359EFF] hover:underline font-medium">
+                            <h2 className="text-xl font-bold text-white">Network</h2>
+                            <Link to={`/profile/${username}/connections`} className="text-sm text-[var(--theme-accent)] hover:underline font-medium">
                                 SEE ALL
                             </Link>
                         </div>
                         <div className="grid grid-cols-3 gap-4 mb-4">
-                            {/* Mock connections - Replace with actual data */}
-                            {[1, 2, 3, 4, 5, 6].map((i) => (
-                                <div key={i} className="flex flex-col items-center">
-                                    <Avatar 
-                                        src={null} 
-                                        alt={`Connection ${i}`} 
-                                        size="md"
-                                    />
-                                    <span className="text-xs text-gray-600 mt-1 text-center">User {i}</span>
-                                </div>
+                            {followersPreview.slice(0, 6).map((f) => (
+                                <Link key={f.id} to={`/profile/${f.username}`} className="flex flex-col items-center group">
+                                    <div className="relative">
+                                        <Avatar
+                                            src={f.profile_picture}
+                                            alt={f.name}
+                                            size="md"
+                                            className="group-hover:ring-2 group-hover:ring-[var(--theme-accent)] rounded-full transition-all"
+                                        />
+                                    </div>
+                                    <span className="text-xs text-gray-400 mt-1 text-center truncate w-full group-hover:text-[var(--theme-accent)]">{f.name}</span>
+                                </Link>
                             ))}
+                            {extraCount > 0 && (
+                                <Link to={`/profile/${username}/connections`} className="flex flex-col items-center justify-center">
+                                    <div className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center text-gray-400 font-semibold text-sm">
+                                        +{extraCount}
+                                    </div>
+                                    <span className="text-xs text-gray-500 mt-1">more</span>
+                                </Link>
+                            )}
                         </div>
                         <p className="text-sm text-gray-500 text-center">
                             {profile.followers_count || 0} connections
@@ -366,10 +385,10 @@ const Profile = () => {
                 </div>
 
                 {/* Main Content - Posts Feed */}
-                <div className="lg:w-2/3 space-y-4">
+                <div className="lg:w-2/3 space-y-6">
                     {/* Post Input - Only show if viewing own profile */}
                     {isOwnProfile && (
-                        <div className="bg-white rounded-lg border border-gray-200 p-4">
+                        <div className="theme-surface rounded-2xl border border-[#2A2A2A] p-6 card-shadow">
                             <PostInput onPostCreated={refetchPosts} />
                         </div>
                     )}
@@ -380,13 +399,13 @@ const Profile = () => {
                             <LoadingSpinner />
                         </div>
                     ) : posts.length > 0 ? (
-                        <div className="space-y-4">
+                        <div className="space-y-6">
                             {posts.map((post) => (
                                 <PostCard key={post.id} post={post} />
                             ))}
                         </div>
                     ) : (
-                        <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
+                        <div className="theme-surface rounded-2xl border border-[#2A2A2A] p-12 text-center card-shadow">
                             <p className="text-gray-500">No posts yet</p>
                         </div>
                     )}

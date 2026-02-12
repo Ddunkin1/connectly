@@ -7,7 +7,10 @@ export const useUserProfile = (userId) => {
         queryKey: ['profile', userId],
         queryFn: () => userAPI.getProfile(userId),
         enabled: !!userId,
-        select: (data) => data.data.user,
+        select: (data) => ({
+            ...data.data.user,
+            followers_preview: data.data.followers_preview ?? [],
+        }),
     });
 };
 

@@ -42,10 +42,25 @@ class UserController extends Controller
             }
         }
 
-        $user->loadCount(['followers', 'following', 'posts']);
+        try {
+            $user->loadCount(['followers', 'following', 'posts']);
+            $followersPreview = $user->followers()
+                ->limit(9)
+                ->get(['id', 'name', 'username', 'profile_picture'])
+                ->map(fn ($u) => [
+                    'id' => $u->id,
+                    'name' => $u->name,
+                    'username' => $u->username,
+                    'profile_picture' => $u->profile_picture ? (filter_var($u->profile_picture, FILTER_VALIDATE_URL) ? $u->profile_picture : asset('storage/' . $u->profile_picture)) : null,
+                ]);
+        } catch (\Throwable $e) {
+            Log::warning('Profile followers_preview failed', ['user_id' => $user->id, 'error' => $e->getMessage()]);
+            $followersPreview = collect();
+        }
 
         return response()->json([
             'user' => new UserResource($user),
+            'followers_preview' => $followersPreview,
         ]);
     }
 

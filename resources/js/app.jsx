@@ -3,9 +3,7 @@ import ReactDOM from 'react-dom/client';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'react-hot-toast';
-import AppTopBar from './components/layout/AppTopBar';
-import LeftSidebar from './components/layout/LeftSidebar';
-import RightSidebar from './components/layout/RightSidebar';
+import MainLayout from './components/layout/MainLayout';
 import QuickChat from './components/layout/QuickChat';
 import Login from './pages/Auth/Login';
 import Register from './pages/Auth/Register';
@@ -29,7 +27,6 @@ import AdminReports from './pages/Admin/AdminReports';
 import AdminUsers from './pages/Admin/AdminUsers';
 import useAuthStore from './store/authStore';
 import useThemeStore from './store/themeStore';
-import EmailVerificationBanner from './components/auth/EmailVerificationBanner';
 import ThemeCustomizer from './components/layout/ThemeCustomizer';
 import RealtimeMessagesProvider from './components/realtime/RealtimeMessagesProvider';
 
@@ -143,17 +140,20 @@ function AppContent() {
         );
     }
 
-    // Render protected pages - 3-column grid: [Sidebar 300px] | [Main flex-1] | [Messages 380px]
+    const isMessagesPage = location.pathname.startsWith('/messages');
+
     return (
         <RealtimeMessagesProvider>
-        <div className="h-screen overflow-hidden theme-bg-main flex flex-col" id="app-root">
-            <EmailVerificationBanner />
-            <AppTopBar />
-            <div className="flex flex-1 min-h-0 w-full justify-center overflow-hidden">
-                <div className="flex w-full max-w-[1536px] min-h-0 px-3 pt-4 pb-4 gap-4 items-stretch">
-                <LeftSidebar />
-                <main className="flex-1 flex justify-center min-w-0 min-h-0 overflow-y-auto pt-4 pb-6 px-4 scrollbar-hide">
-                    <div className="w-full max-w-[1200px] flex justify-center">
+        <MainLayout showRightPanel={!isMessagesPage}>
+                {isMessagesPage ? (
+                    <div className={`flex-1 flex min-h-0 overflow-hidden ${isMessagesPage ? 'h-[calc(100vh-60px)]' : ''}`}>
+                        <Routes>
+                            <Route path="/messages/:username?" element={<ProtectedRoute><Messages /></ProtectedRoute>} />
+                        </Routes>
+                    </div>
+                ) : (
+                <div className="flex-1 overflow-y-auto custom-scrollbar min-w-0 flex justify-center bg-[var(--bg-primary)]">
+                    <div className="w-full max-w-4xl min-w-0 flex flex-col pt-8 px-6 pb-6">
                         <Routes>
                         <Route
                             path="/home"
@@ -212,14 +212,6 @@ function AppContent() {
                             }
                         />
                         <Route
-                            path="/messages/:username?"
-                            element={
-                                <ProtectedRoute>
-                                    <Messages />
-                                </ProtectedRoute>
-                            }
-                        />
-                        <Route
                             path="/notifications"
                             element={
                                 <ProtectedRoute>
@@ -270,13 +262,12 @@ function AppContent() {
                         <Route path="*" element={<Navigate to="/home" replace />} />
                         </Routes>
                     </div>
-                </main>
-                <RightSidebar />
                 </div>
-            </div>
-            <QuickChat />
-            <ThemeCustomizer isOpen={isCustomizerOpen} onClose={closeCustomizer} />
-            <Toaster
+                )}
+        </MainLayout>
+        <QuickChat />
+        <ThemeCustomizer isOpen={isCustomizerOpen} onClose={closeCustomizer} />
+        <Toaster
                 position="top-right"
                 toastOptions={{
                     duration: 3000,
@@ -300,7 +291,6 @@ function AppContent() {
                     },
                 }}
             />
-        </div>
         </RealtimeMessagesProvider>
     );
 }

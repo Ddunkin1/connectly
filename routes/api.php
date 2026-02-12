@@ -166,6 +166,7 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function () {
     // Messages
     Route::post('/messages', [MessageController::class, 'store']);
     Route::get('/conversations/{conversation}/messages', [MessageController::class, 'index']);
+    Route::get('/conversations/{conversation}/media', [MessageController::class, 'media']);
     Route::post('/conversations/{conversation}/read', [MessageController::class, 'markAsRead']);
 
     // Notifications (read-all must be before {id} to avoid matching "read-all" as id)

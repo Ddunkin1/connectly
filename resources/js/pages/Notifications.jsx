@@ -18,11 +18,11 @@ const Notifications = () => {
     };
 
     return (
-        <div className="w-full max-w-[720px]">
+        <div className="w-full max-w-[800px] mx-auto">
             <StoriesRow />
 
-            <div className="theme-surface rounded-[16px] border border-[#2A2A2A] overflow-hidden card-shadow">
-                <div className="px-4 py-3 border-b border-[#2A2A2A] flex items-center justify-between">
+            <div className="bg-[var(--bg-card)] rounded-xl border border-[var(--border-color)] overflow-hidden">
+                <div className="px-4 py-3 border-b border-[var(--border-color)] flex items-center justify-between">
                     <h1 className="text-lg font-semibold text-white">Notifications</h1>
                     {unreadCount > 0 && (
                         <Button
@@ -49,7 +49,7 @@ const Notifications = () => {
                         </p>
                     </div>
                 ) : (
-                    <div className="divide-y divide-[#2A2A2A]">
+                    <div className="divide-y divide-[var(--border-color)]">
                         {notifications.map((notification) => (
                             <NotificationItem
                                 key={notification.id}

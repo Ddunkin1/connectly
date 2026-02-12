@@ -1,48 +1,43 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import Avatar from '../common/Avatar';
-import { UilPlus } from '../common/Icons';
 import useAuthStore from '../../store/authStore';
 
-/* Story cards: 120x200px, gradient overlay, 36px avatar top-left with 3px purple ring, name bottom-left */
+/* Stitch AI: Your Story = square dashed, others = story-ring gradient, older = opacity-50 */
 
 const STORY_PLACEHOLDERS = [
-    { id: '1', name: 'Lilla James', color: '#EAB308' },
-    { id: '2', name: 'Winnie Hale', color: '#EC4899' },
-    { id: '3', name: 'Daniel Bale', color: '#3B82F6' },
-    { id: '4', name: 'Jane Doe', color: '#EF4444' },
-    { id: '5', name: 'Tina White', color: '#14B8A6' },
+    { id: '1', name: 'Lilla James', hasRing: true },
+    { id: '2', name: 'Winnie Hale', hasRing: true },
+    { id: '3', name: 'Daniel Bale', hasRing: true },
+    { id: '4', name: 'Jane Doe', hasRing: false },
+    { id: '5', name: 'Tina Turner', hasRing: false },
 ];
 
 const StoriesRow = () => {
     const user = useAuthStore((s) => s.user);
 
     return (
-        <div className="flex gap-3 overflow-x-auto pb-2 mb-6 scrollbar-hide -mx-1 px-1" style={{ padding: '24px 0' }}>
-            {/* Your Story - avatar top-left with + badge */}
+        <div className="flex gap-3 overflow-x-auto pt-6 pb-4 scrollbar-hide h-[100px] items-end mt-2">
             {user && (
-                <Link to="/home" className="story-card shrink-0" aria-label="Add your story">
-                    <div className="w-full h-full bg-gradient-to-br from-[#2D2D44] to-[#1A1A2E] relative">
-                        <div className="absolute top-2 left-2 w-9 h-9 rounded-full border-[3px] flex items-center justify-center overflow-hidden z-[2]" style={{ borderColor: 'var(--theme-accent)', background: 'white' }}>
-                            <Avatar src={user.profile_picture} alt={user.name} className="!w-7 !h-7 object-cover" />
-                            <span className="absolute -bottom-0.5 -right-0.5 w-5 h-5 bg-[var(--theme-accent)] rounded-full border-2 border-[#1A1A1A] flex items-center justify-center text-white">
-                                <UilPlus size={12} color="white" />
-                            </span>
-                        </div>
+                <Link to="/home" className="flex flex-col items-center space-y-2 flex-shrink-0 cursor-pointer group" aria-label="Add your story">
+                    <div className="w-16 h-16 rounded-xl bg-white/5 border-2 border-dashed border-white/10 flex items-center justify-center group-hover:border-primary transition-colors shrink-0">
+                        <span className="material-symbols-outlined text-primary">add</span>
                     </div>
-                    <span className="story-name-overlay">Your Story</span>
+                    <span className="text-[11px] font-medium opacity-60">Your Story</span>
                 </Link>
             )}
 
-            {/* Other stories - gradient overlay, 36px avatar top-left with colored ring, name bottom-left */}
             {STORY_PLACEHOLDERS.map((story) => (
-                <Link key={story.id} to="/home" className="story-card shrink-0" aria-label={`View ${story.name}'s story`}>
-                    <div className="w-full h-full absolute inset-0" style={{ background: `linear-gradient(180deg, ${story.color}50 0%, #1A1A2E 70%)` }} />
-                    <div className="story-gradient" />
-                    <div className="absolute top-2 left-2 w-9 h-9 rounded-full border-[3px] flex items-center justify-center overflow-hidden z-[2] bg-white" style={{ borderColor: story.color }}>
-                        <Avatar src={null} alt={story.name} className="!w-7 !h-7 object-cover" />
-                    </div>
-                    <span className="story-name-overlay">{story.name}</span>
+                <Link key={story.id} to="/home" className={`flex flex-col items-center space-y-2 flex-shrink-0 cursor-pointer ${!story.hasRing ? 'opacity-50' : ''}`} aria-label={`View ${story.name}'s story`}>
+                    {story.hasRing ? (
+                        <div className="story-ring rounded-xl p-[2px] shrink-0">
+                            <img alt={story.name} className="w-16 h-16 rounded-xl object-cover border-2 border-[#121214]" src={`https://i.pravatar.cc/128?u=${story.id}`} />
+                        </div>
+                    ) : (
+                        <div className="rounded-xl p-[2px] border border-slate-700 shrink-0">
+                            <img alt={story.name} className="w-16 h-16 rounded-xl object-cover" src={`https://i.pravatar.cc/128?u=${story.id}`} />
+                        </div>
+                    )}
+                    <span className="text-[11px] font-medium">{story.name}</span>
                 </Link>
             ))}
         </div>

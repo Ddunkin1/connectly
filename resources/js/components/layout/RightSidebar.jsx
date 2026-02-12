@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { UilSearch, UilEdit } from '../common/Icons';
+import { formatDate } from '../../utils/formatDate';
 import { useConversations } from '../../hooks/useConversations';
 import { useFriendRequests, useAcceptFriendRequest, useRejectFriendRequest } from '../../hooks/useFriendRequests';
 import Avatar from '../common/Avatar';
@@ -18,113 +18,118 @@ const RightSidebar = () => {
     const conversations = conversationsData?.pages?.flatMap((p) => p.data?.conversations ?? []) ?? [];
     const recentConversations = conversations.slice(0, 6);
     const receivedRequests = friendRequestsData?.received ?? [];
+
+    const lastMessagePreview = (lastMessage) => {
+        if (!lastMessage) return 'No messages yet';
+        if (lastMessage.attachment_url) {
+            const t = lastMessage.attachment_type || 'image';
+            return t === 'image' ? '📷 Photo' : t === 'video' ? '🎬 Video' : '📎 File';
+        }
+        return lastMessage.message?.slice(0, 35) || 'No messages yet';
+    };
     const requestsCount = receivedRequests.length;
 
     return (
-        <aside className="hidden xl:flex xl:flex-col w-[420px] self-start max-h-[calc(100vh-56px)] shrink-0 overflow-y-auto rounded-2xl shadow-lg" style={{ backgroundColor: '#161616', boxShadow: '0 4px 24px rgba(0,0,0,0.4)' }}>
-            <div className="p-6 space-y-6">
-                {/* Messages header: 20px bold + compose icon */}
-                <div>
-                    <div className="flex items-center justify-between mb-4">
-                        <h3 className="text-xl font-bold text-white">Messages</h3>
-                        <Link to="/messages" className="text-[#9CA3AF] hover:text-[var(--theme-accent)] p-1 rounded" aria-label="Compose message">
-                            <UilEdit size={22} color="currentColor" />
-                        </Link>
-                    </div>
-                    <div className="relative mb-4">
-                        <span className="absolute left-[10px] top-1/2 -translate-y-1/2 text-[#9CA3AF]">
-                            <UilSearch size={20} color="currentColor" />
-                        </span>
-                        <input
-                            type="text"
-                            value={messageSearch}
-                            onChange={(e) => setMessageSearch(e.target.value)}
-                            placeholder="Search messages"
-                            className="w-full h-10 pl-10 pr-4 bg-[#1A1A1A] border border-transparent rounded-[20px] text-sm text-white placeholder-[#9CA3AF] focus:outline-none focus:ring-1 focus:ring-[var(--theme-accent)]"
-                        />
-                    </div>
-                    {/* Tabs: Primary, General, Requests - 14px medium, active purple underline */}
-                    <div className="flex gap-6 mb-4 border-b border-[#2A2A2A] pb-3">
-                        <button
-                            type="button"
-                            onClick={() => setActiveTab('primary')}
-                            className={`text-sm font-medium transition-colors pb-3 border-b-2 -mb-[13px] ${
-                                activeTab === 'primary' ? 'text-white border-[var(--theme-accent)]' : 'text-[#9CA3AF] hover:text-white border-transparent'
-                            }`}
-                        >
-                            Primary
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => setActiveTab('general')}
-                            className={`text-sm font-medium transition-colors pb-3 border-b-2 -mb-[13px] ${
-                                activeTab === 'general' ? 'text-white border-[var(--theme-accent)]' : 'text-[#9CA3AF] hover:text-white border-transparent'
-                            }`}
-                        >
-                            General
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => setActiveTab('requests')}
-                            className={`text-sm font-medium transition-colors flex items-center gap-1 pb-3 border-b-2 -mb-[13px] ${
-                                activeTab === 'requests' ? 'text-white border-[var(--theme-accent)]' : 'text-[#9CA3AF] hover:text-white border-transparent'
-                            }`}
-                        >
-                            Requests{requestsCount > 0 ? `(${requestsCount})` : ''}
-                        </button>
-                    </div>
+        <aside className="w-[320px] fixed right-10 top-[60px] h-[calc(100vh-60px)] border-l border-white/5 p-4 bg-[#121214] z-10 overflow-y-auto">
+            <div className="flex items-center justify-between mb-6">
+                <h3 className="text-lg font-bold text-white">Messages</h3>
+                <Link to="/messages" className="p-1.5 rounded-lg hover:bg-white/5 text-slate-400 transition-colors" aria-label="Compose message">
+                    <span className="material-symbols-outlined">filter_list</span>
+                </Link>
+            </div>
+            <div className="relative mb-6">
+                <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-sm">search</span>
+                <input
+                    type="text"
+                    value={messageSearch}
+                    onChange={(e) => setMessageSearch(e.target.value)}
+                    placeholder="Search messages"
+                    className="w-full bg-white/5 border-none rounded-xl py-2 pl-9 pr-4 text-xs text-white placeholder:text-slate-500 focus:ring-1 focus:ring-primary outline-none"
+                />
+            </div>
+            <div className="flex p-1 bg-white/5 rounded-xl mb-6">
+                <button
+                    type="button"
+                    onClick={() => setActiveTab('primary')}
+                    className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all ${
+                        activeTab === 'primary' ? 'bg-primary text-white' : 'text-slate-500 hover:text-slate-300'
+                    }`}
+                >
+                    Primary
+                </button>
+                <button
+                    type="button"
+                    onClick={() => setActiveTab('general')}
+                    className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all ${
+                        activeTab === 'general' ? 'bg-primary text-white' : 'text-slate-500 hover:text-slate-300'
+                    }`}
+                >
+                    General
+                </button>
+                <button
+                    type="button"
+                    onClick={() => setActiveTab('requests')}
+                    className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all ${
+                        activeTab === 'requests' ? 'bg-primary text-white' : 'text-slate-500 hover:text-slate-300'
+                    }`}
+                >
+                    Requests{requestsCount > 0 ? ` (${requestsCount})` : ''}
+                </button>
+            </div>
 
-                    {conversationsLoading ? (
-                        <div className="flex justify-center py-4"><LoadingSpinner size="sm" /></div>
-                    ) : recentConversations.length === 0 ? (
-                        <div className="p-4 rounded-xl theme-surface text-center">
-                            <p className="text-sm text-gray-400">No conversations yet</p>
-                            <Link to="/messages" className="text-sm text-[var(--theme-accent)] hover:underline mt-2 inline-block">
-                                Start a conversation
-                            </Link>
-                        </div>
-                    ) : (
-                        <div className="space-y-1">
-                            {recentConversations.map((conversation) => {
-                                const otherUser = conversation.other_user;
-                                const lastMessage = conversation.last_message;
-                                const preview = lastMessage?.message?.slice(0, 35) || 'No messages yet';
-                                const status = conversation.unread_count > 0 ? `${conversation.unread_count} new message${conversation.unread_count > 1 ? 's' : ''}` : preview;
-                                return (
-                                    <Link
-                                        key={conversation.id}
-                                        to={`/messages/${otherUser?.username}`}
-                                        className="flex items-center gap-3 py-3 px-2 rounded-lg hover:bg-[#1A1A1A] transition-colors"
-                                    >
-                                        <div className="relative shrink-0">
-                                            <Avatar src={otherUser?.profile_picture} alt={otherUser?.name} size="sm" />
-                                            {conversation.unread_count > 0 && (
-                                                <span className="absolute -top-0.5 -right-0.5 bg-red-500 text-white text-[10px] rounded-full w-4 h-4 flex items-center justify-center">
-                                                    {conversation.unread_count > 9 ? '9+' : conversation.unread_count}
-                                                </span>
-                                            )}
-                                        </div>
-                                        <div className="flex-1 min-w-0">
-                                            <p className="text-base font-medium text-white truncate">{otherUser?.name}</p>
-                                            <p className="text-sm text-[#9CA3AF] truncate">{status}</p>
-                                        </div>
-                                    </Link>
-                                );
-                            })}
-                        </div>
-                    )}
+            {conversationsLoading ? (
+                <div className="flex justify-center py-4"><LoadingSpinner size="sm" /></div>
+            ) : recentConversations.length === 0 ? (
+                <div className="p-4 rounded-2xl bg-[#161618] text-center">
+                    <p className="text-sm text-slate-500">No conversations yet</p>
+                    <Link to="/messages" className="text-sm text-primary hover:underline mt-2 inline-block">Start a conversation</Link>
                 </div>
+            ) : (
+                <div className="flex-1 overflow-y-auto custom-scrollbar space-y-1">
+                    {recentConversations.map((conversation) => {
+                        const otherUser = conversation.other_user;
+                        const lastMessage = conversation.last_message;
+                        const rawPreview = lastMessagePreview(lastMessage);
+                        const friendlyPreview = rawPreview === '📷 Photo' ? 'Sent you a photo' : rawPreview === '🎬 Video' ? 'Sent you a video' : rawPreview;
+                        const status = conversation.unread_count > 0 ? `${conversation.unread_count} new message${conversation.unread_count > 1 ? 's' : ''}` : friendlyPreview;
+                        return (
+                            <Link
+                                key={conversation.id}
+                                to={`/messages/${otherUser?.username}`}
+                                className="group flex items-center gap-3 p-3 rounded-xl hover:bg-white/5 transition-colors cursor-pointer"
+                            >
+                                <div className="relative shrink-0">
+                                    <Avatar src={otherUser?.profile_picture} alt={otherUser?.name} size="md" className="w-11 h-11 rounded-full object-cover" />
+                                    <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-[#121214] rounded-full" />
+                                    {conversation.unread_count > 0 && (
+                                        <span className="absolute -top-0.5 -right-0.5 bg-red-500 text-white text-[10px] rounded-full w-4 h-4 flex items-center justify-center">{conversation.unread_count > 9 ? '9+' : conversation.unread_count}</span>
+                                    )}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <div className="flex items-center justify-between mb-0.5">
+                                        <h5 className="text-sm font-bold truncate text-white">{otherUser?.name}</h5>
+                                        {lastMessage && <span className="text-[10px] text-slate-500 shrink-0">{formatDate(lastMessage.created_at)}</span>}
+                                    </div>
+                                    <p className="text-xs text-slate-500 truncate font-medium">{status}</p>
+                                </div>
+                            </Link>
+                        );
+                    })}
+                </div>
+            )}
 
-                {/* Requests - 16px medium, #1A1A1A bg, 12px radius */}
-                <div>
-                    <h3 className="text-base font-medium text-white mb-4">Requests</h3>
-                    {friendRequestsLoading ? (
-                        <div className="flex justify-center py-4"><LoadingSpinner size="sm" /></div>
-                    ) : receivedRequests.length === 0 ? (
-                        <div className="p-4 rounded-xl theme-surface text-center">
-                            <p className="text-sm text-gray-400">No pending requests</p>
+            <div className="mt-8">
+                <p className="text-[10px] uppercase font-bold text-slate-600 tracking-widest px-2 mb-4">Requests</p>
+                {friendRequestsLoading ? (
+                    <div className="flex justify-center py-4"><LoadingSpinner size="sm" /></div>
+                ) : receivedRequests.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center p-8 bg-white/[0.02] border border-dashed border-white/10 rounded-2xl">
+                        <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center mb-3">
+                            <span className="material-symbols-outlined text-slate-500">mark_email_unread</span>
                         </div>
-                    ) : (
+                        <p className="text-xs text-slate-500 text-center font-medium">No pending message requests</p>
+                    </div>
+                ) : (
                         <div className="space-y-3">
                             {receivedRequests.slice(0, 3).map((request) => {
                                 const sender = request.sender;
@@ -159,7 +164,6 @@ const RightSidebar = () => {
                             })}
                         </div>
                     )}
-                </div>
             </div>
         </aside>
     );

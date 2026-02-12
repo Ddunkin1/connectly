@@ -200,6 +200,7 @@ export const conversationsAPI = {
 export const messagesAPI = {
     sendMessage: (data) => api.post('/messages', data),
     getMessages: (conversationId, page = 1) => api.get(`/conversations/${conversationId}/messages`, { params: { page } }),
+    getConversationMedia: (conversationId, page = 1) => api.get(`/conversations/${conversationId}/media`, { params: { page } }),
     markAsRead: (conversationId) => api.post(`/conversations/${conversationId}/read`),
 };
 

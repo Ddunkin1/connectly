@@ -3,11 +3,10 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import useAuthStore from '../../store/authStore';
 import useThemeStore from '../../store/themeStore';
 import Avatar from '../common/Avatar';
-import { UilHome, UilCompass, UilBell, UilEnvelope, UilBookmark, UilAnalytics, UilPalette, UilSetting, UilPlus, UilShieldCheck } from '../common/Icons';
 import { useUnreadNotificationsCount } from '../../hooks/useNotifications';
 import { useConversations } from '../../hooks/useConversations';
 
-const LeftSidebar = () => {
+const LeftSidebar = ({ className = '', onNavigate, positionBelowNav = false }) => {
     const location = useLocation();
     const navigate = useNavigate();
     const user = useAuthStore((state) => state.user);
@@ -20,15 +19,15 @@ const LeftSidebar = () => {
         ?.reduce((sum, c) => sum + (c.unread_count ?? 0), 0) ?? 0;
 
     const navItems = [
-        { Icon: UilHome, label: 'Home', path: '/home' },
-        { Icon: UilCompass, label: 'Explore', path: '/search' },
-        { Icon: UilBell, label: 'Notifications', path: '/notifications', badge: notificationsBadge },
-        { Icon: UilEnvelope, label: 'Messages', path: '/messages', badge: messagesBadge },
-        { Icon: UilBookmark, label: 'Bookmarks', path: '/bookmarks' },
-        { Icon: UilAnalytics, label: 'Analytics', path: '/analytics' },
-        { Icon: UilPalette, label: 'Theme', path: null, isTheme: true },
-        { Icon: UilSetting, label: 'Settings', path: '/settings' },
-        ...(user?.role === 'admin' ? [{ Icon: UilShieldCheck, label: 'Admin', path: '/admin/reports' }] : []),
+        { icon: 'home', label: 'Home', path: '/home' },
+        { icon: 'explore', label: 'Explore', path: '/search' },
+        { icon: 'notifications', label: 'Notifications', path: '/notifications', badge: notificationsBadge },
+        { icon: 'mail', label: 'Messages', path: '/messages', badge: messagesBadge },
+        { icon: 'bookmark', label: 'Bookmarks', path: '/bookmarks' },
+        { icon: 'monitoring', label: 'Analytics', path: '/analytics' },
+        { icon: 'palette', label: 'Theme', path: null, isTheme: true },
+        { icon: 'settings', label: 'Settings', path: '/settings' },
+        ...(user?.role === 'admin' ? [{ icon: 'shield', label: 'Admin', path: '/admin/reports' }] : []),
     ];
 
     const openThemeCustomizer = useThemeStore((s) => s.openCustomizer);
@@ -39,24 +38,38 @@ const LeftSidebar = () => {
         setTimeout(() => window.dispatchEvent(new CustomEvent('open-create-post')), 100);
     };
 
+    const wrapperClass = `w-[250px] fixed left-10 border-r border-white/5 flex flex-col p-4 bg-[#121214] z-30 overflow-y-auto
+        ${positionBelowNav ? 'top-[60px] h-[calc(100vh-60px)]' : 'top-0 h-screen'}
+        ${className}`.trim();
+
+    const handleNavClick = () => { onNavigate?.(); };
+
     return (
-        <aside className="hidden lg:flex lg:flex-col w-[340px] self-start max-h-[calc(100vh-56px)] theme-bg-sidebar shrink-0 overflow-y-auto rounded-2xl shadow-lg" style={{ boxShadow: '0 4px 24px rgba(0,0,0,0.4)' }}>
-            {/* Profile card: 48px avatar, 20px padding, 12px radius, bg #1A1A1A */}
+        <aside className={wrapperClass}>
+            <div className="flex items-center space-x-2 px-2">
+                <Link to="/home" className="flex items-center space-x-2" onClick={handleNavClick}>
+                    <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+                        <span className="material-symbols-outlined text-white text-xl">hub</span>
+                    </div>
+                    <span className="text-xl font-bold tracking-tight text-white">connectly</span>
+                </Link>
+            </div>
+
             {user && (
                 <Link
                     to={`/profile/${user.username}`}
-                    className="mx-5 mt-5 mb-6 p-5 rounded-[12px] theme-surface hover:bg-[#1E1E1E] transition-colors flex items-center gap-4"
+                    className="mb-8 px-2 flex items-center gap-3 p-3 rounded-xl hover:bg-white/5 transition-colors cursor-pointer"
+                    onClick={handleNavClick}
                 >
-                    <Avatar src={user.profile_picture} alt={user.name} size="md" className="w-12 h-12 shrink-0" />
-                    <div className="flex-1 min-w-0">
-                        <p className="text-base font-medium text-white truncate">{user.name}</p>
-                        <p className="text-sm text-[#9CA3AF] truncate">@{user.username}</p>
+                    <Avatar src={user.profile_picture} alt={user.name} size="md" className="w-10 h-10 rounded-full shrink-0" />
+                    <div className="flex flex-col overflow-hidden">
+                        <span className="text-sm font-bold text-white truncate">{user.name}</span>
+                        <span className="text-xs text-slate-500 truncate">@{user.username}</span>
                     </div>
                 </Link>
             )}
 
-            {/* Navigation: 16px vertical padding, 16px icon-text gap */}
-            <nav className="px-3 py-2 space-y-0.5" aria-label="Main navigation">
+            <nav className="flex-1 space-y-1.5 mb-4" aria-label="Main navigation">
                 {navItems.map((item) => {
                     if (item.isTheme) {
                         return (
@@ -64,16 +77,14 @@ const LeftSidebar = () => {
                                 key="theme"
                                 type="button"
                                 onClick={openThemeCustomizer}
-                                className={`w-full flex items-center justify-between py-4 rounded-[12px] border-l-4 transition-colors ${
+                                className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all w-full ${
                                     isThemeCustomizerOpen
-                                        ? 'border-[var(--theme-accent)] pl-[8px] pr-3 text-[var(--theme-accent)]'
-                                        : 'border-transparent px-3 text-[#9CA3AF] hover:bg-[#1E1E1E] hover:text-white'
+                                        ? 'bg-primary/10 text-primary active-tab-glow font-medium'
+                                        : 'text-slate-400 hover:text-white hover:bg-white/5'
                                 }`}
                             >
-                                <div className="flex items-center gap-4">
-                                    <item.Icon size={24} color="currentColor" />
-                                    <span className="text-base font-medium">Theme</span>
-                                </div>
+                                <span className="material-symbols-outlined text-[22px]">{item.icon}</span>
+                                <span>Theme</span>
                             </button>
                         );
                     }
@@ -85,43 +96,33 @@ const LeftSidebar = () => {
                         <Link
                             key={item.path}
                             to={item.path}
-                            className={`relative flex items-center justify-between py-4 rounded-[12px] border-l-4 transition-colors ${
+                            onClick={handleNavClick}
+                            className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all relative ${
                                 isActive
-                                    ? 'border-[var(--theme-accent)] pl-[8px] pr-3 text-[var(--theme-accent)]'
-                                    : 'border-transparent px-3 text-[#9CA3AF] hover:bg-[#1E1E1E] hover:text-white'
+                                    ? 'bg-primary/10 text-primary active-tab-glow font-medium'
+                                    : 'text-slate-400 hover:text-white hover:bg-white/5'
                             }`}
                         >
-                            <div className="flex items-center gap-4">
-                                <div className="relative">
-                                    <item.Icon size={24} color="currentColor" />
-                                    {item.badge > 0 && (
-                                        <span
-                                            className="absolute -top-1 -right-1 w-5 h-5 bg-[#EF4444] text-white text-[12px] font-bold rounded-full flex items-center justify-center"
-                                            aria-label={`${item.badge} unread`}
-                                        >
-                                            {item.badge > 99 ? '99+' : item.badge}
-                                        </span>
-                                    )}
-                                </div>
-                                <span className="text-base font-medium">{item.label}</span>
-                            </div>
+                            <span className="material-symbols-outlined text-[22px]">{item.icon}</span>
+                            <span>{item.label}</span>
+                            {item.badge > 0 && (
+                                <span className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 bg-red-500 text-[10px] flex items-center justify-center text-white rounded-full" aria-label={`${item.badge} unread`}>
+                                    {item.badge > 99 ? '99+' : item.badge}
+                                </span>
+                            )}
                         </Link>
                     );
                 })}
             </nav>
 
-            {/* Create Post button: 48px height, purple gradient, 12px radius - close to Settings */}
-            <div className="px-4 pt-2 pb-4">
-                <button
-                    type="button"
-                    onClick={handleCreatePost}
-                    className="w-full h-12 rounded-[12px] font-semibold text-base text-white flex items-center justify-center gap-2 transition-all hover:brightness-110 active:scale-[0.98]"
-                    style={{ background: 'linear-gradient(135deg, #8B5CF6, #7C3AED)' }}
-                >
-                    <UilPlus size={20} color="white" />
-                    Create Post
-                </button>
-            </div>
+            <button
+                type="button"
+                onClick={handleCreatePost}
+                className="mesh-gradient w-full h-12 min-h-12 py-3.5 rounded-xl font-semibold text-white shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center space-x-2"
+            >
+                <span className="material-symbols-outlined text-sm">add</span>
+                <span>Create Post</span>
+            </button>
         </aside>
     );
 };

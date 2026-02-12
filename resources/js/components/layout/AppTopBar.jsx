@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Avatar from '../common/Avatar';
-import { UilSearch } from '../common/Icons';
 import useAuthStore from '../../store/authStore';
+import useThemeStore from '../../store/themeStore';
 
-const AppTopBar = () => {
+const AppTopBar = ({ onMenuToggle, showMenuButton = false }) => {
     const navigate = useNavigate();
     const user = useAuthStore((s) => s.user);
+    const openThemeCustomizer = useThemeStore((s) => s.openCustomizer);
     const [searchQuery, setSearchQuery] = useState('');
 
     const handleSearch = (e) => {
@@ -14,50 +15,73 @@ const AppTopBar = () => {
         if (searchQuery.trim()) navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
     };
 
-    const handleCreate = () => {
+    const handleCreatePost = () => {
         navigate('/home');
         setTimeout(() => window.dispatchEvent(new CustomEvent('open-create-post')), 100);
     };
 
     return (
-        <header className="sticky top-0 z-20 theme-bg-sidebar border-b border-[#2A2A2A] shrink-0 w-full">
-            <div className="w-full px-4 lg:px-6 py-3 flex items-center">
-                <div className="flex-1 flex items-center min-w-0">
-                    <Link to="/home" className="shrink-0">
-                        <span className="text-xl font-semibold text-white tracking-tight">connectly</span>
-                    </Link>
-                </div>
-                <div className="flex-1 flex justify-center items-center min-w-0 px-4">
-                    <form onSubmit={handleSearch} className="w-full max-w-[600px]">
-                        <div className="relative w-full">
-                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#9CA3AF]">
-                            <UilSearch size={22} color="currentColor" />
-                        </span>
-                            <input
-                                type="text"
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                placeholder="Search for creators, inspirations, and projects"
-                                className="w-full h-12 pl-12 pr-4 bg-[#1A1A1A] border border-transparent rounded-[24px] text-white placeholder-[#9CA3AF] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--theme-accent)]"
-                            />
-                        </div>
-                    </form>
-                </div>
-                <div className="flex-1 flex items-center justify-end min-w-0">
-                    <div className="flex items-center gap-3">
+        <header className="fixed top-0 left-0 right-0 h-[60px] z-40 flex items-center px-4 lg:px-6 glass-effect border-b border-white/5">
+            <div className="flex items-center justify-between w-full max-w-[1600px] mx-auto">
+                {/* Left: Hamburger (mobile) or Logo */}
+                <div className="flex items-center w-[250px] shrink-0">
+                    {showMenuButton ? (
                         <button
                             type="button"
-                            onClick={handleCreate}
-                            className="h-10 px-6 rounded-full bg-[#8B5CF6] hover:bg-[#7C3AED] text-white font-medium text-sm transition-colors"
+                            onClick={onMenuToggle}
+                            className="p-2 rounded-xl hover:bg-white/5 text-slate-300 lg:hidden"
+                            aria-label="Open menu"
                         >
-                            Create
+                            <span className="material-symbols-outlined">menu</span>
                         </button>
-                        {user && (
-                            <Link to={`/profile/${user.username}`}>
-                                <Avatar src={user.profile_picture} alt={user.name} size="sm" />
-                            </Link>
-                        )}
+                    ) : (
+                        <Link to="/home" className="flex items-center gap-2">
+                            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+                                <span className="material-symbols-outlined text-white text-xl">hub</span>
+                            </div>
+                            <span className="text-xl font-bold tracking-tight text-white">connectly</span>
+                        </Link>
+                    )}
+                </div>
+
+                {/* Search bar - centered in header */}
+                <form onSubmit={handleSearch} className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-xl px-4">
+                    <div className="relative">
+                        <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-xl">search</span>
+                        <input
+                            type="text"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            placeholder="Search creators, inspirations, and projects..."
+                            className="w-full bg-white/5 border-none rounded-2xl py-2.5 pl-12 pr-4 focus:ring-2 focus:ring-primary/50 focus:outline-none text-sm text-white placeholder:text-slate-500 transition-standard"
+                        />
                     </div>
+                </form>
+
+                {/* Right: Buttons and profile */}
+                <div className="flex items-center gap-3 w-[320px] shrink-0 justify-end">
+                    {/* Create button */}
+                    <button
+                        type="button"
+                        onClick={handleCreatePost}
+                        className="bg-primary hover:bg-primary/90 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-primary)] text-white px-4 py-2 rounded-xl font-medium text-sm flex items-center gap-2 transition-all duration-200"
+                    >
+                        <span className="material-symbols-outlined text-lg">add</span>
+                        <span className="hidden sm:inline">Create</span>
+                    </button>
+                    <button
+                        type="button"
+                        onClick={openThemeCustomizer}
+                        className="p-2 rounded-xl hover:bg-white/5 text-slate-300"
+                        aria-label="Theme"
+                    >
+                        <span className="material-symbols-outlined">dark_mode</span>
+                    </button>
+                    {user && (
+                        <Link to={`/profile/${user.username}`} className="rounded-xl border-2 border-primary/20" aria-label="Profile">
+                            <Avatar src={user.profile_picture} alt={user.name} size="sm" className="w-9 h-9 rounded-xl object-cover" />
+                        </Link>
+                    )}
                 </div>
             </div>
         </header>

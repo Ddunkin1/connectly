@@ -20,6 +20,8 @@ class MessageResource extends JsonResource
             'sender' => new UserResource($this->whenLoaded('sender')),
             'receiver' => new UserResource($this->whenLoaded('receiver')),
             'message' => $this->message,
+            'attachment_url' => $this->attachment_url,
+            'attachment_type' => $this->attachment_type,
             'is_read' => $this->is_read,
             'read_at' => $this->read_at,
             'created_at' => $this->created_at,

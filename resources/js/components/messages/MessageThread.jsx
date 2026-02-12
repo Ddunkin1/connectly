@@ -2,12 +2,21 @@ import React, { useEffect, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useMessages } from '../../hooks/useMessages';
 import { getEcho } from '../../echo';
-import Avatar from '../common/Avatar';
 import LoadingSpinner from '../common/LoadingSpinner';
 import { formatDate } from '../../utils/formatDate';
 import useAuthStore from '../../store/authStore';
 
-const MessageThread = ({ conversationId }) => {
+const formatDateSeparator = (dateStr) => {
+    const d = new Date(dateStr);
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    if (d.toDateString() === today.toDateString()) return 'TODAY';
+    if (d.toDateString() === yesterday.toDateString()) return 'YESTERDAY';
+    return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }).toUpperCase();
+};
+
+const MessageThread = ({ conversationId, onMediaFromMessages }) => {
     const user = useAuthStore((state) => state.user);
     const queryClient = useQueryClient();
     const {
@@ -23,6 +32,18 @@ const MessageThread = ({ conversationId }) => {
     const messagesContainerRef = useRef(null);
 
     const messages = data?.pages.flatMap((page) => page.data.messages).reverse() || [];
+
+    // Extract media for right panel
+    useEffect(() => {
+        if (onMediaFromMessages) {
+            const media = messages.filter((m) => m.attachment_url).map((m) => ({
+                id: m.id,
+                attachment_url: m.attachment_url,
+                attachment_type: m.attachment_type || 'image',
+            }));
+            onMediaFromMessages(media);
+        }
+    }, [messages, onMediaFromMessages]);
 
     // Subscribe to real-time messages via Reverb
     useEffect(() => {
@@ -106,11 +127,23 @@ const MessageThread = ({ conversationId }) => {
         );
     }
 
+    // Group messages by date for separators
+    const grouped = [];
+    let lastDateKey = null;
+    messages.forEach((msg) => {
+        const dateKey = msg.created_at ? new Date(msg.created_at).toDateString() : '';
+        if (dateKey && dateKey !== lastDateKey) {
+            grouped.push({ type: 'separator', date: msg.created_at });
+            lastDateKey = dateKey;
+        }
+        grouped.push({ type: 'message', data: msg });
+    });
+
     return (
         <div
             ref={messagesContainerRef}
             onScroll={handleScroll}
-            className="flex-1 overflow-y-auto p-4 space-y-4"
+            className="flex-1 min-h-0 overflow-y-auto px-6 py-6 flex flex-col gap-6 custom-scrollbar"
         >
             {isFetchingNextPage && (
                 <div className="flex justify-center py-2">
@@ -122,47 +155,41 @@ const MessageThread = ({ conversationId }) => {
                     <p className="text-gray-500">No messages yet. Start the conversation!</p>
                 </div>
             ) : (
-                messages.map((message) => {
+                grouped.map((item, idx) => {
+                    if (item.type === 'separator') {
+                        return (
+                            <div key={`sep-${idx}`} className="flex flex-col items-center mb-4">
+                                <span className="px-3 py-1 bg-[#16161E] text-[10px] font-bold text-slate-500 rounded-full uppercase tracking-tighter">
+                                    {formatDateSeparator(item.date)}
+                                </span>
+                            </div>
+                        );
+                    }
+                    const message = item.data;
                     const isOwnMessage = message.sender?.id === user?.id;
                     return (
-                        <div
-                            key={message.id}
-                            className={`flex items-start space-x-3 ${
-                                isOwnMessage ? 'flex-row-reverse space-x-reverse' : ''
-                            }`}
-                        >
-                            <Avatar
-                                src={message.sender?.profile_picture}
-                                alt={message.sender?.name}
-                                size="sm"
-                            />
-                            <div
-                                className={`flex flex-col max-w-xs lg:max-w-md ${
-                                    isOwnMessage ? 'items-end' : 'items-start'
-                                }`}
-                            >
-                                <div
-                                    className={`rounded-lg px-4 py-2 ${
-                                        isOwnMessage
-                                            ? 'bg-[#359EFF] text-white'
-                                            : 'bg-gray-100 text-gray-900'
-                                    }`}
-                                >
-                                    <p className="text-sm whitespace-pre-wrap">{message.message}</p>
-                                </div>
-                                <p className="text-xs text-gray-500 mt-1 flex items-center gap-1">
-                                    {formatDate(message.created_at)}
-                                    {isOwnMessage && (
-                                        <span className="text-[var(--theme-accent)]" title={message.is_read ? 'Read' : 'Delivered'}>
-                                            {message.is_read ? '✓✓' : '✓'}
-                                        </span>
+                        <div key={message.id} className={`flex items-end gap-3 max-w-[85%] ${isOwnMessage ? 'self-end flex-row-reverse' : ''}`}>
+                            {!isOwnMessage && (
+                                <img src={message.sender?.profile_picture} alt={message.sender?.name} className="w-8 h-8 rounded-full object-cover shrink-0" />
+                            )}
+                            <div className={`flex flex-col ${isOwnMessage ? 'items-end' : 'items-start'}`}>
+                                <div className={`p-4 rounded-2xl shadow-sm ${
+                                    isOwnMessage ? 'message-gradient text-white rounded-br-none shadow-lg shadow-primary/20' : 'bg-[#16161E] text-white border border-[#26262E] rounded-bl-none'
+                                }`}>
+                                    {message.attachment_url && (
+                                        <div className="mb-2">
+                                            {message.attachment_type === 'video' ? (
+                                                <video src={message.attachment_url} controls className="rounded-lg max-w-full max-h-64" />
+                                            ) : (
+                                                <a href={message.attachment_url} target="_blank" rel="noopener noreferrer">
+                                                    <img src={message.attachment_url} alt="Shared media" className="rounded-lg max-w-full max-h-64 object-cover" />
+                                                </a>
+                                            )}
+                                        </div>
                                     )}
-                                    {!isOwnMessage && (() => {
-                                        const created = message.created_at ? new Date(message.created_at).getTime() : 0;
-                                        const isJustNow = Date.now() - created < 15000;
-                                        return isJustNow && <span className="text-[var(--theme-accent)] text-[10px] font-medium">· Just now</span>;
-                                    })()}
-                                </p>
+                                    {message.message && <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.message}</p>}
+                                </div>
+                                <span className={`text-[10px] mt-2 block ${isOwnMessage ? 'text-white/70 text-right' : 'text-slate-400'}`}>{formatDate(message.created_at)}</span>
                             </div>
                         </div>
                     );

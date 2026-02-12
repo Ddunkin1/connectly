@@ -5,7 +5,7 @@ import useAuthStore from '../../store/authStore';
 import toast from 'react-hot-toast';
 import Avatar from '../common/Avatar';
 import Button from '../common/Button';
-import { UilImage, UilGlobe, UilUsersAlt, UilTimes } from '../common/Icons';
+import { UilGlobe, UilUsersAlt, UilTimes } from '../common/Icons';
 
 /* Post input: 64px height pill, 40px avatar, 80x40 Post button */
 
@@ -88,35 +88,47 @@ const PostInput = ({ onPostCreated }) => {
     const firstName = user?.name?.split(' ')[0] || 'there';
 
     return (
-        <div className="theme-surface rounded-[16px] p-4 mb-6 card-shadow" style={{ margin: '24px 0' }}>
+        <div className="glass-effect rounded-2xl p-5 mb-5 shadow-xl">
             <form onSubmit={handleSubmit(onSubmit)}>
-                {/* Single row: 64px height pill - avatar (40px) + input + Post button (80x40) */}
-                <div className="flex items-center gap-3 min-h-[64px]">
-                    <Avatar src={user?.profile_picture} alt={user?.name} size="lg" className="w-10 h-10 shrink-0" />
-                    <div className="flex-1 min-w-0 flex items-center gap-3 h-16 px-4 rounded-[32px] bg-[#1A1A1A] border border-transparent">
-                        <input
+                <div className="flex items-start gap-4">
+                    <Avatar src={user?.profile_picture} alt={user?.name} size="lg" className="w-10 h-10 shrink-0 rounded-full ring-2 ring-primary/20" />
+                    <div className="flex-1 min-w-0 space-y-4">
+                        <textarea
                             {...register('content')}
-                            type="text"
                             placeholder={`What's on your mind, ${firstName}?`}
                             onFocus={() => setIsExpanded(true)}
-                            className="flex-1 min-w-0 bg-transparent text-white placeholder-[#9CA3AF] text-sm focus:outline-none"
+                            rows={2}
+                            className="w-full bg-transparent border-none focus:ring-0 text-[15px] leading-relaxed resize-none min-h-[48px] py-3 text-white placeholder:text-slate-500 focus:outline-none"
                         />
-                        <label htmlFor="media-upload" className="cursor-pointer text-[var(--theme-accent)] hover:opacity-80 shrink-0">
-                            <UilImage size={24} color="currentColor" />
-                            <input type="file" id="media-upload" accept="image/*,video/*" onChange={handleFileChange} className="hidden" />
-                        </label>
+                        <div className="flex items-center justify-between pt-4 border-t border-white/5">
+                            <div className="flex items-center gap-2">
+                                <label htmlFor="media-upload" className="p-2 rounded-xl hover:bg-white/5 text-primary cursor-pointer transition-colors">
+                                    <span className="material-symbols-outlined">image</span>
+                                    <input type="file" id="media-upload" accept="image/*,video/*" onChange={handleFileChange} className="hidden" />
+                                </label>
+                                <button type="button" className="p-2 rounded-xl hover:bg-white/5 text-primary transition-colors">
+                                    <span className="material-symbols-outlined">videocam</span>
+                                </button>
+                                <button type="button" className="p-2 rounded-xl hover:bg-white/5 text-primary transition-colors">
+                                    <span className="material-symbols-outlined">sentiment_satisfied</span>
+                                </button>
+                                <button type="button" className="p-2 rounded-xl hover:bg-white/5 text-primary transition-colors">
+                                    <span className="material-symbols-outlined">equalizer</span>
+                                </button>
+                            </div>
+                            <button
+                                type="submit"
+                                disabled={!isFormValid || createPostMutation.isPending}
+                                className="bg-primary hover:bg-primary/90 text-white h-12 min-h-12 px-8 rounded-xl font-semibold transition-all shadow-lg shadow-primary/10 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                            >
+                                {createPostMutation.isPending ? '...' : 'Post'}
+                            </button>
+                        </div>
                     </div>
-                    <button
-                        type="submit"
-                        disabled={!isFormValid || createPostMutation.isPending}
-                        className="shrink-0 w-20 h-10 rounded-[20px] bg-[#8B5CF6] hover:bg-[#7C3AED] text-white font-medium text-sm flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                    >
-                        {createPostMutation.isPending ? '...' : 'Post'}
-                    </button>
                 </div>
 
                 {isExpanded && (
-                    <div className="mt-4 pt-4 border-t border-[#2A2A2A] flex items-center justify-between flex-wrap gap-2">
+                    <div className="mt-4 pt-4 border-t border-white/5 flex items-center justify-between flex-wrap gap-2">
                         <div className="flex items-center gap-6">
                             <span className="text-sm text-[#9CA3AF]">Who can see this?</span>
                             <label className="flex items-center gap-1.5 cursor-pointer text-[#9CA3AF] hover:text-white text-sm">

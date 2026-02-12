@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useConversation, useConversationByUsername } from '../hooks/useConversations';
 import ConversationList from '../components/messages/ConversationList';
 import MessageThread from '../components/messages/MessageThread';
 import MessageInput from '../components/messages/MessageInput';
+import MessageChatHeader from '../components/messages/MessageChatHeader';
+import MessageUserPanel from '../components/messages/MessageUserPanel';
+import SharedMediaModal from '../components/messages/SharedMediaModal';
 import GroupConversationList from '../components/messages/GroupConversationList';
 import GroupMessageThread from '../components/messages/GroupMessageThread';
 import GroupMessageInput from '../components/messages/GroupMessageInput';
@@ -21,6 +24,8 @@ const Messages = () => {
     const [selectedConversation, setSelectedConversation] = useState(null);
     const [selectedGroup, setSelectedGroup] = useState(null);
     const [newGroupModalOpen, setNewGroupModalOpen] = useState(false);
+    const [conversationMedia, setConversationMedia] = useState([]);
+    const [sharedMediaModalOpen, setSharedMediaModalOpen] = useState(false);
     
     // If username is provided, get or create conversation by username
     const { 
@@ -95,39 +100,30 @@ const Messages = () => {
     const showGroupContent = activeTab === 'groups';
 
     return (
-        <div className="max-w-7xl mx-auto h-[calc(100vh-200px)]">
+        <div className="flex-1 flex min-h-0 overflow-hidden bg-[#0A0A0B]">
             <NewGroupModal
                 isOpen={newGroupModalOpen}
                 onClose={() => setNewGroupModalOpen(false)}
                 onCreated={handleGroupCreated}
             />
-            <div className="theme-surface rounded-lg border border-gray-200 h-full flex">
-                {/* Sidebar */}
-                <div className="w-80 border-r border-gray-200 flex flex-col">
-                    <div className="p-4 border-b border-gray-200 flex items-center justify-between">
-                        <h2 className="text-xl font-bold theme-text">Messages</h2>
-                    </div>
-                    <div className="flex border-b border-gray-200">
-                        <button
-                            onClick={() => setActiveTab('direct')}
-                            className={`flex-1 py-2 text-sm font-medium ${
-                                activeTab === 'direct'
-                                    ? 'border-b-2 border-[var(--theme-accent)] text-[var(--theme-accent)]'
-                                    : 'text-gray-500 hover:text-gray-700'
-                            }`}
-                        >
-                            Direct
-                        </button>
-                        <button
-                            onClick={() => setActiveTab('groups')}
-                            className={`flex-1 py-2 text-sm font-medium ${
-                                activeTab === 'groups'
-                                    ? 'border-b-2 border-[var(--theme-accent)] text-[var(--theme-accent)]'
-                                    : 'text-gray-500 hover:text-gray-700'
-                            }`}
-                        >
-                            Groups
-                        </button>
+            <div className="flex flex-1 min-h-0 overflow-hidden bg-[#0A0A0B]">
+                {/* Left panel - conversation list (slim w-64 for wider chat) */}
+                <section className="w-64 shrink-0 border-r border-[#26262E] flex flex-col bg-[#0A0A0B]">
+                    <div className="p-6">
+                        <div className="flex items-center justify-between mb-6">
+                            <h2 className="text-xl font-bold text-white">Messages</h2>
+                            <Link to="/messages" className="p-2 rounded-lg hover:bg-[#16161E] text-slate-400 transition-colors" aria-label="Compose">
+                                <span className="material-symbols-outlined">edit_note</span>
+                            </Link>
+                        </div>
+                        <div className="relative mb-6">
+                            <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg">search</span>
+                            <input type="text" placeholder="Search messages" className="w-full bg-[#16161E] border-none rounded-xl pl-10 py-2.5 text-sm text-white placeholder:text-slate-500 focus:ring-2 focus:ring-primary/50" />
+                        </div>
+                        <div className="flex p-1 bg-[#16161E] rounded-xl mb-4">
+                            <button type="button" onClick={() => setActiveTab('direct')} className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all ${activeTab === 'direct' ? 'bg-white dark:bg-slate-800 text-white shadow-sm' : 'text-slate-500 hover:text-slate-200'}`}>Direct</button>
+                            <button type="button" onClick={() => setActiveTab('groups')} className={`flex-1 py-1.5 text-xs font-medium rounded-lg transition-all ${activeTab === 'groups' ? 'bg-white dark:bg-slate-800 text-white shadow-sm' : 'text-slate-500 hover:text-slate-200'}`}>Groups</button>
+                        </div>
                     </div>
                     {showDirectContent && (
                         <ConversationList
@@ -137,15 +133,8 @@ const Messages = () => {
                     )}
                     {showGroupContent && (
                         <>
-                            <div className="p-2 border-b border-gray-200">
-                                <Button
-                                    variant="primary"
-                                    size="sm"
-                                    className="w-full"
-                                    onClick={() => setNewGroupModalOpen(true)}
-                                >
-                                    New Group
-                                </Button>
+                            <div className="px-6 pb-4">
+                                <Button variant="primary" size="sm" className="w-full" onClick={() => setNewGroupModalOpen(true)}>New Group</Button>
                             </div>
                             <GroupConversationList
                                 onSelectGroup={handleSelectGroup}
@@ -153,34 +142,34 @@ const Messages = () => {
                             />
                         </>
                     )}
-                </div>
+                </section>
 
-                {/* Message Thread */}
-                <div className="flex-1 flex flex-col min-h-0">
+                {/* Center - chat: header fixed top, messages scroll, input fixed bottom */}
+                <main className="flex-1 flex flex-col min-h-0 min-w-0 overflow-hidden bg-[#0A0A0B]/50">
                     {showDirectContent && (
                         <>
                             {isLoadingConversation ? (
-                        <div className="flex-1 flex items-center justify-center">
-                            <LoadingSpinner />
-                        </div>
+                                <div className="flex-1 flex items-center justify-center">
+                                    <LoadingSpinner />
+                                </div>
                             ) : displayConversation ? (
                                 <>
-                                    <div className="p-4 border-b border-gray-200">
-                                        <div className="flex items-center space-x-3">
-                                            <h3 className="text-lg font-semibold theme-text">
-                                                {displayConversation.other_user?.name}
-                                            </h3>
-                                            <span className="text-sm text-gray-500">
-                                                @{displayConversation.other_user?.username}
-                                            </span>
-                                        </div>
+                                    <div className="shrink-0">
+                                        <MessageChatHeader otherUser={displayConversation.other_user} />
                                     </div>
-                                    <MessageThread conversationId={displayConversation.id} />
-                                    <MessageInput
-                                        conversationId={displayConversation.id}
-                                        receiverId={displayConversation.other_user?.id}
-                                        onMessageSent={handleMessageSent}
-                                    />
+                                    <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
+                                        <MessageThread
+                                            conversationId={displayConversation.id}
+                                            onMediaFromMessages={setConversationMedia}
+                                        />
+                                    </div>
+                                    <div className="shrink-0">
+                                        <MessageInput
+                                            conversationId={displayConversation.id}
+                                            receiverId={displayConversation.other_user?.id}
+                                            onMessageSent={handleMessageSent}
+                                        />
+                                    </div>
                                 </>
                             ) : (
                                 <div className="flex-1 flex items-center justify-center">
@@ -198,16 +187,16 @@ const Messages = () => {
                         <>
                             {selectedGroup ? (
                                 <>
-                                    <div className="p-4 border-b border-gray-200">
-                                        <h3 className="text-lg font-semibold theme-text">
-                                            {selectedGroup.name}
-                                        </h3>
-                                        <p className="text-sm text-gray-500">
-                                            {selectedGroup.members?.length || 0} members
-                                        </p>
+                                    <div className="shrink-0 px-6 py-4 border-b border-[#26262E]">
+                                        <h3 className="text-lg font-semibold text-white">{selectedGroup.name}</h3>
+                                        <p className="text-sm text-slate-500">{selectedGroup.members?.length || 0} members</p>
                                     </div>
-                                    <GroupMessageThread groupId={selectedGroup.id} />
-                                    <GroupMessageInput groupId={selectedGroup.id} onMessageSent={() => {}} />
+                                    <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
+                                        <GroupMessageThread groupId={selectedGroup.id} />
+                                    </div>
+                                    <div className="shrink-0">
+                                        <GroupMessageInput groupId={selectedGroup.id} onMessageSent={() => {}} />
+                                    </div>
                                 </>
                             ) : (
                                 <div className="flex-1 flex items-center justify-center">
@@ -221,7 +210,23 @@ const Messages = () => {
                             )}
                         </>
                     )}
-                </div>
+                </main>
+
+                {/* Right panel - user details & shared media */}
+                {showDirectContent && displayConversation && (
+                    <>
+                        <MessageUserPanel
+                            otherUser={displayConversation.other_user}
+                            mediaItems={conversationMedia}
+                            onViewAllMedia={() => setSharedMediaModalOpen(true)}
+                        />
+                        <SharedMediaModal
+                            isOpen={sharedMediaModalOpen}
+                            onClose={() => setSharedMediaModalOpen(false)}
+                            conversationId={displayConversation.id}
+                        />
+                    </>
+                )}
             </div>
         </div>
     );

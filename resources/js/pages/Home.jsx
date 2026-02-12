@@ -65,19 +65,19 @@ const Home = () => {
         }) || [];
 
     return (
-        <div className="w-full max-w-[720px]">
+        <div className="w-full max-w-4xl">
             <StoriesRow />
-            {/* Feed Tabs */}
-            <div className="theme-surface rounded-[16px] border border-[#2A2A2A] mb-6 overflow-hidden card-shadow">
-                <div className="flex">
+            {/* Feed Tabs - glass-morphism oval, active-tab-glow */}
+            <div className="flex items-center justify-center mb-6">
+                <div className="glass-morphism p-1 rounded-full flex items-center">
                     {['for-you', 'following', 'recent'].map((tab) => (
                         <button
                             key={tab}
                             onClick={() => setActiveTab(tab)}
-                            className={`flex-1 px-4 py-4 text-sm font-medium transition-colors ${
+                            className={`px-8 py-2 rounded-full text-sm font-medium transition-all ${
                                 activeTab === tab
-                                    ? 'bg-[var(--theme-accent)]/20 text-[var(--theme-accent)] border-b-2 border-[var(--theme-accent)]'
-                                    : 'text-[#9CA3AF] hover:text-white hover:bg-[#1E1E1E]'
+                                    ? 'bg-primary text-white active-tab-glow'
+                                    : 'text-slate-400 hover:text-white'
                             }`}
                         >
                             {tab === 'for-you' ? 'For You' : tab === 'following' ? 'Following' : 'Recent'}
@@ -86,13 +86,14 @@ const Home = () => {
                 </div>
             </div>
 
+            {/* Post creator - "What's on your mind?" pattern in card */}
             <div ref={postInputRef}>
                 <PostInput />
             </div>
-            <div className="space-y-4 mt-4">
+            <div className="space-y-4 pt-5">
                 {posts.length === 0 ? (
-                    <div className="text-center py-12 theme-surface rounded-[16px] border border-[#2A2A2A]">
-                        <p className="text-sm text-[#9CA3AF]">No posts yet. Start following people to see their posts!</p>
+                    <div className="text-center py-12 glass-effect rounded-2xl">
+                        <p className="text-sm text-slate-500">No posts yet. Start following people to see their posts!</p>
                     </div>
                 ) : (
                     posts.map((post, index) => {
@@ -108,14 +109,21 @@ const Home = () => {
                                     <PostCard post={post} onCommentClick={() => {}} />
                                 )}
                                 {showSuggestedAfter && (
-                                    <div className="mt-6">
-                                        <p className="text-sm font-medium text-gray-400 mb-3 px-1">Suggested for you</p>
-                                        <div className="space-y-4">
+                                    <>
+                                    <div className="flex items-center gap-3 px-2 py-2">
+                                        <div className="h-px flex-1 bg-white/10" />
+                                        <span className="text-[10px] uppercase font-bold text-slate-600 tracking-widest">Suggested for you</span>
+                                        <div className="h-px flex-1 bg-white/10" />
+                                    </div>
+                                    <div className="glass-effect rounded-2xl p-6 shadow-xl">
+                                        <p className="text-sm font-semibold mb-4 text-slate-100">Suggested for you</p>
+                                        <div className="space-y-6">
                                             {suggestedPosts.map((sp) => (
                                                 <PostCard key={sp.id} post={sp} onCommentClick={() => {}} />
                                             ))}
                                         </div>
                                     </div>
+                                    </>
                                 )}
                             </React.Fragment>
                         );

@@ -13,19 +13,27 @@ class MessageService
 {
     /**
      * Send a message in a conversation.
+     *
+     * @param array{attachment_url?: string|null, attachment_type?: string|null} $options
      */
-    public function sendMessage(Conversation $conversation, User $sender, string $message): Message
+    public function sendMessage(Conversation $conversation, User $sender, string $message, array $options = []): Message
     {
         // Determine receiver
         $receiver = $conversation->getOtherUser($sender);
 
-        // Create message
-        $messageModel = Message::create([
+        $data = [
             'conversation_id' => $conversation->id,
             'sender_id' => $sender->id,
             'receiver_id' => $receiver->id,
             'message' => $message,
-        ]);
+        ];
+
+        if (! empty($options['attachment_url'])) {
+            $data['attachment_url'] = $options['attachment_url'];
+            $data['attachment_type'] = $options['attachment_type'] ?? 'image';
+        }
+
+        $messageModel = Message::create($data);
 
         // Update conversation's last_message_at
         $conversation->update([
