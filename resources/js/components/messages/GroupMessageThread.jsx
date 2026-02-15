@@ -14,6 +14,12 @@ const GroupMessageThread = ({ groupId }) => {
     const messagesEndRef = useRef(null);
 
     const messages = data?.messages || [];
+    const group = data?.group;
+    const members = group?.members || [];
+    const getSenderDisplayName = (senderId) => {
+        const m = members.find((x) => x.id === senderId);
+        return (m?.pivot?.nickname?.trim()) || m?.name || 'Unknown';
+    };
 
     // Subscribe to real-time group messages via Reverb
     useEffect(() => {
@@ -104,7 +110,7 @@ const GroupMessageThread = ({ groupId }) => {
                             >
                                 {!isOwnMessage && (
                                     <p className="text-xs font-medium text-gray-600 mb-0.5">
-                                        {message.sender?.name}
+                                        {getSenderDisplayName(message.sender?.id) || message.sender?.name || 'Unknown'}
                                     </p>
                                 )}
                                 <div

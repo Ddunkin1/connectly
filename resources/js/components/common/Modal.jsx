@@ -24,16 +24,18 @@ const Modal = ({ isOpen, onClose, title, children, size = 'md' }) => {
     return (
         <div
             className="fixed inset-0 z-50 overflow-y-auto"
-            onClick={onClose}
+            role="dialog"
+            aria-modal="true"
         >
             <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
                 <div
-                    className="fixed inset-0 transition-opacity bg-black/70"
+                    className="fixed inset-0 z-40 transition-opacity bg-black/70"
+                    aria-hidden="true"
                     onClick={onClose}
                 />
 
                 <div
-                    className={`inline-block align-bottom bg-[#252538] rounded-xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle border border-gray-700 ${sizes[size]} w-full`}
+                    className={`relative z-50 inline-block align-bottom bg-[#252538] rounded-xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle border border-gray-700 ${sizes[size]} w-full`}
                     onClick={(e) => e.stopPropagation()}
                 >
                     {title && (

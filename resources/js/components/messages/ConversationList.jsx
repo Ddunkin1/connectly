@@ -2,6 +2,7 @@ import React from 'react';
 import { useConversations } from '../../hooks/useConversations';
 import LoadingSpinner from '../common/LoadingSpinner';
 import useAuthStore from '../../store/authStore';
+import { formatDate } from '../../utils/formatDate';
 
 const ConversationList = ({ onSelectConversation, selectedConversationId }) => {
     const user = useAuthStore((state) => state.user);

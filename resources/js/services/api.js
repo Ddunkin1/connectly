@@ -126,6 +126,7 @@ export const postsAPI = {
     likePost: (postId) => api.post(`/posts/${postId}/like`),
     unlikePost: (postId) => api.delete(`/posts/${postId}/unlike`),
     sharePost: (postId) => api.post(`/posts/${postId}/share`),
+    votePoll: (postId, pollOptionId) => api.post(`/posts/${postId}/polls/vote`, { poll_option_id: pollOptionId }),
 };
 
 // Comments API
@@ -209,11 +210,24 @@ export const groupConversationsAPI = {
     getList: (page = 1) => api.get('/group-conversations', { params: { page } }),
     create: (data) => api.post('/group-conversations', data),
     getOne: (id) => api.get(`/group-conversations/${id}`),
+    addMembers: (groupId, memberIds) => api.post(`/group-conversations/${groupId}/members`, { member_ids: memberIds }),
+    removeMember: (groupId, userId) => api.delete(`/group-conversations/${groupId}/members/${userId}`),
+    setNickname: (groupId, userId, nickname) => api.put(`/group-conversations/${groupId}/members/${userId}/nickname`, { nickname }),
 };
 
 // Group Messages API
 export const groupMessagesAPI = {
     send: (data) => api.post('/group-messages', data),
+};
+
+// Stories API
+export const storiesAPI = {
+    getList: () => api.get('/stories'),
+    create: (formData) => {
+        const config = formData instanceof FormData ? { headers: { 'Content-Type': undefined } } : {};
+        return api.post('/stories', formData, config);
+    },
+    getOne: (storyId) => api.get(`/stories/${storyId}`),
 };
 
 // Push Subscriptions API

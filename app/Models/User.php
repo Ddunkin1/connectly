@@ -104,6 +104,14 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
+     * Get all stories for this user.
+     */
+    public function stories(): HasMany
+    {
+        return $this->hasMany(Story::class);
+    }
+
+    /**
      * Get all comments made by the user.
      */
     public function comments(): HasMany
@@ -385,5 +393,23 @@ class User extends Authenticatable implements MustVerifyEmail
     public function getRouteKeyName(): string
     {
         return 'username';
+    }
+
+    /**
+     * Retrieve the model for a bound value (supports username or numeric id).
+     */
+    public function resolveRouteBinding($value, $field = null)
+    {
+        $query = static::query();
+
+        if ($field !== null) {
+            return $query->where($field, $value)->firstOrFail();
+        }
+
+        if (is_numeric($value)) {
+            return $query->where('id', $value)->firstOrFail();
+        }
+
+        return $query->where($this->getRouteKeyName(), $value)->firstOrFail();
     }
 }

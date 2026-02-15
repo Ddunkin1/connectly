@@ -64,6 +64,17 @@ html:not(.dark) #app-root {
     color: var(--text-primary, #1a1a1a);
 }
 
+/* Light mode: darken muted text for better readability (fixes invisible text on light backgrounds) */
+html:not(.dark) .text-slate-400 { color: #475569 !important; }
+html:not(.dark) .text-slate-500 { color: #334155 !important; }
+html:not(.dark) .text-slate-300 { color: #475569 !important; }
+html:not(.dark) .text-slate-100 { color: #1e293b !important; }
+html:not(.dark) .text-gray-400 { color: #4b5563 !important; }
+html:not(.dark) .text-gray-500 { color: #374151 !important; }
+html:not(.dark) .text-gray-300 { color: #4b5563 !important; }
+html:not(.dark) input::placeholder,
+html:not(.dark) textarea::placeholder { color: #64748b !important; }
+
 /* Theme customization - CSS variables (set by themeStore) */
 /* Layout overhaul design tokens (per spec) */
 :root {

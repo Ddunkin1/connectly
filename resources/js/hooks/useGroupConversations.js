@@ -46,6 +46,51 @@ export const useCreateGroupConversation = () => {
     });
 };
 
+export const useAddGroupMembers = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: ({ groupId, memberIds }) => groupConversationsAPI.addMembers(groupId, memberIds),
+        onSuccess: (response, { groupId }) => {
+            queryClient.invalidateQueries({ queryKey: ['group-conversation', groupId] });
+            queryClient.invalidateQueries({ queryKey: ['group-conversations'] });
+            toast.success(response?.data?.message || 'Members added');
+        },
+        onError: (error) => {
+            toast.error(error.response?.data?.message || 'Failed to add members');
+        },
+    });
+};
+
+export const useRemoveGroupMember = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: ({ groupId, userId }) => groupConversationsAPI.removeMember(groupId, userId),
+        onSuccess: (response, { groupId }) => {
+            queryClient.invalidateQueries({ queryKey: ['group-conversation', groupId] });
+            queryClient.invalidateQueries({ queryKey: ['group-conversations'] });
+            toast.success(response?.data?.message || 'Member removed');
+        },
+        onError: (error) => {
+            toast.error(error.response?.data?.message || 'Failed to remove member');
+        },
+    });
+};
+
+export const useSetGroupMemberNickname = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: ({ groupId, userId, nickname }) => groupConversationsAPI.setNickname(groupId, userId, nickname),
+        onSuccess: (response, { groupId }) => {
+            queryClient.invalidateQueries({ queryKey: ['group-conversation', groupId] });
+            queryClient.invalidateQueries({ queryKey: ['group-conversations'] });
+            toast.success('Nickname updated');
+        },
+        onError: (error) => {
+            toast.error(error.response?.data?.message || 'Failed to update nickname');
+        },
+    });
+};
+
 export const useSendGroupMessage = () => {
     const queryClient = useQueryClient();
 

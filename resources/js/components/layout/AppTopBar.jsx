@@ -58,7 +58,7 @@ const AppTopBar = ({ onMenuToggle, showMenuButton = false }) => {
                             <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
                                 <span className="material-symbols-outlined text-white text-xl">hub</span>
                             </div>
-                            <span className="text-xl font-bold tracking-tight text-white">connectly</span>
+                            <span className="text-xl font-bold tracking-tight text-[var(--text-primary)]">connectly</span>
                         </Link>
                     )}
                 </div>

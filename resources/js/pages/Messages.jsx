@@ -10,6 +10,7 @@ import SharedMediaModal from '../components/messages/SharedMediaModal';
 import GroupConversationList from '../components/messages/GroupConversationList';
 import GroupMessageThread from '../components/messages/GroupMessageThread';
 import GroupMessageInput from '../components/messages/GroupMessageInput';
+import GroupMembersPanel from '../components/messages/GroupMembersPanel';
 import NewGroupModal from '../components/messages/NewGroupModal';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import Button from '../components/common/Button';
@@ -134,11 +135,20 @@ const Messages = () => {
                     {showGroupContent && (
                         <>
                             <div className="px-6 pb-4">
-                                <Button variant="primary" size="sm" className="w-full" onClick={() => setNewGroupModalOpen(true)}>New Group</Button>
+                                <Button
+                                    variant="primary"
+                                    size="md"
+                                    className="w-full flex items-center justify-center gap-2 py-3 rounded-xl hover:scale-[1.02] active:scale-[0.98] transition-transform shadow-lg shadow-primary/20"
+                                    onClick={() => setNewGroupModalOpen(true)}
+                                >
+                                    <span className="material-symbols-outlined text-xl">group_add</span>
+                                    New Group
+                                </Button>
                             </div>
                             <GroupConversationList
                                 onSelectGroup={handleSelectGroup}
                                 selectedGroupId={selectedGroup?.id}
+                                onNewGroup={() => setNewGroupModalOpen(true)}
                             />
                         </>
                     )}
@@ -212,7 +222,7 @@ const Messages = () => {
                     )}
                 </main>
 
-                {/* Right panel - user details & shared media */}
+                {/* Right panel - user details & shared media (direct) or group members (groups) */}
                 {showDirectContent && displayConversation && (
                     <>
                         <MessageUserPanel
@@ -226,6 +236,9 @@ const Messages = () => {
                             conversationId={displayConversation.id}
                         />
                     </>
+                )}
+                {showGroupContent && selectedGroup && (
+                    <GroupMembersPanel groupId={selectedGroup.id} />
                 )}
             </div>
         </div>

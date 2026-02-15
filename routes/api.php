@@ -15,10 +15,12 @@ use App\Http\Controllers\Api\FriendRequestController;
 use App\Http\Controllers\Api\LikeController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\MessageController;
+use App\Http\Controllers\Api\PollVoteController;
 use App\Http\Controllers\Api\PostController;
 use App\Http\Controllers\Api\PushSubscriptionController;
 use App\Http\Controllers\Api\ReportController;
 use App\Http\Controllers\Api\SearchController;
+use App\Http\Controllers\Api\StoryController;
 use App\Http\Controllers\Api\SocialAuthController;
 use App\Http\Controllers\Api\TrendingController;
 use App\Http\Controllers\Api\TwoFactorController;
@@ -100,6 +102,14 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function () {
     // Post Share (increment share count)
     Route::post('/posts/{post}/share', [PostController::class, 'share']);
 
+    // Poll vote
+    Route::post('/posts/{post}/polls/vote', [PollVoteController::class, 'vote']);
+
+    // Stories
+    Route::get('/stories', [StoryController::class, 'index']);
+    Route::post('/stories', [StoryController::class, 'store']);
+    Route::get('/stories/{story}', [StoryController::class, 'show']);
+
     // Bookmarks
     Route::get('/bookmarks', [BookmarkController::class, 'index']);
     Route::post('/posts/{post}/bookmark', [BookmarkController::class, 'store']);
@@ -159,6 +169,9 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function () {
     Route::get('/group-conversations', [GroupConversationController::class, 'index']);
     Route::post('/group-conversations', [GroupConversationController::class, 'store']);
     Route::get('/group-conversations/{groupConversation}', [GroupConversationController::class, 'show']);
+    Route::post('/group-conversations/{groupConversation}/members', [GroupConversationController::class, 'addMembers']);
+    Route::delete('/group-conversations/{groupConversation}/members/{user}', [GroupConversationController::class, 'removeMember']);
+    Route::put('/group-conversations/{groupConversation}/members/{user}/nickname', [GroupConversationController::class, 'setNickname']);
     Route::post('/group-messages', [GroupMessageController::class, 'store']);
     Route::get('/conversations/by-username/{username}', [ConversationController::class, 'getByUsername']);
     Route::get('/conversations/{conversation}', [ConversationController::class, 'show']);

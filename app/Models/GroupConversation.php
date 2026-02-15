@@ -19,7 +19,8 @@ class GroupConversation extends Model
     public function members(): BelongsToMany
     {
         return $this->belongsToMany(User::class, 'group_conversation_members', 'group_conversation_id', 'user_id')
-            ->withPivot('role')
+            ->using(GroupConversationMember::class)
+            ->withPivot('role', 'nickname')
             ->withTimestamps();
     }
 
@@ -31,5 +32,10 @@ class GroupConversation extends Model
     public function isMember(User $user): bool
     {
         return $this->members()->where('user_id', $user->id)->exists();
+    }
+
+    public function isAdmin(User $user): bool
+    {
+        return $this->members()->where('user_id', $user->id)->wherePivot('role', 'admin')->exists();
     }
 }

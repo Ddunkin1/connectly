@@ -22,24 +22,10 @@ export const BACKGROUND_THEMES = {
         feedBg: '#f5f7f8',
         feedMuted: '#eef0f2',
         textPrimary: '#1a1a1a',
-        textSecondary: '#6b7280',
-        border: 'rgba(0,0,0,0.1)',
+        textSecondary: '#475569',
+        border: 'rgba(0,0,0,0.12)',
         cardShadow: '0 1px 3px rgba(0,0,0,0.08)',
         glassBg: 'rgba(255,255,255,0.9)',
-    },
-    stitch: {
-        name: 'Stitch AI',
-        bg: '#0A0A0B',
-        sidebar: '#121214',
-        surface: '#161618',
-        surfaceHover: '#16161E',
-        feedBg: '#0A0A0B',
-        feedMuted: '#141414',
-        textPrimary: '#ffffff',
-        textSecondary: '#a0a0a0',
-        border: '#26262E',
-        cardShadow: '0 2px 8px rgba(0,0,0,0.2)',
-        glassBg: 'rgba(26,26,29,0.6)',
     },
     dim: {
         name: 'Dim',
@@ -55,20 +41,6 @@ export const BACKGROUND_THEMES = {
         cardShadow: '0 2px 8px rgba(0,0,0,0.2)',
         glassBg: 'rgba(26,26,29,0.6)',
     },
-    dark: {
-        name: 'Lights Out',
-        bg: '#0F0F0F',
-        sidebar: '#121212',
-        surface: '#1A1A1A',
-        surfaceHover: '#16161E',
-        feedBg: '#0F0F0F',
-        feedMuted: '#141414',
-        textPrimary: '#ffffff',
-        textSecondary: '#a0a0a0',
-        border: '#26262E',
-        cardShadow: '0 2px 8px rgba(0,0,0,0.2)',
-        glassBg: 'rgba(26,26,29,0.6)',
-    },
 };
 
 const useThemeStore = create(
@@ -76,7 +48,7 @@ const useThemeStore = create(
         (set) => ({
             fontSize: 'md',
             accentColor: 'peachy',
-            background: 'stitch',
+            background: 'dim',
             isCustomizerOpen: false,
             setFontSize: (fontSize) => {
                 set({ fontSize });
@@ -124,20 +96,24 @@ const useThemeStore = create(
                     root.style.setProperty('--color-primary-dark', accentHover);
                     root.style.setProperty('--accent-primary', accent.hex);
                 }
-                const isDark = ['stitch', 'dim', 'dark'].includes(state.background);
+                const isDark = state.background === 'dim';
                 root.classList.toggle('dark', isDark);
             },
         }),
         {
             name: THEME_KEY,
-            version: 2,
+            version: 3,
             partialize: (s) => ({ fontSize: s.fontSize, accentColor: s.accentColor, background: s.background }),
             onRehydrateStorage: () => () => useThemeStore.getState().applyToDom(),
             migrate: (persistedState, version) => {
-                if (version < 2 && persistedState?.accentColor === 'purple') {
-                    return { ...persistedState, accentColor: 'peachy' };
+                let next = persistedState ?? {};
+                if (version < 2 && next?.accentColor === 'purple') {
+                    next = { ...next, accentColor: 'peachy' };
                 }
-                return persistedState;
+                if (version < 3 && ['stitch', 'dark'].includes(next?.background)) {
+                    next = { ...next, background: 'dim' };
+                }
+                return next;
             },
         }
     )

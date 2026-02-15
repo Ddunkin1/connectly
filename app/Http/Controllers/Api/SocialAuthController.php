@@ -3,10 +3,10 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Http\Resources\UserResource;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Laravel\Socialite\Facades\Socialite;
 
@@ -17,7 +17,7 @@ class SocialAuthController extends Controller
      */
     public function redirectToGoogle(): RedirectResponse
     {
-        return Socialite::driver('google')->redirect();
+        return Socialite::driver('google')->stateless()->redirect();
     }
 
     /**
@@ -33,7 +33,7 @@ class SocialAuthController extends Controller
      */
     public function redirectToFacebook(): RedirectResponse
     {
-        return Socialite::driver('facebook')->redirect();
+        return Socialite::driver('facebook')->stateless()->redirect();
     }
 
     /**
@@ -50,9 +50,17 @@ class SocialAuthController extends Controller
     private function handleProviderCallback(string $provider): RedirectResponse
     {
         try {
-            $socialUser = Socialite::driver($provider)->user();
+            $socialUser = Socialite::driver($provider)->stateless()->user();
         } catch (\Exception $e) {
-            return $this->redirectToFrontendWithError('Could not authenticate with ' . $provider);
+            Log::error('Social auth failed', [
+                'provider' => $provider,
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            $message = config('app.debug')
+                ? 'Could not authenticate with ' . $provider . ': ' . $e->getMessage()
+                : 'Could not authenticate with ' . $provider . '. Check storage/logs/laravel.log for details.';
+            return $this->redirectToFrontendWithError($message);
         }
 
         $email = $socialUser->getEmail();

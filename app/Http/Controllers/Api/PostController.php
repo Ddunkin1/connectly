@@ -147,7 +147,7 @@ class PostController extends Controller
     public function show(Request $request, Post $post): JsonResponse
     {
         $post->loadCount(['likes', 'allComments']);
-        $post->load(['user', 'hashtags', 'sharedPost.user']);
+        $post->load(['user', 'hashtags', 'sharedPost.user', 'poll.options']);
 
         if ($request->user()) {
             $post->is_liked = $post->likes()->where('user_id', $request->user()->id)->exists();

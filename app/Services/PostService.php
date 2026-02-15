@@ -29,7 +29,7 @@ class PostService
 
         $blockedIds = array_merge($user->blockedUserIds(), $user->blockedByUserIds());
 
-        return Post::with(['user', 'hashtags', 'likes', 'sharedPost.user'])
+        return Post::with(['user', 'hashtags', 'likes', 'sharedPost.user', 'poll.options'])
             ->whereIn('user_id', $followingIds)
             ->whereNotIn('user_id', $blockedIds)
             ->where('is_archived', false)
@@ -55,7 +55,7 @@ class PostService
 
         $blockedIds = array_merge($user->blockedUserIds(), $user->blockedByUserIds());
 
-        $posts = Post::with(['user', 'hashtags', 'likes', 'sharedPost.user'])
+        $posts = Post::with(['user', 'hashtags', 'likes', 'sharedPost.user', 'poll.options'])
             ->whereNotIn('user_id', $followingIds)
             ->whereNotIn('user_id', $blockedIds)
             ->where('is_archived', false)
@@ -80,7 +80,7 @@ class PostService
             }
         }
 
-        $query = Post::with(['user', 'hashtags', 'likes'])
+        $query = Post::with(['user', 'hashtags', 'likes', 'poll.options'])
             ->where('user_id', $user->id)
             ->where('is_archived', false);
 
@@ -171,7 +171,17 @@ class PostService
             $this->mentionService->notifyMentionedUsers($data['content'], $post, $user, 'post');
         }
 
-        return $post->load(['user', 'hashtags', 'sharedPost.user']);
+        // Create poll if provided
+        if (!empty($data['poll']['question']) && !empty($data['poll']['options'])) {
+            $poll = $post->poll()->create(['question' => $data['poll']['question']]);
+            foreach (array_values($data['poll']['options']) as $order => $text) {
+                if (trim((string) $text) !== '') {
+                    $poll->options()->create(['text' => trim($text), 'order' => $order]);
+                }
+            }
+        }
+
+        return $post->load(['user', 'hashtags', 'sharedPost.user', 'poll.options']);
     }
 
     /**

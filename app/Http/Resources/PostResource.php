@@ -35,6 +35,34 @@ class PostResource extends JsonResource
             ),
             'hashtags' => HashtagResource::collection($this->whenLoaded('hashtags')),
             'shared_post' => new PostResource($this->whenLoaded('sharedPost')),
+            'poll' => $this->when($this->relationLoaded('poll') && $this->poll, function () use ($request) {
+                $poll = $this->poll;
+                $voteCounts = \App\Models\PollVote::where('poll_id', $poll->id)
+                    ->selectRaw('poll_option_id, count(*) as cnt')
+                    ->groupBy('poll_option_id')
+                    ->pluck('cnt', 'poll_option_id');
+                $options = $poll->options->map(function ($opt) use ($voteCounts) {
+                    $count = (int) ($voteCounts[$opt->id] ?? 0);
+                    return [
+                        'id' => $opt->id,
+                        'text' => $opt->text,
+                        'votes_count' => $count,
+                    ];
+                });
+                $totalVotes = $options->sum('votes_count');
+                $userVote = $request->user()
+                    ? \App\Models\PollVote::where('poll_id', $poll->id)->where('user_id', $request->user()->id)->first()
+                    : null;
+                return [
+                    'id' => $poll->id,
+                    'question' => $poll->question,
+                    'options' => $options->map(fn ($o) => array_merge($o, [
+                        'percentage' => $totalVotes > 0 ? round(($o['votes_count'] / $totalVotes) * 100) : 0,
+                    ]))->values(),
+                    'total_votes' => $totalVotes,
+                    'user_voted_option_id' => $userVote?->poll_option_id,
+                ];
+            }),
             'recent_likers' => UserResource::collection($this->recent_likers ?? collect()),
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,

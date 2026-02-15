@@ -17,9 +17,27 @@ const PostInput = ({ onPostCreated }) => {
     const [mediaPreview, setMediaPreview] = useState(null);
     const [mediaFile, setMediaFile] = useState(null);
     const [mediaType, setMediaType] = useState(null);
+    const [pollMode, setPollMode] = useState(false);
+    const [pollQuestion, setPollQuestion] = useState('');
+    const [pollOptions, setPollOptions] = useState(['', '']);
 
     const content = watch('content', '');
-    const isFormValid = content.trim().length > 0 || mediaFile !== null;
+    const hasPoll = pollMode && pollQuestion.trim() && pollOptions.filter((o) => o.trim()).length >= 2;
+    const isFormValid = content.trim().length > 0 || mediaFile !== null || hasPoll;
+
+    const addPollOption = () => {
+        if (pollOptions.length < 5) setPollOptions((p) => [...p, '']);
+    };
+    const removePollOption = (i) => {
+        if (pollOptions.length > 2) setPollOptions((p) => p.filter((_, idx) => idx !== i));
+    };
+    const setPollOption = (i, val) => {
+        setPollOptions((p) => {
+            const n = [...p];
+            n[i] = val;
+            return n;
+        });
+    };
 
     const handleFileChange = (event) => {
         const file = event.target.files?.[0];
@@ -54,17 +72,38 @@ const PostInput = ({ onPostCreated }) => {
     };
 
     const onSubmit = async (data) => {
-        if (!data.content.trim() && !mediaFile) {
-            toast.error('Please add content or select a media file');
+        if (!data.content?.trim() && !mediaFile && !hasPoll) {
+            toast.error('Please add content, media, or a poll');
+            return;
+        }
+        if (pollMode && (!pollQuestion.trim() || pollOptions.filter((o) => o.trim()).length < 2)) {
+            toast.error('Poll needs a question and at least 2 options');
             return;
         }
         try {
-            const formData = new FormData();
-            formData.append('content', data.content || '');
-            formData.append('visibility', data.visibility || 'public');
-            if (mediaFile) formData.append('media', mediaFile);
-
-            await createPostMutation.mutateAsync(formData);
+            let payload;
+            if (mediaFile) {
+                payload = new FormData();
+                payload.append('content', data.content || '');
+                payload.append('visibility', data.visibility || 'public');
+                payload.append('media', mediaFile);
+                if (pollMode && pollQuestion.trim()) {
+                    payload.append('poll[question]', pollQuestion.trim());
+                    pollOptions.filter((o) => o.trim()).forEach((o, i) => payload.append(`poll[options][${i}]`, o.trim()));
+                }
+            } else {
+                payload = {
+                    content: data.content || '',
+                    visibility: data.visibility || 'public',
+                };
+                if (pollMode && pollQuestion.trim()) {
+                    payload.poll = {
+                        question: pollQuestion.trim(),
+                        options: pollOptions.filter((o) => o.trim()),
+                    };
+                }
+            }
+            await createPostMutation.mutateAsync({ formData: payload });
             reset();
             if (mediaPreview && mediaType === 'video') {
                 URL.revokeObjectURL(mediaPreview);
@@ -72,6 +111,9 @@ const PostInput = ({ onPostCreated }) => {
             setMediaPreview(null);
             setMediaFile(null);
             setMediaType(null);
+            setPollMode(false);
+            setPollQuestion('');
+            setPollOptions(['', '']);
             setIsExpanded(false);
             if (onPostCreated) onPostCreated();
         } catch (error) {
@@ -112,7 +154,12 @@ const PostInput = ({ onPostCreated }) => {
                                 <button type="button" className="p-2 rounded-xl hover:bg-white/5 text-primary transition-colors">
                                     <span className="material-symbols-outlined">sentiment_satisfied</span>
                                 </button>
-                                <button type="button" className="p-2 rounded-xl hover:bg-white/5 text-primary transition-colors">
+                                <button
+                                    type="button"
+                                    onClick={() => setPollMode((p) => !p)}
+                                    className={`p-2 rounded-xl transition-colors ${pollMode ? 'bg-primary/20 text-primary' : 'hover:bg-white/5 text-primary'}`}
+                                    title="Add poll"
+                                >
                                     <span className="material-symbols-outlined">equalizer</span>
                                 </button>
                             </div>
@@ -145,6 +192,48 @@ const PostInput = ({ onPostCreated }) => {
                         <Button type="button" variant="ghost" size="sm" onClick={() => { setIsExpanded(false); reset(); }}>
                             Cancel
                         </Button>
+                    </div>
+                )}
+
+                {pollMode && (
+                    <div className="mt-4 p-4 rounded-xl bg-white/5 border border-white/10 space-y-3">
+                        <input
+                            type="text"
+                            value={pollQuestion}
+                            onChange={(e) => setPollQuestion(e.target.value)}
+                            placeholder="Ask a question..."
+                            className="w-full px-4 py-2 rounded-lg bg-[#1A1A1A] border border-gray-700 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[var(--theme-accent)]"
+                        />
+                        <div className="space-y-2">
+                            {pollOptions.map((opt, i) => (
+                                <div key={i} className="flex gap-2">
+                                    <input
+                                        type="text"
+                                        value={opt}
+                                        onChange={(e) => setPollOption(i, e.target.value)}
+                                        placeholder={`Option ${i + 1}`}
+                                        className="flex-1 px-4 py-2 rounded-lg bg-[#1A1A1A] border border-gray-700 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[var(--theme-accent)]"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => removePollOption(i)}
+                                        disabled={pollOptions.length <= 2}
+                                        className="p-2 rounded-lg text-gray-500 hover:text-red-500 hover:bg-red-500/10 disabled:opacity-40 disabled:cursor-not-allowed"
+                                    >
+                                        <span className="material-symbols-outlined text-xl">close</span>
+                                    </button>
+                                </div>
+                            ))}
+                            {pollOptions.length < 5 && (
+                                <button
+                                    type="button"
+                                    onClick={addPollOption}
+                                    className="text-sm text-[var(--theme-accent)] hover:underline"
+                                >
+                                    Add option
+                                </button>
+                            )}
+                        </div>
                     </div>
                 )}
 

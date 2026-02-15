@@ -4,7 +4,7 @@ import Avatar from '../common/Avatar';
 import LoadingSpinner from '../common/LoadingSpinner';
 import { formatDate } from '../../utils/formatDate';
 
-const GroupConversationList = ({ onSelectGroup, selectedGroupId }) => {
+const GroupConversationList = ({ onSelectGroup, selectedGroupId, onNewGroup }) => {
     const {
         data,
         fetchNextPage,
@@ -40,8 +40,18 @@ const GroupConversationList = ({ onSelectGroup, selectedGroupId }) => {
         <div className="h-full flex flex-col">
             <div className="flex-1 overflow-y-auto">
                 {groups.length === 0 ? (
-                    <div className="flex justify-center items-center h-full p-4">
-                        <p className="text-gray-500 text-center">No groups yet. Create one to get started!</p>
+                    <div className="flex flex-col justify-center items-center h-full p-4 gap-4">
+                        <p className="text-gray-500 text-center">No groups yet.</p>
+                        {onNewGroup && (
+                            <button
+                                type="button"
+                                onClick={onNewGroup}
+                                className="flex items-center gap-2 px-5 py-3 rounded-xl bg-primary text-white font-semibold hover:opacity-90 hover:scale-105 active:scale-95 transition-all shadow-lg shadow-primary/20"
+                            >
+                                <span className="material-symbols-outlined">group_add</span>
+                                Create your first group
+                            </button>
+                        )}
                     </div>
                 ) : (
                     groups.map((group) => {

@@ -65,15 +65,6 @@ const LeftSidebar = ({ className = '', onNavigate, positionBelowNav = false }) =
 
     return (
         <aside className={wrapperClass}>
-            <div className="flex items-center space-x-2 px-2">
-                <Link to="/home" className="flex items-center space-x-2" onClick={handleNavClick}>
-                    <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                        <span className="material-symbols-outlined text-white text-xl">hub</span>
-                    </div>
-                    <span className="text-xl font-bold tracking-tight text-white">connectly</span>
-                </Link>
-            </div>
-
             {user && (
                 <div className="mb-8 px-2 relative" ref={userMenuRef}>
                     <button
@@ -83,7 +74,7 @@ const LeftSidebar = ({ className = '', onNavigate, positionBelowNav = false }) =
                     >
                         <Avatar src={user.profile_picture} alt={user.name} size="md" className="w-10 h-10 rounded-full shrink-0" />
                         <div className="flex flex-col overflow-hidden">
-                            <span className="text-sm font-bold text-white truncate">{user.name}</span>
+                            <span className="text-sm font-bold text-[var(--text-primary)] truncate">{user.name}</span>
                             <span className="text-xs text-slate-500 truncate">@{user.username}</span>
                         </div>
                         <span className="material-symbols-outlined text-slate-500 ml-auto">expand_more</span>

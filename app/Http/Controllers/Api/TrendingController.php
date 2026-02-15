@@ -81,7 +81,7 @@ class TrendingController extends Controller
             return response()->json(['posts' => []]);
         }
 
-        $posts = Post::with(['user', 'hashtags', 'sharedPost.user'])
+        $posts = Post::with(['user', 'hashtags', 'sharedPost.user', 'poll.options'])
             ->whereIn('id', $topIds)
             ->orderByRaw('FIELD(id, ' . implode(',', array_map('intval', $topIds)) . ')')
             ->get();

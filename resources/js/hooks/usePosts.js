@@ -400,6 +400,23 @@ export const useUnlikePost = () => {
     });
 };
 
+export const useVotePoll = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: ({ postId, pollOptionId }) => postsAPI.votePoll(postId, pollOptionId),
+        onSuccess: (response, { postId }) => {
+            const updatedPost = response?.data?.post;
+            if (updatedPost) {
+                updatePostInCaches(queryClient, postId, () => updatedPost);
+            }
+        },
+        onError: () => {
+            toast.error('Failed to vote');
+        },
+    });
+};
+
 export const useSharePost = () => {
     const queryClient = useQueryClient();
 

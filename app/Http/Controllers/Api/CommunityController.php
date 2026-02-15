@@ -246,13 +246,13 @@ class CommunityController extends Controller
             $postIds = $community->communityPosts()
                 ->where('status', CommunityPost::STATUS_APPROVED)
                 ->pluck('post_id');
-            $posts = Post::with(['user', 'hashtags', 'likes'])
+            $posts = Post::with(['user', 'hashtags', 'likes', 'poll.options'])
                 ->whereIn('id', $postIds)
                 ->withCount(['likes', 'allComments as comments_count'])
                 ->latest()
                 ->paginate(15);
         } else {
-            $posts = Post::with(['user', 'hashtags', 'likes'])
+            $posts = Post::with(['user', 'hashtags', 'likes', 'poll.options'])
                 ->whereIn('user_id', $memberIds)
                 ->where('visibility', 'public')
                 ->withCount(['likes', 'allComments as comments_count'])

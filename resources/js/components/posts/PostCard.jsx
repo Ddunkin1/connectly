@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import Avatar from '../common/Avatar';
 import { UilHeart, UilHeartAlt, UilComment, UilShare, UilBookmark, UilBookmarkFull, UilEllipsisH, UilTrash, UilMegaphone, UilArchive, UilGlobe, UilUsersAlt, UilLock } from '../common/Icons';
 import { formatDateUppercase } from '../../utils/formatDate';
-import { useLikePost, useUnlikePost, useSharePost, useCreatePost, useDeletePost, useUpdatePost } from '../../hooks/usePosts';
+import { useLikePost, useUnlikePost, useSharePost, useCreatePost, useDeletePost, useUpdatePost, useVotePoll } from '../../hooks/usePosts';
 import { useAddBookmark, useRemoveBookmark } from '../../hooks/useBookmarks';
 import ReportModal from '../common/ReportModal';
 import useAuthStore from '../../store/authStore';
@@ -20,6 +20,7 @@ const PostCard = ({ post, onDeleted, onCommentClick }) => {
     const createPostMutation = useCreatePost();
     const deleteMutation = useDeletePost();
     const updateMutation = useUpdatePost();
+    const votePollMutation = useVotePoll();
     const [shareOpen, setShareOpen] = useState(false);
     const [shareOpenInner, setShareOpenInner] = useState(false);
     const [shareToTimelinePost, setShareToTimelinePost] = useState(null);
@@ -119,7 +120,7 @@ const PostCard = ({ post, onDeleted, onCommentClick }) => {
                     <div>
                         <Link
                             to={`/profile/${post.user?.username}`}
-                            className="font-bold text-sm text-slate-100 hover:text-primary block"
+                            className="font-bold text-sm text-[var(--text-primary)] hover:text-primary block"
                         >
                             {post.user?.name}
                         </Link>
@@ -253,6 +254,21 @@ const PostCard = ({ post, onDeleted, onCommentClick }) => {
                             </div>
                         </div>
                         <p className="text-sm text-gray-300 line-clamp-3">{post.shared_post.content || '—'}</p>
+                        {post.shared_post.poll && (
+                            <div className="mt-2 py-2">
+                                <p className="text-xs font-medium text-gray-400 mb-2">{post.shared_post.poll.question}</p>
+                                <div className="space-y-1">
+                                    {post.shared_post.poll.options?.slice(0, 3).map((o) => (
+                                        <div key={o.id} className="text-xs text-gray-500 flex justify-between">
+                                            <span>{o.text}</span>
+                                            {post.shared_post.poll.user_voted_option_id != null && (
+                                                <span>{o.percentage}%</span>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
                         {post.shared_post.media_url && (
                             <div className="mt-2 rounded overflow-hidden max-h-48">
                                 {post.shared_post.media_type === 'image' ? (
@@ -351,6 +367,61 @@ const PostCard = ({ post, onDeleted, onCommentClick }) => {
                 <Link to={`/post/${post.id}`}>
                     <p className="text-slate-100 text-[15px] leading-relaxed mb-4 whitespace-pre-wrap">{highlightHashtags(post.content)}</p>
                 </Link>
+            )}
+
+            {/* Poll - for posts with poll */}
+            {!post.shared_post && post.poll && (
+                <div className="my-4 p-4 rounded-xl bg-white/5 border border-white/10">
+                    <p className="font-medium text-white mb-3">{post.poll.question}</p>
+                    <div className="space-y-2">
+                        {post.poll.options?.map((opt) => {
+                            const hasVoted = post.poll.user_voted_option_id != null;
+                            const isSelected = post.poll.user_voted_option_id === opt.id;
+                            return (
+                                <button
+                                    key={opt.id}
+                                    type="button"
+                                    disabled={hasVoted || votePollMutation.isPending}
+                                    onClick={() => {
+                                        if (!hasVoted && user) {
+                                            votePollMutation.mutate({ postId: post.id, pollOptionId: opt.id });
+                                        }
+                                    }}
+                                    className={`w-full text-left px-4 py-3 rounded-lg border transition-colors ${
+                                        hasVoted
+                                            ? isSelected
+                                                ? 'border-[var(--theme-accent)] bg-[var(--theme-accent)]/20'
+                                                : 'border-white/10 bg-white/5'
+                                            : 'border-white/10 hover:border-white/20 hover:bg-white/5'
+                                    }`}
+                                >
+                                    <div className="flex items-center justify-between gap-2">
+                                        <span className="text-[var(--text-primary)]">{opt.text}</span>
+                                        {hasVoted && (
+                                            <span className="text-sm text-slate-400">
+                                                {opt.percentage}% ({opt.votes_count})
+                                            </span>
+                                        )}
+                                    </div>
+                                    {hasVoted && (
+                                        <div
+                                            className="mt-2 h-1 rounded-full bg-white/20 overflow-hidden"
+                                            style={{ width: '100%' }}
+                                        >
+                                            <div
+                                                className="h-full rounded-full bg-[var(--theme-accent)]"
+                                                style={{ width: `${opt.percentage}%` }}
+                                            />
+                                        </div>
+                                    )}
+                                </button>
+                            );
+                        })}
+                    </div>
+                    {post.poll.total_votes > 0 && (
+                        <p className="text-xs text-slate-500 mt-2">{post.poll.total_votes} vote{post.poll.total_votes !== 1 ? 's' : ''}</p>
+                    )}
+                </div>
             )}
 
             {/* Post Actions - Stitch: like/comment/share left, bookmark right */}

@@ -41,6 +41,10 @@ class StorePostRequest extends FormRequest
             ],
             'visibility' => ['nullable', 'in:public,followers'],
             'shared_post_id' => ['nullable', 'integer', 'exists:posts,id'],
+            'poll' => ['nullable', 'array'],
+            'poll.question' => ['required_with:poll', 'string', 'max:500'],
+            'poll.options' => ['required_with:poll', 'array', 'min:2', 'max:5'],
+            'poll.options.*' => ['required', 'string', 'max:200'],
         ];
     }
 
@@ -56,10 +60,11 @@ class StorePostRequest extends FormRequest
             $content = $this->input('content');
             $hasMedia = $this->hasFile('media');
             $isShare = $this->filled('shared_post_id');
+            $hasPoll = $this->filled('poll.question') && $this->filled('poll.options');
 
-            // Either content, media, or shared_post_id must be present
-            if (empty(trim($content ?? '')) && !$hasMedia && !$isShare) {
-                $validator->errors()->add('content', 'Either content, media file, or shared post is required.');
+            // Either content, media, shared_post_id, or poll must be present
+            if (empty(trim($content ?? '')) && !$hasMedia && !$isShare && !$hasPoll) {
+                $validator->errors()->add('content', 'Either content, media file, shared post, or poll is required.');
             }
         });
     }

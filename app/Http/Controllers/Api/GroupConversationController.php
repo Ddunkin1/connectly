@@ -93,4 +93,96 @@ class GroupConversationController extends Controller
             ],
         ]);
     }
+
+    /**
+     * Add members to group (admin only).
+     */
+    public function addMembers(Request $request, GroupConversation $groupConversation): JsonResponse
+    {
+        if (!$groupConversation->isMember($request->user())) {
+            return response()->json(['message' => 'Forbidden'], 403);
+        }
+        if (!$groupConversation->isAdmin($request->user())) {
+            return response()->json(['message' => 'Only admins can add members'], 403);
+        }
+
+        $request->validate([
+            'member_ids' => 'required|array',
+            'member_ids.*' => 'integer|exists:users,id',
+        ]);
+
+        $memberIds = array_unique(array_map('intval', $request->member_ids));
+        $existingIds = $groupConversation->members()->pluck('user_id')->toArray();
+        $toAdd = array_values(array_filter($memberIds, fn ($id) => !in_array($id, $existingIds)));
+
+        foreach ($toAdd as $id) {
+            $groupConversation->members()->attach($id, ['role' => 'member']);
+        }
+
+        $groupConversation->load(['creator', 'members']);
+
+        return response()->json([
+            'message' => count($toAdd) . ' member(s) added',
+            'group' => $groupConversation,
+        ]);
+    }
+
+    /**
+     * Remove a member from group (admin only).
+     */
+    public function removeMember(Request $request, GroupConversation $groupConversation, User $user): JsonResponse
+    {
+        if (!$groupConversation->isMember($request->user())) {
+            return response()->json(['message' => 'Forbidden'], 403);
+        }
+        if (!$groupConversation->isAdmin($request->user())) {
+            return response()->json(['message' => 'Only admins can remove members'], 403);
+        }
+
+        if (!$groupConversation->isMember($user)) {
+            return response()->json(['message' => 'User is not a member'], 422);
+        }
+
+        $groupConversation->members()->detach($user->id);
+        $groupConversation->load(['creator', 'members']);
+
+        return response()->json([
+            'message' => 'Member removed',
+            'group' => $groupConversation,
+        ]);
+    }
+
+    /**
+     * Set nickname for a member (admin or self).
+     */
+    public function setNickname(Request $request, GroupConversation $groupConversation, User $user): JsonResponse
+    {
+        if (!$groupConversation->isMember($request->user())) {
+            return response()->json(['message' => 'Forbidden'], 403);
+        }
+        if (!$groupConversation->isMember($user)) {
+            return response()->json(['message' => 'User is not a member'], 422);
+        }
+
+        $currentUser = $request->user();
+        $isSelf = $currentUser->id === $user->id;
+        $isAdmin = $groupConversation->isAdmin($currentUser);
+        if (!$isSelf && !$isAdmin) {
+            return response()->json(['message' => 'Only admins can set nicknames for others'], 403);
+        }
+
+        $request->validate([
+            'nickname' => ['nullable', 'string', 'max:50'],
+        ]);
+
+        $groupConversation->members()->updateExistingPivot($user->id, [
+            'nickname' => $request->input('nickname') ? trim($request->input('nickname')) : null,
+        ]);
+        $groupConversation->load(['creator', 'members']);
+
+        return response()->json([
+            'message' => 'Nickname updated',
+            'group' => $groupConversation,
+        ]);
+    }
 }
