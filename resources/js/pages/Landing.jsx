@@ -25,7 +25,7 @@ const Landing = () => {
     };
 
     return (
-        <div className="min-h-screen bg-white">
+        <div className="auth-form-panel min-h-screen bg-white">
             {/* Header */}
             <header className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
                 <div className="flex items-center justify-between">
