@@ -24,19 +24,24 @@ This app has two parts: a **frontend** (React/Vite) and a **Laravel API** backen
 1. **Host**
    - Deploy the Laravel app on a PHP-capable host (e.g. Railway, Render, Fly.io, shared hosting, or a VPS).
 
-### Railway (Nixpacks)
+### Railway (recommended: use the Dockerfile)
 
-Railway uses [Nixpacks](https://nixpacks.com/docs/providers/php) to build PHP apps. By default the web root is the project root, but **Laravel must be served from `public/`** or you get 404s on `/api/user`, `/api/auth/google`, etc.
+This repo includes a [Dockerfile](Dockerfile) that runs the Laravel API with `php artisan serve`. **Railway uses the Dockerfile when present**, so your app will serve correctly and `/api/user`, `/api/auth/google`, etc. will work (no 404s).
 
-This repo includes a [nixpacks.toml](nixpacks.toml) that sets:
+1. Connect the repo to Railway and deploy. Do **not** set a custom “Build” or “Start” command—let Railway use the Dockerfile.
+2. In Railway → your service → **Variables**, set at least:
+   - `APP_KEY` (run `php artisan key:generate` locally and paste the value)
+   - `APP_URL` = `https://connectly-api.railway.app` (or your Railway API domain)
+   - `FRONTEND_URL` = your Vercel app URL (e.g. `https://connectly-lake.vercel.app`)
+   - `CORS_ALLOWED_ORIGINS` = same as `FRONTEND_URL`
+   - Database: `DB_*` or `DATABASE_URL` (if you use a Railway Postgres/MySQL or external DB)
+3. In **Networking**, generate a public domain (e.g. `connectly-api.railway.app`).
 
-- `NIXPACKS_PHP_ROOT_DIR=/app/public` – serve from Laravel’s `public` directory
-- `NIXPACKS_PHP_FALLBACK_PATH=/index.php` – route all requests through Laravel’s front controller
+If you remove the Dockerfile and deploy with Nixpacks instead, use the [nixpacks.toml](nixpacks.toml) and variables below so the web root is `public/`.
 
-If you deploy without `nixpacks.toml`, set these in Railway → your service → **Variables**:
+### Railway (Nixpacks, if not using Dockerfile)
 
-- `NIXPACKS_PHP_ROOT_DIR` = `public` (or `/app/public` if full path is required)
-- `NIXPACKS_PHP_FALLBACK_PATH` = `/index.php`
+Railway can build with [Nixpacks](https://nixpacks.com/docs/providers/php) if no Dockerfile is present. By default the web root is the project root; **Laravel must be served from `public/`** or you get 404s. This repo’s [nixpacks.toml](nixpacks.toml) sets `NIXPACKS_PHP_ROOT_DIR=/app/public` and `NIXPACKS_PHP_FALLBACK_PATH=/index.php`. Alternatively set those in Railway → Variables.
 
 Recommended Railway variables for the API:
 
