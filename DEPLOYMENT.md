@@ -24,6 +24,30 @@ This app has two parts: a **frontend** (React/Vite) and a **Laravel API** backen
 1. **Host**
    - Deploy the Laravel app on a PHP-capable host (e.g. Railway, Render, Fly.io, shared hosting, or a VPS).
 
+### Railway (Nixpacks)
+
+Railway uses [Nixpacks](https://nixpacks.com/docs/providers/php) to build PHP apps. By default the web root is the project root, but **Laravel must be served from `public/`** or you get 404s on `/api/user`, `/api/auth/google`, etc.
+
+This repo includes a [nixpacks.toml](nixpacks.toml) that sets:
+
+- `NIXPACKS_PHP_ROOT_DIR=/app/public` – serve from Laravel’s `public` directory
+- `NIXPACKS_PHP_FALLBACK_PATH=/index.php` – route all requests through Laravel’s front controller
+
+If you deploy without `nixpacks.toml`, set these in Railway → your service → **Variables**:
+
+- `NIXPACKS_PHP_ROOT_DIR` = `public` (or `/app/public` if full path is required)
+- `NIXPACKS_PHP_FALLBACK_PATH` = `/index.php`
+
+Recommended Railway variables for the API:
+
+- `APP_URL` = your Railway API URL (e.g. `https://connectly-api.railway.app`)
+- `APP_KEY` = from `php artisan key:generate`
+- `FRONTEND_URL` = your Vercel app URL (e.g. `https://connectly-lake.vercel.app`)
+- `CORS_ALLOWED_ORIGINS` = same as `FRONTEND_URL` (or comma-separated list)
+- `LOG_CHANNEL` = `stderr` (so logs show in Railway dashboard)
+- `LOG_STDERR_FORMATTER` = `\Monolog\Formatter\JsonFormatter` (optional, for structured logs)
+- Database: `DB_*` or `DATABASE_URL` as per your database service
+
 2. **Environment**
    - Configure `.env` on the server with at least:
      - `APP_URL` – public URL of the Laravel app (e.g. `https://connectly-api.railway.app`)
