@@ -4,6 +4,8 @@ import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 
 export default defineConfig({
+    // On Vercel, outputDirectory is public/build so site root = /. Use base '/' so assets are /assets/..., not /build/assets/
+    base: process.env.VERCEL ? '/' : '/build/',
     plugins: [
         laravel({
             input: ['resources/css/app.css', 'resources/js/main.jsx'],
