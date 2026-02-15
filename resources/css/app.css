@@ -55,6 +55,19 @@ html.dark #app-root {
 }
 html.dark .text-inherit { color: inherit; }
 
+/* Auth pages (Register/Login): form panel is always light – force dark text on white so it's visible even when app theme is dark */
+.auth-form-panel {
+    color: #1a1a1a;
+}
+.auth-form-panel .text-gray-500 { color: #374151 !important; }
+.auth-form-panel .text-gray-600 { color: #4b5563 !important; }
+.auth-form-panel .text-gray-700 { color: #374151 !important; }
+.auth-form-panel .text-gray-900 { color: #111827 !important; }
+.auth-form-panel input,
+.auth-form-panel textarea { color: #1a1a1a !important; }
+.auth-form-panel input::placeholder,
+.auth-form-panel textarea::placeholder { color: #6b7280 !important; }
+
 /* Light mode: explicit overrides when not dark */
 html:not(.dark),
 html:not(.dark) body,

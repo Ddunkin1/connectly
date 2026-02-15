@@ -92,7 +92,7 @@ const Login = () => {
             </div>
 
             {/* Right Panel - Login Form */}
-            <div className="w-full lg:w-1/2 flex items-center justify-center bg-white px-4 py-12">
+            <div className="auth-form-panel w-full lg:w-1/2 flex items-center justify-center bg-white px-4 py-12">
                 <div className="w-full max-w-md">
                     {/* Logo for mobile */}
                     <div className="lg:hidden flex items-center justify-center mb-8">

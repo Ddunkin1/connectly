@@ -744,7 +744,7 @@ const Register = () => {
             </div>
 
             {/* Right Panel - Registration Form */}
-            <div className="w-full lg:w-1/2 flex items-center justify-center bg-white px-4 py-12 overflow-y-auto">
+            <div className="auth-form-panel w-full lg:w-1/2 flex items-center justify-center bg-white px-4 py-12 overflow-y-auto">
                 <div className="w-full max-w-md">
                     {/* Logo for mobile */}
                     <div className="lg:hidden flex items-center justify-between mb-8">
