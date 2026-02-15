@@ -49,3 +49,11 @@ If users see "Could not reach the server" or "Server returned an invalid respons
 
 1. **VITE_API_URL** on Vercel is set and points to the Laravel API base URL (including `/api` if applicable), and you redeployed after setting it.
 2. **CORS** on the Laravel host includes the frontend origin (e.g. your Vercel URL) in `allowed_origins`.
+
+## Production checklist
+
+Use this when deploying with a Vercel frontend and a separate Laravel API host:
+
+1. **Vercel:** Set `VITE_API_URL` to your API base URL including `/api` (e.g. `https://your-api.com/api`). Redeploy after changing it.
+2. **Laravel API server:** In `.env`, set `APP_URL` (API public URL), `FRONTEND_URL` (Vercel app URL, e.g. `https://connectlyproject.vercel.app`), and `CORS_ALLOWED_ORIGINS` (same as `FRONTEND_URL`, or comma-separated list of frontend origins). Run `php artisan config:clear` and `php artisan config:cache`.
+3. **Google OAuth:** On the API server, ensure `APP_URL` (and optional `GOOGLE_REDIRECT_URI`) match the callback URL. In Google Cloud Console, add the redirect URI `https://your-api-domain.com/api/auth/google/callback`. See [GOOGLE_OAUTH_SETUP.md](GOOGLE_OAUTH_SETUP.md) for the "Production (Vercel + separate API)" section.

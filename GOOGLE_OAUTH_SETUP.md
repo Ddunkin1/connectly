@@ -46,6 +46,25 @@ php artisan migrate
 3. Sign in with your Google account
 4. You should be redirected back and logged in
 
+## Production (Vercel + separate API)
+
+When the frontend is on Vercel (e.g. `https://connectlyproject.vercel.app`) and the Laravel API is on another host (e.g. `https://your-api-domain.com`):
+
+1. **Laravel API server `.env`**
+   - `APP_URL` = your API public URL, e.g. `https://your-api-domain.com` (no `/api`).
+   - `FRONTEND_URL` = your Vercel app URL, e.g. `https://connectlyproject.vercel.app`. This is where users are redirected after Google sign-in (`/auth/callback?token=...`).
+   - Google redirect URI defaults to `APP_URL + /api/auth/google/callback`, i.e. `https://your-api-domain.com/api/auth/google/callback`. Override with `GOOGLE_REDIRECT_URI` only if you need a different value.
+
+2. **Google Cloud Console**
+   - **Authorized redirect URIs:** add exactly (no trailing slash): `https://your-api-domain.com/api/auth/google/callback`.
+   - **Authorized JavaScript origins** (if required): add `https://connectlyproject.vercel.app` and `https://your-api-domain.com` as needed.
+   - Save.
+
+3. **Vercel**
+   - Set `VITE_API_URL` to `https://your-api-domain.com/api` so "Continue with Google" links point to your API. Redeploy after changing.
+
+After Google sign-in, the user is sent to Google, then to your API callback, then redirected to `FRONTEND_URL/auth/callback?token=...` (your Vercel app).
+
 ## Troubleshooting
 
 - **"redirect_uri_mismatch"**: The redirect URI in Google Console must match exactly (including protocol, port, and path).

@@ -29,6 +29,7 @@ return [
             'http://127.0.0.1:3000',
             'http://127.0.0.1:8000',
             'https://connectly-three-pi.vercel.app',
+            'https://connectlyproject.vercel.app',
         ],
         array_map('trim', explode(',', env('CORS_ALLOWED_ORIGINS', '')))
     ))),
