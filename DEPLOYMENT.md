@@ -16,7 +16,11 @@ This app has two parts: a **frontend** (React/Vite) and a **Laravel API** backen
      - No trailing slash.
    - **Redeploy** after adding or changing this variable. `VITE_*` is baked in at build time.
 
-3. **Result**
+3. **Seeing your latest push**
+   - **Redeploy** rebuilds the **same** commit; it does not pull the latest from Git. To see new code: push to your connected branch — Vercel will create a **new** deployment for that commit. Open the **Deployments** tab and check the top entry; it should show your latest commit.
+   - If **Production** (e.g. `connectly-lake.vercel.app`) is tied to a different branch (e.g. `main`), then pushing only to `feature1` updates the **preview** URL (e.g. `connectly-git-feature1-…vercel.app`), not Production. To update Production: merge into the production branch and push, or set **Settings → Git → Production Branch** to the branch you push (e.g. `feature1`).
+
+4. **Result**
    - All API requests (register, login, posts, etc.) go to `VITE_API_URL` instead of the same origin. If you omit this, the frontend calls `/api` on the Vercel URL and gets HTML instead of JSON, so registration and login fail.
 
 ## Backend (Laravel)
