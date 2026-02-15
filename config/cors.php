@@ -31,6 +31,7 @@ return [
             'https://connectly-three-pi.vercel.app',
             'https://connectlyproject.vercel.app',
             'https://connectly-henna.vercel.app',
+            'https://connectly-lake.vercel.app',
         ],
         array_map('trim', explode(',', env('CORS_ALLOWED_ORIGINS', '')))
     ))),
