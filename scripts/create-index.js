@@ -71,3 +71,19 @@ if (!fs.existsSync(buildDir)) {
 }
 fs.writeFileSync(path.join(buildDir, 'index.html'), indexHtml);
 console.log('Created index.html in public/build');
+
+// Rewrite /build/ -> / in built JS and CSS so Vercel (root = public/build) serves assets at /assets/...
+const assetsDir = path.join(buildDir, 'assets');
+if (fs.existsSync(assetsDir)) {
+    const files = fs.readdirSync(assetsDir);
+    for (const name of files) {
+        if (!/\.(js|css)$/.test(name)) continue;
+        const filePath = path.join(assetsDir, name);
+        let content = fs.readFileSync(filePath, 'utf8');
+        const next = content.replace(/\/build\/assets\//g, '/assets/').replace(/\/build\//g, '/');
+        if (next !== content) {
+            fs.writeFileSync(filePath, next);
+            console.log('Rewrote /build/ -> / in', name);
+        }
+    }
+}
