@@ -344,18 +344,18 @@ const PostCard = ({ post, onDeleted, onCommentClick }) => {
 
             {/* Media first (reference order), then text content for text-only posts */}
             {!post.shared_post && post.media_url && (
-                <div className="my-2 rounded-[12px] overflow-hidden">
+                <div className="my-2 rounded-[12px] overflow-hidden bg-[var(--theme-surface)]">
                     {post.media_type === 'image' ? (
                         <img
                             src={post.media_url}
                             alt="Post media"
-                            className="w-full h-auto object-contain max-h-[500px]"
+                            className="w-full h-auto max-h-[500px] object-contain block"
                         />
                     ) : (
                         <video
                             src={post.media_url}
                             controls
-                            className="w-full h-auto max-h-[500px] object-contain"
+                            className="w-full h-auto max-h-[500px] object-contain block"
                         >
                             Your browser does not support the video tag.
                         </video>

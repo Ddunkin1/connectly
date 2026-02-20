@@ -34,13 +34,13 @@ const MainLayout = ({ children, showRightPanel = true }) => {
     }, [isMobile]);
 
     return (
-        <div className="min-h-screen bg-[var(--bg-primary)] text-slate-100 font-display overflow-x-hidden" id="app-root">
+        <div className="h-screen bg-[var(--bg-primary)] text-slate-100 font-display overflow-hidden" id="app-root">
             <AppTopBar
                 onMenuToggle={() => setMobileMenuOpen((o) => !o)}
                 showMenuButton={isMobile}
             />
 
-            <div className="flex pt-[60px]">
+            <div className="flex pt-[60px] h-[calc(100vh-60px)] overflow-hidden">
                 <LeftSidebar
                     positionBelowNav
                     onNavigate={() => setMobileMenuOpen(false)}
@@ -56,7 +56,7 @@ const MainLayout = ({ children, showRightPanel = true }) => {
                 )}
 
                 <main
-                    className="flex-1 flex flex-col min-h-0 min-w-0"
+                    className="flex-1 flex flex-col min-h-0 min-w-0 h-full"
                     style={{
                         marginLeft: isMobile ? 0 : SIDEBAR_LEFT + SIDEBAR_INSET,
                         marginRight: showRight ? SIDEBAR_RIGHT + SIDEBAR_INSET : 0,

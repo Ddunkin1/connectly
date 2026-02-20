@@ -4,7 +4,6 @@ import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'r
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'react-hot-toast';
 import MainLayout from './components/layout/MainLayout';
-import QuickChat from './components/layout/QuickChat';
 import Login from './pages/Auth/Login';
 import Register from './pages/Auth/Register';
 import ForgotPassword from './pages/Auth/ForgotPassword';
@@ -265,7 +264,6 @@ function AppContent() {
                 </div>
                 )}
         </MainLayout>
-        <QuickChat />
         <ThemeCustomizer isOpen={isCustomizerOpen} onClose={closeCustomizer} />
         <Toaster
                 position="top-right"

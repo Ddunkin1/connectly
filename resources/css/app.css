@@ -204,6 +204,9 @@ html:not(.dark) .glass-effect {
     padding: 2px;
     background: linear-gradient(45deg, var(--theme-accent), color-mix(in srgb, var(--theme-accent) 80%, #EC4899));
 }
+.story-ring-thin {
+    padding: 1px;
+}
 
 /* Active tab glow - uses theme accent */
 .active-tab-glow {
@@ -309,4 +312,13 @@ html:not(.dark) .scrollbar-styled::-webkit-scrollbar-thumb { background: rgba(0,
 }
 @media (min-width: 1200px) {
     /* Desktop: full 3-column layout */
+}
+
+/* Message dropdown pop-in */
+@keyframes message-menu-in {
+    from { opacity: 0; transform: scale(0.96) translateY(4px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+}
+.message-menu-dropdown {
+    animation: message-menu-in 0.15s ease-out forwards;
 }

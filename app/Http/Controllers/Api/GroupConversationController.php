@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\GroupMessageResource;
 use App\Models\GroupConversation;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
@@ -84,7 +85,7 @@ class GroupConversationController extends Controller
 
         return response()->json([
             'group' => $groupConversation,
-            'messages' => $messages->items(),
+            'messages' => GroupMessageResource::collection($messages->items())->resolve(),
             'pagination' => [
                 'current_page' => $messages->currentPage(),
                 'last_page' => $messages->lastPage(),

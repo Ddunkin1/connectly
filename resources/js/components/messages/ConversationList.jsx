@@ -52,62 +52,74 @@ const ConversationList = ({ onSelectConversation, selectedConversationId }) => {
         const now = new Date();
         const diff = now - d;
         if (diff < 60000) return 'Just now';
-        if (diff < 3600000) return `${Math.floor(diff / 60000)}m`;
-        if (diff < 86400000) return `${Math.floor(diff / 3600000)}h`;
+        if (diff < 3600000) return `${Math.floor(diff / 60000)}m ago`;
+        if (diff < 86400000) return `${Math.floor(diff / 3600000)}h ago`;
+        if (diff < 172800000) return 'Yesterday';
         return formatDate(dateStr);
+    };
+
+    const isJustNow = (dateStr) => {
+        if (!dateStr) return false;
+        return new Date() - new Date(dateStr) < 60000;
+    };
+
+    const pinnedConversations = []; // Could be driven by backend later
+    const recentConversations = conversations.filter((c) => !pinnedConversations.includes(c.id));
+
+    const renderConversationRow = (conversation) => {
+        const otherUser = conversation.other_user;
+        const lastMessage = conversation.last_message;
+        const isSelected = selectedConversationId === conversation.id;
+        const preview = lastMessagePreview(lastMessage);
+        const justNow = lastMessage && isJustNow(lastMessage.created_at);
+
+        return (
+            <button
+                key={conversation.id}
+                onClick={() => onSelectConversation(conversation)}
+                className={`w-full px-3 py-2.5 rounded-xl flex gap-3 cursor-pointer transition-all duration-200 text-left ${
+                    isSelected ? 'bg-[#2C2C2C]' : 'hover:bg-[#252525]'
+                }`}
+            >
+                <div className="relative shrink-0">
+                    <img src={otherUser?.profile_picture} alt={otherUser?.name} className="w-11 h-11 rounded-full object-cover" />
+                    {conversation.unread_count > 0 && (
+                        <span className="absolute -top-0.5 -right-0.5 bg-red-500 text-white text-[10px] rounded-full min-w-[18px] h-[18px] flex items-center justify-center font-bold px-1">{conversation.unread_count > 9 ? '9+' : conversation.unread_count}</span>
+                    )}
+                </div>
+                <div className="flex-1 min-w-0">
+                    <div className="flex justify-between items-center gap-1 mb-0.5">
+                        <h3 className="text-sm font-medium text-white truncate">{otherUser?.name}</h3>
+                        {lastMessage && (
+                            <span className={`text-[10px] shrink-0 rounded ${justNow ? 'bg-primary/20 text-primary px-1.5 py-0.5' : 'text-slate-500'}`}>
+                                {justNow ? 'Just now' : formatTime(lastMessage.created_at)}
+                            </span>
+                        )}
+                    </div>
+                    {lastMessage && <p className={`text-xs truncate ${conversation.unread_count > 0 ? 'text-slate-300' : 'text-slate-500'}`}>{preview}</p>}
+                </div>
+            </button>
+        );
     };
 
     return (
         <div className="flex-1 flex flex-col overflow-hidden">
-            <div className="flex-1 overflow-y-auto custom-scrollbar px-4">
+            <div className="flex-1 overflow-y-auto custom-scrollbar px-2 py-2">
                 {conversations.length === 0 ? (
                     <div className="flex justify-center items-center py-12 px-4">
                         <p className="text-slate-500 text-sm text-center">No conversations yet</p>
                     </div>
                 ) : (
                     <>
-                        <div className="mb-2">
-                            {conversations.map((conversation) => {
-                                const otherUser = conversation.other_user;
-                                const lastMessage = conversation.last_message;
-                                const isSelected = selectedConversationId === conversation.id;
-                                const preview = lastMessagePreview(lastMessage);
-
-                                return (
-                                    <button
-                                        key={conversation.id}
-                                        onClick={() => onSelectConversation(conversation)}
-                                        className={`w-full p-3 rounded-2xl flex gap-3 cursor-pointer transition-all text-left mb-2 ${
-                                            isSelected
-                                                ? 'bg-primary/10 border border-primary/20'
-                                                : 'hover:bg-[var(--theme-surface-hover)] border border-transparent'
-                                        }`}
-                                    >
-                                        <div className="relative shrink-0">
-                                            <img src={otherUser?.profile_picture} alt={otherUser?.name} className="w-12 h-12 rounded-full object-cover" />
-                                            {conversation.unread_count > 0 && (
-                                                <span className="absolute -top-0.5 -right-0.5 bg-red-500 text-white text-[10px] rounded-full w-4 h-4 flex items-center justify-center font-bold">{conversation.unread_count > 9 ? '9+' : conversation.unread_count}</span>
-                                            )}
-                                        </div>
-                                        <div className="flex-1 min-w-0">
-                                            <div className="flex justify-between items-start mb-0.5">
-                                                <h3 className={`text-sm truncate ${isSelected ? 'font-bold' : 'font-semibold'}`}>{otherUser?.name}</h3>
-                                                {isSelected && <span className="text-[10px] text-primary font-medium uppercase tracking-wider shrink-0 ml-1">Online</span>}
-                                                {!isSelected && lastMessage && <span className="text-[10px] text-slate-400 shrink-0">{formatTime(lastMessage.created_at)}</span>}
-                                            </div>
-                                            {lastMessage && <p className={`text-xs truncate ${conversation.unread_count > 0 ? 'text-slate-300 font-medium' : 'text-slate-500'}`}>{preview}</p>}
-                                        </div>
-                                    </button>
-                                );
-                            })}
-                        </div>
-                        <div className="px-2 mt-6 mb-2">
-                            <h4 className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Requests</h4>
-                        </div>
-                        <div className="px-4 py-4">
-                            <div className="p-4 border-2 border-dashed border-[var(--theme-border)] rounded-2xl text-center">
-                                <p className="text-xs text-slate-400">No pending requests</p>
-                            </div>
+                        {pinnedConversations.length > 0 && (
+                            <>
+                                <h4 className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider px-2 mb-1 mt-2">PINNED</h4>
+                                {conversations.filter((c) => pinnedConversations.includes(c.id)).map(renderConversationRow)}
+                            </>
+                        )}
+                        <h4 className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider px-2 mb-1 mt-2">RECENT</h4>
+                        <div className="space-y-0.5">
+                            {recentConversations.map(renderConversationRow)}
                         </div>
                     </>
                 )}

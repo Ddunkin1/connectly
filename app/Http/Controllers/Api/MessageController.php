@@ -2,10 +2,14 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Events\MessageDeleted;
+use App\Events\MessageUpdated;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Message\StoreMessageRequest;
+use App\Http\Requests\Message\UpdateMessageRequest;
 use App\Http\Resources\MessageResource;
 use App\Models\Conversation;
+use App\Models\Message;
 use App\Models\User;
 use App\Services\ConversationService;
 use App\Services\MessageService;
@@ -36,6 +40,11 @@ class MessageController extends Controller
 
         // Get or create conversation
         $conversation = $this->conversationService->getOrCreateConversation($sender, $receiver);
+        if (! $conversation) {
+            return response()->json([
+                'message' => 'You cannot message this user.',
+            ], 403);
+        }
 
         $messageText = $data['message'] ?? '';
         $options = [];
@@ -77,7 +86,8 @@ class MessageController extends Controller
             ], 404);
         }
 
-        $messages = $this->messageService->getMessages($conversation, 50);
+        $perPage = min(max((int) $request->input('per_page', 25), 10), 50);
+        $messages = $this->messageService->getMessages($conversation, $perPage);
 
         return response()->json([
             'messages' => MessageResource::collection($messages->items()),
@@ -127,6 +137,7 @@ class MessageController extends Controller
         }
 
         $messages = \App\Models\Message::where('conversation_id', $conversation->id)
+            ->withTrashed()
             ->whereNotNull('attachment_url')
             ->orderBy('created_at', 'desc')
             ->paginate(24);
@@ -139,6 +150,43 @@ class MessageController extends Controller
                 'per_page' => $messages->perPage(),
                 'total' => $messages->total(),
             ],
+        ]);
+    }
+
+    /**
+     * Edit an existing message sent by the authenticated user.
+     */
+    public function update(UpdateMessageRequest $request, Message $message): JsonResponse
+    {
+        $this->authorize('update', $message);
+
+        $validated = $request->validated();
+        $updatedMessage = $this->messageService->updateMessage(
+            $message,
+            $validated['message'] ?? null,
+            $request->file('media')
+        );
+        broadcast(new MessageUpdated($updatedMessage))->toOthers();
+
+        return response()->json([
+            'message' => 'Message updated successfully',
+            'data' => new MessageResource($updatedMessage),
+        ]);
+    }
+
+    /**
+     * Soft-delete an existing message sent by the authenticated user.
+     */
+    public function destroy(Request $request, Message $message): JsonResponse
+    {
+        $this->authorize('delete', $message);
+
+        $deletedMessage = $this->messageService->deleteMessage($message, $request->user());
+        broadcast(new MessageDeleted($deletedMessage))->toOthers();
+
+        return response()->json([
+            'message' => 'Message deleted successfully',
+            'data' => new MessageResource($deletedMessage),
         ]);
     }
 }

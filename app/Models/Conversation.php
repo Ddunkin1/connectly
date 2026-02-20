@@ -47,7 +47,7 @@ class Conversation extends Model
      */
     public function messages(): HasMany
     {
-        return $this->hasMany(Message::class)->orderBy('created_at', 'desc');
+        return $this->hasMany(Message::class)->withTrashed()->orderBy('created_at', 'desc');
     }
 
     /**
@@ -73,6 +73,7 @@ class Conversation extends Model
     {
         $this->messages()
             ->where('receiver_id', $user->id)
+            ->whereNull('deleted_at')
             ->where('is_read', false)
             ->update([
                 'is_read' => true,
@@ -87,6 +88,7 @@ class Conversation extends Model
     {
         return $this->messages()
             ->where('receiver_id', $user->id)
+            ->whereNull('deleted_at')
             ->where('is_read', false)
             ->count();
     }

@@ -7,7 +7,7 @@ import Modal from '../common/Modal';
 import Button from '../common/Button';
 import useAuthStore from '../../store/authStore';
 
-const GroupMembersPanel = ({ groupId }) => {
+const GroupMembersPanel = ({ groupId, openAddModal, onCloseAddModal }) => {
     const user = useAuthStore((state) => state.user);
     const { data } = useGroupConversationWithMessages(groupId);
     const group = data?.group;
@@ -17,7 +17,12 @@ const GroupMembersPanel = ({ groupId }) => {
     const removeMemberMutation = useRemoveGroupMember();
     const setNicknameMutation = useSetGroupMemberNickname();
 
-    const [addModalOpen, setAddModalOpen] = useState(false);
+    const [internalAddOpen, setInternalAddOpen] = useState(false);
+    const addModalOpen = openAddModal === true ? true : internalAddOpen;
+    const setAddModalOpen = (v) => {
+        if (!v) onCloseAddModal?.();
+        setInternalAddOpen(!!v);
+    };
     const [searchQuery, setSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState([]);
     const [searching, setSearching] = useState(false);
@@ -80,110 +85,115 @@ const GroupMembersPanel = ({ groupId }) => {
     if (!groupId || !group) return null;
 
     return (
-        <div className="w-72 shrink-0 border-l border-[var(--theme-border)] flex flex-col bg-[var(--theme-bg-main)] p-4 overflow-y-auto">
-            <div className="flex items-center justify-between mb-4">
-                <h3 className="font-semibold text-white">Members ({members.length})</h3>
-                {isAdmin && (
-                    <button
-                        type="button"
-                        onClick={() => setAddModalOpen(true)}
-                        className="p-2 rounded-lg hover:bg-white/10 text-[var(--theme-accent)] transition-colors"
-                        title="Add member"
-                    >
-                        <span className="material-symbols-outlined text-xl">person_add</span>
-                    </button>
-                )}
-            </div>
-            <div className="space-y-2">
-                {members.map((member) => {
-                    const isSelf = member.id === user?.id;
-                    const canKick = isAdmin && !isSelf;
-                    const canEditNickname = isAdmin || isSelf;
-
-                    return (
-                        <div
-                            key={member.id}
-                            className="flex items-center gap-3 p-2 rounded-lg hover:bg-white/5 group"
+        <section className="w-[280px] shrink-0 border-l border-[#3A3A3A] flex flex-col bg-[#1A1A1A] overflow-hidden">
+            <div className="p-4 border-b border-[#3A3A3A]">
+                <div className="flex items-center justify-between">
+                    <h3 className="text-sm font-semibold text-white">Members ({members.length})</h3>
+                    {isAdmin && (
+                        <button
+                            type="button"
+                            onClick={() => setAddModalOpen(true)}
+                            className="p-2 rounded-lg hover:bg-white/10 text-primary transition-colors"
+                            title="Add member"
                         >
-                            <Avatar src={member.profile_picture} alt={member.name} size="sm" />
-                            <div className="flex-1 min-w-0">
-                                {nicknameEdit === member.id ? (
-                                    <div className="flex gap-1">
-                                        <input
-                                            ref={nicknameInputRef}
-                                            type="text"
-                                            defaultValue={member.pivot?.nickname || ''}
-                                            onKeyDown={(e) => {
-                                                if (e.key === 'Enter') {
-                                                    handleSetNickname(member.id, nicknameInputRef.current?.value || '');
+                            <span className="material-symbols-outlined text-xl">person_add</span>
+                        </button>
+                    )}
+                </div>
+            </div>
+            <div className="flex-1 overflow-y-auto custom-scrollbar p-4">
+                <div className="rounded-xl bg-[#1E1E1E] border border-[#3A3A3A] p-3 space-y-1">
+                    {members.map((member) => {
+                        const isSelf = member.id === user?.id;
+                        const canKick = isAdmin && !isSelf;
+                        const canEditNickname = isAdmin || isSelf;
+
+                        return (
+                            <div
+                                key={member.id}
+                                className="flex items-center gap-3 p-2 rounded-lg hover:bg-white/5 group transition-colors"
+                            >
+                                <Avatar src={member.profile_picture} alt={member.name} size="sm" />
+                                <div className="flex-1 min-w-0">
+                                    {nicknameEdit === member.id ? (
+                                        <div className="flex gap-1">
+                                            <input
+                                                ref={nicknameInputRef}
+                                                type="text"
+                                                defaultValue={member.pivot?.nickname || ''}
+                                                onKeyDown={(e) => {
+                                                    if (e.key === 'Enter') {
+                                                        handleSetNickname(member.id, nicknameInputRef.current?.value || '');
+                                                    }
+                                                    if (e.key === 'Escape') setNicknameEdit(null);
+                                                }}
+                                                autoFocus
+                                                className="flex-1 px-2 py-1 text-sm bg-[#2C2C2C] border border-[#3A3A3A] rounded text-white focus:outline-none focus:border-[#4A4A4A]"
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={() =>
+                                                    handleSetNickname(member.id, nicknameInputRef.current?.value || '')
                                                 }
-                                                if (e.key === 'Escape') setNicknameEdit(null);
-                                            }}
-                                            autoFocus
-                                            className="flex-1 px-2 py-1 text-sm bg-[var(--theme-surface)] border border-gray-600 rounded text-white"
-                                        />
-                                        <button
-                                            type="button"
-                                            onClick={() =>
-                                                handleSetNickname(member.id, nicknameInputRef.current?.value || '')
-                                            }
-                                            className="text-[var(--theme-accent)] hover:underline"
-                                        >
-                                            Save
-                                        </button>
-                                        <button
-                                            type="button"
-                                            onClick={() => setNicknameEdit(null)}
-                                            className="text-gray-500 hover:text-white"
-                                        >
-                                            <span className="material-symbols-outlined text-sm">close</span>
-                                        </button>
-                                    </div>
-                                ) : (
-                                    <p className="text-sm font-medium text-[var(--text-primary)] truncate">
-                                        {getDisplayName(member)}
-                                        {member.pivot?.nickname && (
-                                            <span className="text-gray-500 font-normal"> @{member.username}</span>
-                                        )}
+                                                className="text-primary hover:underline text-xs font-medium"
+                                            >
+                                                Save
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => setNicknameEdit(null)}
+                                                className="text-slate-500 hover:text-white p-1"
+                                            >
+                                                <span className="material-symbols-outlined text-sm">close</span>
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <p className="text-sm font-medium text-white truncate">
+                                            {getDisplayName(member)}
+                                            {member.pivot?.nickname && (
+                                                <span className="text-slate-500 font-normal"> @{member.username}</span>
+                                            )}
+                                        </p>
+                                    )}
+                                    <p className="text-[10px] text-slate-500">
+                                        {member.pivot?.role === 'admin' && 'Admin'}
+                                        {isSelf && ' (you)'}
                                     </p>
-                                )}
-                                <p className="text-xs text-gray-500">
-                                    {member.pivot?.role === 'admin' && 'Admin'}
-                                    {isSelf && ' (you)'}
-                                </p>
+                                </div>
+                                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    {canEditNickname && nicknameEdit !== member.id && (
+                                        <button
+                                            type="button"
+                                            onClick={() => setNicknameEdit(member.id)}
+                                            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/10"
+                                            title="Edit nickname"
+                                        >
+                                            <span className="material-symbols-outlined text-base">edit</span>
+                                        </button>
+                                    )}
+                                    {canKick && (
+                                        <button
+                                            type="button"
+                                            onClick={() => handleRemoveMember(member.id)}
+                                            disabled={removeMemberMutation.isPending}
+                                            className="p-1.5 rounded-lg text-slate-400 hover:text-red-400 hover:bg-red-500/10"
+                                            title="Remove member"
+                                        >
+                                            <span className="material-symbols-outlined text-base">person_remove</span>
+                                        </button>
+                                    )}
+                                </div>
                             </div>
-                            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                {canEditNickname && nicknameEdit !== member.id && (
-                                    <button
-                                        type="button"
-                                        onClick={() => setNicknameEdit(member.id)}
-                                        className="p-1 rounded text-gray-500 hover:text-white hover:bg-white/10"
-                                        title="Edit nickname"
-                                    >
-                                        <span className="material-symbols-outlined text-base">edit</span>
-                                    </button>
-                                )}
-                                {canKick && (
-                                    <button
-                                        type="button"
-                                        onClick={() => handleRemoveMember(member.id)}
-                                        disabled={removeMemberMutation.isPending}
-                                        className="p-1 rounded text-gray-500 hover:text-red-500 hover:bg-red-500/10"
-                                        title="Remove member"
-                                    >
-                                        <span className="material-symbols-outlined text-base">person_remove</span>
-                                    </button>
-                                )}
-                            </div>
-                        </div>
-                    );
-                })}
+                        );
+                    })}
+                </div>
             </div>
 
             <Modal
                 isOpen={addModalOpen}
                 onClose={() => {
                     setAddModalOpen(false);
+                    onCloseAddModal?.();
                     setSearchQuery('');
                     setSearchResults([]);
                     setSelectedToAdd([]);
@@ -255,7 +265,7 @@ const GroupMembersPanel = ({ groupId }) => {
                     </Button>
                 </div>
             </Modal>
-        </div>
+        </section>
     );
 };
 

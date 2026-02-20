@@ -5,10 +5,11 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Message extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     protected $fillable = [
         'conversation_id',
@@ -19,6 +20,8 @@ class Message extends Model
         'attachment_type',
         'is_read',
         'read_at',
+        'edited_at',
+        'deleted_by',
     ];
 
     protected function casts(): array
@@ -26,6 +29,8 @@ class Message extends Model
         return [
             'is_read' => 'boolean',
             'read_at' => 'datetime',
+            'edited_at' => 'datetime',
+            'deleted_at' => 'datetime',
             'created_at' => 'datetime',
             'updated_at' => 'datetime',
         ];

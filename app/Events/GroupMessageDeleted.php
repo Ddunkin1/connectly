@@ -6,11 +6,11 @@ use App\Http\Resources\GroupMessageResource;
 use App\Models\GroupMessage;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Broadcasting\PrivateChannel;
-use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-class GroupMessageSent implements ShouldBroadcast
+class GroupMessageDeleted implements ShouldBroadcastNow
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
@@ -29,7 +29,7 @@ class GroupMessageSent implements ShouldBroadcast
 
     public function broadcastAs(): string
     {
-        return 'GroupMessageSent';
+        return 'GroupMessageDeleted';
     }
 
     public function broadcastWith(): array

@@ -25,6 +25,7 @@ const Messages = () => {
     const [selectedConversation, setSelectedConversation] = useState(null);
     const [selectedGroup, setSelectedGroup] = useState(null);
     const [newGroupModalOpen, setNewGroupModalOpen] = useState(false);
+    const [groupAddModalOpen, setGroupAddModalOpen] = useState(false);
     const [conversationMedia, setConversationMedia] = useState([]);
     const [sharedMediaModalOpen, setSharedMediaModalOpen] = useState(false);
     
@@ -101,29 +102,27 @@ const Messages = () => {
     const showGroupContent = activeTab === 'groups';
 
     return (
-        <div className="flex-1 flex min-h-0 overflow-hidden bg-[var(--theme-bg-main)]">
+        <div className="flex-1 flex min-h-0 overflow-hidden bg-[#1A1A1A]">
             <NewGroupModal
                 isOpen={newGroupModalOpen}
                 onClose={() => setNewGroupModalOpen(false)}
                 onCreated={handleGroupCreated}
             />
-            <div className="flex flex-1 min-h-0 overflow-hidden bg-[var(--theme-bg-main)]">
-                {/* Left panel - conversation list (slim w-64 for wider chat) */}
-                <section className="w-64 shrink-0 border-r border-[var(--theme-border)] flex flex-col bg-[var(--theme-bg-main)]">
-                    <div className="p-6">
-                        <div className="flex items-center justify-between mb-6">
-                            <h2 className="text-xl font-bold text-white">Messages</h2>
-                            <Link to="/messages" className="p-2 rounded-lg hover:bg-[var(--theme-surface-hover)] text-slate-400 transition-colors" aria-label="Compose">
-                                <span className="material-symbols-outlined">edit_note</span>
-                            </Link>
+            <div className="flex flex-1 min-h-0 overflow-hidden">
+                {/* Left panel - conversation list (~1/4 width, Connectly style) */}
+                <section className="w-[280px] shrink-0 border-r border-[var(--theme-border)] flex flex-col bg-[#1A1A1A]">
+                    <div className="p-4 border-b border-[var(--theme-border)]">
+                        <div className="flex items-center gap-2 mb-4">
+                            <h1 className="text-lg font-semibold text-white">Connectly</h1>
+                            <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-primary/20 text-primary">PRO</span>
                         </div>
-                        <div className="relative mb-6">
-                            <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg">search</span>
-                            <input type="text" placeholder="Search messages" className="w-full bg-[var(--theme-surface-hover)] border-none rounded-xl pl-10 py-2.5 text-sm text-white placeholder:text-slate-500 focus:ring-2 focus:ring-primary/50" />
+                        <div className="relative">
+                            <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-lg">search</span>
+                            <input type="text" placeholder="Search conversations..." className="w-full bg-[#2C2C2C] border-0 rounded-lg pl-9 pr-3 py-2.5 text-sm text-white placeholder:text-slate-500 focus:ring-2 focus:ring-primary/30 focus:outline-none" />
                         </div>
-                        <div className="flex p-1 bg-[var(--theme-surface-hover)] rounded-xl mb-4">
-                            <button type="button" onClick={() => setActiveTab('direct')} className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all ${activeTab === 'direct' ? 'bg-white dark:bg-slate-800 text-white shadow-sm' : 'text-slate-500 hover:text-slate-200'}`}>Direct</button>
-                            <button type="button" onClick={() => setActiveTab('groups')} className={`flex-1 py-1.5 text-xs font-medium rounded-lg transition-all ${activeTab === 'groups' ? 'bg-white dark:bg-slate-800 text-white shadow-sm' : 'text-slate-500 hover:text-slate-200'}`}>Groups</button>
+                        <div className="flex p-1 bg-[#2C2C2C] rounded-lg mt-3">
+                            <button type="button" onClick={() => setActiveTab('direct')} className={`flex-1 py-2 text-xs font-medium rounded-md transition-all ${activeTab === 'direct' ? 'bg-primary text-white' : 'text-slate-400 hover:text-white'}`}>Direct</button>
+                            <button type="button" onClick={() => setActiveTab('groups')} className={`flex-1 py-2 text-xs font-medium rounded-md transition-all ${activeTab === 'groups' ? 'bg-primary text-white' : 'text-slate-400 hover:text-white'}`}>Groups</button>
                         </div>
                     </div>
                     {showDirectContent && (
@@ -154,8 +153,8 @@ const Messages = () => {
                     )}
                 </section>
 
-                {/* Center - chat: header fixed top, messages scroll, input fixed bottom */}
-                <main className="flex-1 flex flex-col min-h-0 min-w-0 overflow-hidden bg-[var(--theme-bg-main)]/50">
+                {/* Center - chat (~1/2 width) */}
+                <main className="flex-1 flex flex-col min-h-0 min-w-0 overflow-hidden bg-[#1A1A1A]">
                     {showDirectContent && (
                         <>
                             {isLoadingConversation ? (
@@ -182,12 +181,10 @@ const Messages = () => {
                                     </div>
                                 </>
                             ) : (
-                                <div className="flex-1 flex items-center justify-center">
+                                <div className="flex-1 flex items-center justify-center bg-[#1A1A1A]">
                                     <div className="text-center">
-                                        <p className="text-gray-500 text-lg mb-2">Select a conversation</p>
-                                        <p className="text-gray-400 text-sm">
-                                            Choose a conversation from the list to start messaging
-                                        </p>
+                                        <p className="text-slate-400 text-base mb-1">Select a conversation</p>
+                                        <p className="text-slate-500 text-sm">Choose from the list to start messaging</p>
                                     </div>
                                 </div>
                             )}
@@ -197,11 +194,10 @@ const Messages = () => {
                         <>
                             {selectedGroup ? (
                                 <>
-                                    <div className="shrink-0 px-6 py-4 border-b border-[var(--theme-border)]">
-                                        <h3 className="text-lg font-semibold text-white">{selectedGroup.name}</h3>
-                                        <p className="text-sm text-slate-500">{selectedGroup.members?.length || 0} members</p>
+                                    <div className="shrink-0">
+                                        <GroupChatHeader group={selectedGroup} onInviteClick={() => setGroupAddModalOpen(true)} />
                                     </div>
-                                    <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
+                                    <div className="flex-1 min-h-0 flex flex-col overflow-hidden bg-[#1A1A1A]">
                                         <GroupMessageThread groupId={selectedGroup.id} />
                                     </div>
                                     <div className="shrink-0">
@@ -209,12 +205,10 @@ const Messages = () => {
                                     </div>
                                 </>
                             ) : (
-                                <div className="flex-1 flex items-center justify-center">
+                                <div className="flex-1 flex items-center justify-center bg-[#1A1A1A]">
                                     <div className="text-center">
-                                        <p className="text-gray-500 text-lg mb-2">Select a group</p>
-                                        <p className="text-gray-400 text-sm">
-                                            Choose a group from the list or create a new one
-                                        </p>
+                                        <p className="text-slate-400 text-base mb-1">Select a group</p>
+                                        <p className="text-slate-500 text-sm">Choose from the list or create a new one</p>
                                     </div>
                                 </div>
                             )}
@@ -222,14 +216,16 @@ const Messages = () => {
                     )}
                 </main>
 
-                {/* Right panel - user details & shared media (direct) or group members (groups) */}
+                {/* Right panel - contact details (~1/4 width, Connectly style) */}
                 {showDirectContent && displayConversation && (
                     <>
-                        <MessageUserPanel
-                            otherUser={displayConversation.other_user}
-                            mediaItems={conversationMedia}
-                            onViewAllMedia={() => setSharedMediaModalOpen(true)}
-                        />
+                        <section className="w-[280px] shrink-0 border-l border-[var(--theme-border)] flex flex-col bg-[#1A1A1A] overflow-hidden">
+                            <MessageUserPanel
+                                otherUser={displayConversation.other_user}
+                                mediaItems={conversationMedia}
+                                onViewAllMedia={() => setSharedMediaModalOpen(true)}
+                            />
+                        </section>
                         <SharedMediaModal
                             isOpen={sharedMediaModalOpen}
                             onClose={() => setSharedMediaModalOpen(false)}
@@ -238,7 +234,11 @@ const Messages = () => {
                     </>
                 )}
                 {showGroupContent && selectedGroup && (
-                    <GroupMembersPanel groupId={selectedGroup.id} />
+                    <GroupMembersPanel
+                        groupId={selectedGroup.id}
+                        openAddModal={groupAddModalOpen}
+                        onCloseAddModal={() => setGroupAddModalOpen(false)}
+                    />
                 )}
             </div>
         </div>

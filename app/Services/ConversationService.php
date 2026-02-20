@@ -56,6 +56,7 @@ class ConversationService
             ->withCount([
                 'messages as unread_count' => function ($query) use ($user) {
                     $query->where('receiver_id', $user->id)
+                          ->whereNull('deleted_at')
                           ->where('is_read', false);
                 }
             ])

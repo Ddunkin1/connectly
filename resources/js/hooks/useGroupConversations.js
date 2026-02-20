@@ -2,6 +2,18 @@ import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from '@tansta
 import { groupConversationsAPI, groupMessagesAPI } from '../services/api';
 import toast from 'react-hot-toast';
 
+const patchGroupMessageInCache = (old, patchedMessage) => {
+    if (!old?.data) return old;
+    const existing = old.data.messages || [];
+    return {
+        ...old,
+        data: {
+            ...old.data,
+            messages: existing.map((m) => (m.id === patchedMessage.id ? { ...m, ...patchedMessage } : m)),
+        },
+    };
+};
+
 export const useGroupConversations = () => {
     return useInfiniteQuery({
         queryKey: ['group-conversations'],
@@ -121,6 +133,46 @@ export const useSendGroupMessage = () => {
         },
         onError: (error) => {
             toast.error(error.response?.data?.message || 'Failed to send message');
+        },
+    });
+};
+
+export const useUpdateGroupMessage = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: ({ messageId, data }) => groupMessagesAPI.update(messageId, data),
+        onSuccess: (response) => {
+            const updated = response?.data?.data;
+            const groupId = updated?.group_conversation_id;
+            if (!updated || !groupId) return;
+
+            queryClient.setQueryData(['group-conversation', groupId], (old) => patchGroupMessageInCache(old, updated));
+            queryClient.invalidateQueries({ queryKey: ['group-conversations'] });
+            toast.success('Message updated');
+        },
+        onError: (error) => {
+            toast.error(error.response?.data?.message || 'Failed to update message');
+        },
+    });
+};
+
+export const useDeleteGroupMessage = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: (messageId) => groupMessagesAPI.delete(messageId),
+        onSuccess: (response) => {
+            const deleted = response?.data?.data;
+            const groupId = deleted?.group_conversation_id;
+            if (!deleted || !groupId) return;
+
+            queryClient.setQueryData(['group-conversation', groupId], (old) => patchGroupMessageInCache(old, deleted));
+            queryClient.invalidateQueries({ queryKey: ['group-conversations'] });
+            toast.success('Message deleted');
+        },
+        onError: (error) => {
+            toast.error(error.response?.data?.message || 'Failed to delete message');
         },
     });
 };

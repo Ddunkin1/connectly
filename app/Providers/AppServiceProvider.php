@@ -3,8 +3,12 @@
 namespace App\Providers;
 
 use App\Models\Comment;
+use App\Models\GroupMessage;
+use App\Models\Message;
 use App\Models\Post;
 use App\Policies\CommentPolicy;
+use App\Policies\GroupMessagePolicy;
+use App\Policies\MessagePolicy;
 use App\Policies\PostPolicy;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Auth\Notifications\VerifyEmail;
@@ -23,6 +27,8 @@ class AppServiceProvider extends ServiceProvider
     protected $policies = [
         Post::class => PostPolicy::class,
         Comment::class => CommentPolicy::class,
+        Message::class => MessagePolicy::class,
+        GroupMessage::class => GroupMessagePolicy::class,
     ];
 
     /**
@@ -40,6 +46,8 @@ class AppServiceProvider extends ServiceProvider
     {
         Gate::policy(Post::class, PostPolicy::class);
         Gate::policy(Comment::class, CommentPolicy::class);
+        Gate::policy(Message::class, MessagePolicy::class);
+        Gate::policy(GroupMessage::class, GroupMessagePolicy::class);
 
         // Email verification link points to API, then redirects to frontend
         VerifyEmail::createUrlUsing(function ($notifiable) {

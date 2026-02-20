@@ -26,7 +26,7 @@ class GroupConversation extends Model
 
     public function groupMessages(): HasMany
     {
-        return $this->hasMany(GroupMessage::class, 'group_conversation_id');
+        return $this->hasMany(GroupMessage::class, 'group_conversation_id')->withTrashed();
     }
 
     public function isMember(User $user): bool

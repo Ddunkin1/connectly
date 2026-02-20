@@ -2,40 +2,40 @@
 
 namespace App\Events;
 
-use App\Http\Resources\GroupMessageResource;
-use App\Models\GroupMessage;
+use App\Http\Resources\MessageResource;
+use App\Models\Message;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Broadcasting\PrivateChannel;
-use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-class GroupMessageSent implements ShouldBroadcast
+class MessageDeleted implements ShouldBroadcastNow
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
     public function __construct(
-        public GroupMessage $groupMessage
+        public Message $message
     ) {
-        $this->groupMessage->load('sender');
+        $this->message->load(['sender', 'receiver']);
     }
 
     public function broadcastOn(): array
     {
         return [
-            new PrivateChannel('group-conversation.' . $this->groupMessage->group_conversation_id),
+            new PrivateChannel('conversation.' . $this->message->conversation_id),
         ];
     }
 
     public function broadcastAs(): string
     {
-        return 'GroupMessageSent';
+        return 'MessageDeleted';
     }
 
     public function broadcastWith(): array
     {
         return [
-            'message' => (new GroupMessageResource($this->groupMessage))->resolve(),
+            'message' => (new MessageResource($this->message))->resolve(),
         ];
     }
 }

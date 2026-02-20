@@ -2,10 +2,28 @@ import { useMutation, useInfiniteQuery, useQueryClient } from '@tanstack/react-q
 import { messagesAPI } from '../services/api';
 import toast from 'react-hot-toast';
 
+const patchMessageInInfiniteCache = (old, patchedMessage) => {
+    if (!old?.pages?.length) return old;
+    const pages = old.pages.map((page) => {
+        const messages = page?.data?.messages || [];
+        const nextMessages = messages.map((m) => (m.id === patchedMessage.id ? { ...m, ...patchedMessage } : m));
+        return {
+            ...page,
+            data: {
+                ...page.data,
+                messages: nextMessages,
+            },
+        };
+    });
+    return { ...old, pages };
+};
+
+const PER_PAGE = 25;
+
 export const useMessages = (conversationId) => {
     return useInfiniteQuery({
         queryKey: ['messages', conversationId],
-        queryFn: ({ pageParam = 1 }) => messagesAPI.getMessages(conversationId, pageParam),
+        queryFn: ({ pageParam = 1 }) => messagesAPI.getMessages(conversationId, pageParam, PER_PAGE),
         enabled: !!conversationId,
         getNextPageParam: (lastPage) => {
             const { pagination } = lastPage.data;
@@ -16,7 +34,6 @@ export const useMessages = (conversationId) => {
         initialPageParam: 1,
         retry: 1,
         retryDelay: 1000,
-        // Fallback: poll every 15s when viewing conversation (in case WebSocket fails)
         refetchInterval: 15000,
         refetchIntervalInBackground: false,
     });
@@ -75,6 +92,46 @@ export const useMarkAsRead = () => {
         },
         onError: (error) => {
             toast.error(error.response?.data?.message || 'Failed to mark as read');
+        },
+    });
+};
+
+export const useUpdateMessage = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: ({ messageId, data }) => messagesAPI.updateMessage(messageId, data),
+        onSuccess: (response) => {
+            const updatedMessage = response?.data?.data;
+            const conversationId = updatedMessage?.conversation_id;
+            if (!updatedMessage || !conversationId) return;
+
+            queryClient.setQueryData(['messages', conversationId], (old) => patchMessageInInfiniteCache(old, updatedMessage));
+            queryClient.invalidateQueries({ queryKey: ['conversations'] });
+            toast.success('Message updated');
+        },
+        onError: (error) => {
+            toast.error(error.response?.data?.message || 'Failed to update message');
+        },
+    });
+};
+
+export const useDeleteMessage = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: (messageId) => messagesAPI.deleteMessage(messageId),
+        onSuccess: (response) => {
+            const deletedMessage = response?.data?.data;
+            const conversationId = deletedMessage?.conversation_id;
+            if (!deletedMessage || !conversationId) return;
+
+            queryClient.setQueryData(['messages', conversationId], (old) => patchMessageInInfiniteCache(old, deletedMessage));
+            queryClient.invalidateQueries({ queryKey: ['conversations'] });
+            toast.success('Message deleted');
+        },
+        onError: (error) => {
+            toast.error(error.response?.data?.message || 'Failed to delete message');
         },
     });
 };

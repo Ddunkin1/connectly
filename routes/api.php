@@ -173,11 +173,15 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function () {
     Route::delete('/group-conversations/{groupConversation}/members/{user}', [GroupConversationController::class, 'removeMember']);
     Route::put('/group-conversations/{groupConversation}/members/{user}/nickname', [GroupConversationController::class, 'setNickname']);
     Route::post('/group-messages', [GroupMessageController::class, 'store']);
+    Route::patch('/group-messages/{groupMessage}', [GroupMessageController::class, 'update']);
+    Route::delete('/group-messages/{groupMessage}', [GroupMessageController::class, 'destroy']);
     Route::get('/conversations/by-username/{username}', [ConversationController::class, 'getByUsername']);
     Route::get('/conversations/{conversation}', [ConversationController::class, 'show']);
 
     // Messages
     Route::post('/messages', [MessageController::class, 'store']);
+    Route::patch('/messages/{message}', [MessageController::class, 'update']);
+    Route::delete('/messages/{message}', [MessageController::class, 'destroy']);
     Route::get('/conversations/{conversation}/messages', [MessageController::class, 'index']);
     Route::get('/conversations/{conversation}/media', [MessageController::class, 'media']);
     Route::post('/conversations/{conversation}/read', [MessageController::class, 'markAsRead']);

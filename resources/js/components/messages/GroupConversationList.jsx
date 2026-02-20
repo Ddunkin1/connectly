@@ -1,8 +1,6 @@
 import React from 'react';
 import { useGroupConversations } from '../../hooks/useGroupConversations';
-import Avatar from '../common/Avatar';
 import LoadingSpinner from '../common/LoadingSpinner';
-import { formatDate } from '../../utils/formatDate';
 
 const GroupConversationList = ({ onSelectGroup, selectedGroupId, onNewGroup }) => {
     const {
@@ -37,16 +35,16 @@ const GroupConversationList = ({ onSelectGroup, selectedGroupId, onNewGroup }) =
     }
 
     return (
-        <div className="h-full flex flex-col">
-            <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 flex flex-col overflow-hidden">
+            <div className="flex-1 overflow-y-auto custom-scrollbar px-2 py-2">
                 {groups.length === 0 ? (
-                    <div className="flex flex-col justify-center items-center h-full p-4 gap-4">
-                        <p className="text-gray-500 text-center">No groups yet.</p>
+                    <div className="flex flex-col justify-center items-center py-12 px-4 gap-4">
+                        <p className="text-slate-500 text-sm text-center">No groups yet.</p>
                         {onNewGroup && (
                             <button
                                 type="button"
                                 onClick={onNewGroup}
-                                className="flex items-center gap-2 px-5 py-3 rounded-xl bg-primary text-white font-semibold hover:opacity-90 hover:scale-105 active:scale-95 transition-all shadow-lg shadow-primary/20"
+                                className="flex items-center gap-2 px-5 py-3 rounded-xl bg-primary text-white font-semibold hover:opacity-90 active:scale-95 transition-all"
                             >
                                 <span className="material-symbols-outlined">group_add</span>
                                 Create your first group
@@ -54,42 +52,40 @@ const GroupConversationList = ({ onSelectGroup, selectedGroupId, onNewGroup }) =
                         )}
                     </div>
                 ) : (
-                    groups.map((group) => {
-                        const isSelected = selectedGroupId === group.id;
-                        const memberNames = group.members?.slice(0, 3).map((m) => m.name).join(', ') || '';
+                    <div className="space-y-0.5">
+                        {groups.map((group) => {
+                            const isSelected = selectedGroupId === group.id;
+                            const memberNames = group.members?.slice(0, 3).map((m) => m.name).join(', ') || '';
 
-                        return (
-                            <button
-                                key={group.id}
-                                onClick={() => onSelectGroup(group)}
-                                className={`w-full flex items-center space-x-3 p-4 hover:bg-gray-50 border-b border-gray-100 transition-colors text-left theme-hover ${
-                                    isSelected ? 'bg-blue-50 dark:bg-blue-900/20' : ''
-                                }`}
-                            >
-                                <div className="flex-shrink-0">
-                                    <div className="w-12 h-12 rounded-full bg-[var(--theme-accent)]/20 flex items-center justify-center text-[var(--theme-accent)] font-bold text-lg">
+                            return (
+                                <button
+                                    key={group.id}
+                                    onClick={() => onSelectGroup(group)}
+                                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all duration-200 ${
+                                        isSelected ? 'bg-[#2C2C2C]' : 'hover:bg-[#252525]'
+                                    }`}
+                                >
+                                    <div className="flex-shrink-0 w-11 h-11 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-lg">
                                         {group.name?.charAt(0)?.toUpperCase() || 'G'}
                                     </div>
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                    <p className="font-medium text-gray-900 theme-text truncate">
-                                        {group.name}
-                                    </p>
-                                    <p className="text-sm text-gray-500 truncate">
-                                        {memberNames || `${group.members?.length || 0} members`}
-                                    </p>
-                                </div>
-                            </button>
-                        );
-                    })
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-sm font-medium text-white truncate">{group.name}</p>
+                                        <p className="text-xs text-slate-500 truncate">
+                                            {memberNames || `${group.members?.length || 0} members`}
+                                        </p>
+                                    </div>
+                                </button>
+                            );
+                        })}
+                    </div>
                 )}
             </div>
             {hasNextPage && (
-                <div className="flex justify-center py-2 border-t border-gray-200">
+                <div className="flex justify-center py-2 border-t border-[#3A3A3A]">
                     <button
                         onClick={() => fetchNextPage()}
                         disabled={isFetchingNextPage}
-                        className="text-sm text-[var(--theme-accent)] hover:underline"
+                        className="text-xs text-primary hover:underline disabled:opacity-50"
                     >
                         {isFetchingNextPage ? 'Loading...' : 'Load more'}
                     </button>

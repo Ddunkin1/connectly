@@ -50,7 +50,7 @@ const StoriesRow = () => {
                         className="flex flex-col items-center space-y-2 flex-shrink-0 cursor-pointer group"
                         aria-label="Add your story"
                     >
-                        <div className="w-16 h-16 rounded-xl bg-primary flex items-center justify-center shrink-0 transition-all duration-200 group-hover:opacity-90 group-hover:scale-105 group-hover:shadow-lg group-hover:shadow-primary/40 ring-2 ring-primary/30">
+                        <div className="w-16 h-16 rounded-xl bg-primary flex items-center justify-center shrink-0 transition-all duration-200 group-hover:opacity-90 group-hover:scale-105">
                             <span className="material-symbols-outlined text-white text-2xl font-bold">add</span>
                         </div>
                         <span className="text-[11px] font-bold text-primary">Add story</span>
@@ -68,15 +68,15 @@ const StoriesRow = () => {
                             aria-label={`View ${group.user?.name}'s story`}
                         >
                             {hasRing ? (
-                                <div className="story-ring rounded-xl p-[2px] shrink-0">
+                                <div className="story-ring story-ring-thin rounded-xl shrink-0 inline-flex">
                                     <Avatar
                                         src={group.user?.profile_picture}
                                         alt={group.user?.name}
-                                        className="w-16 h-16 rounded-xl border-2 border-[var(--theme-bg-sidebar)]"
+                                        className="w-16 h-16 rounded-[10px]"
                                     />
                                 </div>
                             ) : (
-                                <div className="rounded-xl p-[2px] border border-slate-700 shrink-0">
+                                <div className="rounded-xl shrink-0 overflow-hidden inline-flex">
                                     <Avatar
                                         src={group.user?.profile_picture}
                                         alt={group.user?.name}

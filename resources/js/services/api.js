@@ -200,7 +200,9 @@ export const conversationsAPI = {
 // Messages API
 export const messagesAPI = {
     sendMessage: (data) => api.post('/messages', data),
-    getMessages: (conversationId, page = 1) => api.get(`/conversations/${conversationId}/messages`, { params: { page } }),
+    updateMessage: (messageId, data) => api.patch(`/messages/${messageId}`, data),
+    deleteMessage: (messageId) => api.delete(`/messages/${messageId}`),
+    getMessages: (conversationId, page = 1, perPage = 25) => api.get(`/conversations/${conversationId}/messages`, { params: { page, per_page: perPage } }),
     getConversationMedia: (conversationId, page = 1) => api.get(`/conversations/${conversationId}/media`, { params: { page } }),
     markAsRead: (conversationId) => api.post(`/conversations/${conversationId}/read`),
 };
@@ -218,6 +220,8 @@ export const groupConversationsAPI = {
 // Group Messages API
 export const groupMessagesAPI = {
     send: (data) => api.post('/group-messages', data),
+    update: (messageId, data) => api.patch(`/group-messages/${messageId}`, data),
+    delete: (messageId) => api.delete(`/group-messages/${messageId}`),
 };
 
 // Stories API
