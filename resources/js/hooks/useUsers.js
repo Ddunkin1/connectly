@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { userAPI, followAPI, friendRequestAPI } from '../services/api';
 import toast from 'react-hot-toast';
+import useAuthStore from '../store/authStore';
 
 export const useUserProfile = (userId) => {
     return useQuery({
@@ -37,12 +38,21 @@ export const useUpdateProfile = () => {
 
     return useMutation({
         mutationFn: (data) => userAPI.updateProfile(data),
-        onSuccess: () => {
+        onSuccess: async (response) => {
+            const userData = response?.data?.user;
+            const message = response?.data?.message || 'Profile updated successfully';
+
+            if (userData) {
+                useAuthStore.getState().updateUser(userData);
+            }
             queryClient.invalidateQueries({ queryKey: ['user'] });
             queryClient.invalidateQueries({ queryKey: ['profile'] });
-            queryClient.refetchQueries({ queryKey: ['user'] });
-            queryClient.refetchQueries({ queryKey: ['profile'] });
-            toast.success('Profile updated successfully');
+            await Promise.all([
+                queryClient.refetchQueries({ queryKey: ['user'] }),
+                queryClient.refetchQueries({ queryKey: ['profile'] }),
+            ]);
+
+            toast.success(message);
         },
         onError: (error) => {
             const message = error.response?.data?.message || 'Failed to update profile';

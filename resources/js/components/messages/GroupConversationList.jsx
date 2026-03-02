@@ -39,7 +39,7 @@ const GroupConversationList = ({ onSelectGroup, selectedGroupId, onNewGroup }) =
             <div className="flex-1 overflow-y-auto custom-scrollbar px-2 py-2">
                 {groups.length === 0 ? (
                     <div className="flex flex-col justify-center items-center py-12 px-4 gap-4">
-                        <p className="text-slate-500 text-sm text-center">No groups yet.</p>
+                        <p className="text-[var(--text-primary)]/60 text-sm text-center">No groups yet.</p>
                         {onNewGroup && (
                             <button
                                 type="button"
@@ -62,15 +62,15 @@ const GroupConversationList = ({ onSelectGroup, selectedGroupId, onNewGroup }) =
                                     key={group.id}
                                     onClick={() => onSelectGroup(group)}
                                     className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all duration-200 ${
-                                        isSelected ? 'bg-[#2C2C2C]' : 'hover:bg-[#252525]'
+                                        isSelected ? 'bg-[var(--theme-surface)]' : 'hover:bg-[var(--theme-surface-hover)]'
                                     }`}
                                 >
                                     <div className="flex-shrink-0 w-11 h-11 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-lg">
                                         {group.name?.charAt(0)?.toUpperCase() || 'G'}
                                     </div>
                                     <div className="flex-1 min-w-0">
-                                        <p className="text-sm font-medium text-white truncate">{group.name}</p>
-                                        <p className="text-xs text-slate-500 truncate">
+                                        <p className="text-sm font-medium text-[var(--text-primary)] truncate">{group.name}</p>
+                                        <p className="text-xs text-[var(--text-primary)]/60 truncate">
                                             {memberNames || `${group.members?.length || 0} members`}
                                         </p>
                                     </div>
@@ -81,7 +81,7 @@ const GroupConversationList = ({ onSelectGroup, selectedGroupId, onNewGroup }) =
                 )}
             </div>
             {hasNextPage && (
-                <div className="flex justify-center py-2 border-t border-[#3A3A3A]">
+                <div className="flex justify-center py-2 border-t border-[var(--theme-border)]">
                     <button
                         onClick={() => fetchNextPage()}
                         disabled={isFetchingNextPage}

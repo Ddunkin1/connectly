@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use App\Models\Post;
 
 class NotificationController extends Controller
 {
@@ -34,6 +35,48 @@ class NotificationController extends Controller
         return response()->json([
             'notifications' => $notifications,
             'unread_count' => $unreadCount,
+        ]);
+    }
+
+    /**
+     * Simple highlights endpoint (e.g. for digest view).
+     */
+    public function highlights(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        $oneWeekAgo = now()->subWeek();
+
+        $newFollowers = $user->followers()
+            ->wherePivot('created_at', '>=', $oneWeekAgo)
+            ->limit(10)
+            ->get(['users.id', 'users.name', 'users.username', 'users.profile_picture']);
+
+        $topPosts = $user->posts()
+            ->where('is_archived', false)
+            ->where('created_at', '>=', $oneWeekAgo)
+            ->withCount(['likes', 'allComments'])
+            ->orderByRaw('(likes_count + all_comments_count) desc')
+            ->limit(5)
+            ->get()
+            ->map(fn (Post $post) => [
+                'id' => $post->id,
+                'content_preview' => mb_substr((string) $post->content, 0, 100),
+                'likes_count' => $post->likes_count ?? 0,
+                'comments_count' => $post->all_comments_count ?? 0,
+                'created_at' => $post->created_at?->toIso8601String(),
+            ]);
+
+        return response()->json([
+            'highlights' => [
+                'new_followers' => $newFollowers->map(fn ($u) => [
+                    'id' => $u->id,
+                    'name' => $u->name,
+                    'username' => $u->username,
+                    'profile_picture' => $u->profile_picture,
+                ]),
+                'top_posts' => $topPosts,
+            ],
         ]);
     }
 

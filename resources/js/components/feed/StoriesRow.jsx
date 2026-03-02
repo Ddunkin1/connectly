@@ -32,8 +32,8 @@ const StoriesRow = () => {
 
     if (isLoading) {
         return (
-            <div className="flex gap-3 overflow-x-auto pt-6 pb-4 scrollbar-hide h-[100px] items-end mt-2">
-                <div className="flex items-center justify-center w-16 h-16 shrink-0">
+            <div className="flex gap-3 overflow-x-auto pt-4 pb-3 scrollbar-hide h-[88px] items-end mt-1">
+                <div className="flex items-center justify-center w-14 h-14 shrink-0">
                     <LoadingSpinner size="sm" />
                 </div>
             </div>
@@ -42,7 +42,7 @@ const StoriesRow = () => {
 
     return (
         <>
-            <div className="flex gap-3 overflow-x-auto pt-6 pb-4 scrollbar-hide h-[100px] items-end mt-2">
+            <div className="flex gap-3 overflow-x-auto pt-4 pb-3 scrollbar-hide h-[88px] items-end mt-1">
                 {user && (
                     <button
                         type="button"
@@ -50,10 +50,10 @@ const StoriesRow = () => {
                         className="flex flex-col items-center space-y-2 flex-shrink-0 cursor-pointer group"
                         aria-label="Add your story"
                     >
-                        <div className="w-16 h-16 rounded-xl bg-primary flex items-center justify-center shrink-0 transition-all duration-200 group-hover:opacity-90 group-hover:scale-105">
-                            <span className="material-symbols-outlined text-white text-2xl font-bold">add</span>
+                        <div className="w-14 h-14 rounded-xl bg-primary flex items-center justify-center shrink-0 transition-all duration-200 group-hover:opacity-90 group-hover:scale-105">
+                            <span className="material-symbols-outlined text-white text-xl font-bold">add</span>
                         </div>
-                        <span className="text-[11px] font-bold text-primary">Add story</span>
+                        <span className="text-[10px] font-bold text-primary">Add story</span>
                     </button>
                 )}
 
@@ -72,7 +72,7 @@ const StoriesRow = () => {
                                     <Avatar
                                         src={group.user?.profile_picture}
                                         alt={group.user?.name}
-                                        className="w-16 h-16 rounded-[10px]"
+                                        className="w-14 h-14 rounded-[10px]"
                                     />
                                 </div>
                             ) : (
@@ -80,11 +80,11 @@ const StoriesRow = () => {
                                     <Avatar
                                         src={group.user?.profile_picture}
                                         alt={group.user?.name}
-                                        className="w-16 h-16 rounded-xl"
+                                        className="w-14 h-14 rounded-xl"
                                     />
                                 </div>
                             )}
-                            <span className="text-[11px] font-medium text-[var(--text-primary)] truncate max-w-[64px]">
+                            <span className="text-[10px] font-medium text-[var(--text-primary)] truncate max-w-[56px]">
                                 {group.user?.name}
                             </span>
                         </button>

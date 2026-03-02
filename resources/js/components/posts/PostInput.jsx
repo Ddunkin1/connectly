@@ -127,17 +127,15 @@ const PostInput = ({ onPostCreated }) => {
         }
     };
 
-    const firstName = user?.name?.split(' ')[0] || 'there';
-
     return (
-        <div className="glass-effect rounded-2xl p-5 mb-5 shadow-xl">
+        <div className="glass-effect rounded-2xl p-5 mb-6 shadow-xl transition-all duration-200 focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary/30 border border-transparent">
             <form onSubmit={handleSubmit(onSubmit)}>
                 <div className="flex items-start gap-4">
                     <Avatar src={user?.profile_picture} alt={user?.name} size="lg" className="w-10 h-10 shrink-0 rounded-full ring-2 ring-primary/20" />
                     <div className="flex-1 min-w-0 space-y-4">
                         <textarea
                             {...register('content')}
-                            placeholder={`What's on your mind, ${firstName}?`}
+                            placeholder="Share a thought, a photo, or a poll..."
                             onFocus={() => setIsExpanded(true)}
                             rows={2}
                             className="w-full bg-transparent border-none focus:ring-0 text-[15px] leading-relaxed resize-none min-h-[48px] py-3 text-white placeholder:text-slate-500 focus:outline-none"

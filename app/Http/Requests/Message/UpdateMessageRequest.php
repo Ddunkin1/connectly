@@ -16,7 +16,7 @@ class UpdateMessageRequest extends FormRequest
     {
         return [
             'message' => ['nullable', 'string', 'max:5000'],
-            'media' => ['nullable', 'file', 'mimes:jpeg,jpg,png,gif,webp,mp4,webm,mov', 'max:51200'],
+            'media' => ['nullable', 'file', 'mimes:jpeg,jpg,png,gif,webp,mp4,webm,mov,pdf,doc,docx,xls,xlsx,ppt,pptx,txt,csv,zip', 'max:51200'],
         ];
     }
 

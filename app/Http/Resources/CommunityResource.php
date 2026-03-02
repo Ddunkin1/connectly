@@ -19,6 +19,7 @@ class CommunityResource extends JsonResource
             'name' => $this->name,
             'slug' => $this->slug,
             'description' => $this->description,
+            'avatar' => $this->avatar,
             'privacy' => $this->privacy,
             'requires_approval' => $this->requires_approval ?? false,
             'creator' => new UserResource($this->whenLoaded('creator')),

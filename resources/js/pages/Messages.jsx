@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { useConversation, useConversationByUsername } from '../hooks/useConversations';
+import { useConversation, useConversationByUsername, useConversations } from '../hooks/useConversations';
 import ConversationList from '../components/messages/ConversationList';
 import MessageThread from '../components/messages/MessageThread';
 import MessageInput from '../components/messages/MessageInput';
@@ -12,10 +12,12 @@ import GroupMessageThread from '../components/messages/GroupMessageThread';
 import GroupMessageInput from '../components/messages/GroupMessageInput';
 import GroupMembersPanel from '../components/messages/GroupMembersPanel';
 import NewGroupModal from '../components/messages/NewGroupModal';
+import GroupChatHeader from '../components/messages/GroupChatHeader';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import Button from '../components/common/Button';
 import useAuthStore from '../store/authStore';
 import toast from 'react-hot-toast';
+import { useConnections } from '../hooks/useConnections';
 
 const Messages = () => {
     const { username } = useParams();
@@ -35,6 +37,9 @@ const Messages = () => {
         isLoading: conversationByUsernameLoading,
         error: conversationByUsernameError 
     } = useConversationByUsername(username);
+
+    const { data: conversationsData } = useConversations();
+    const { data: connectionsData } = useConnections();
     
     // If conversation ID is selected (from list), get that conversation
     const { data: conversationData, isLoading: conversationLoading } = useConversation(
@@ -101,8 +106,19 @@ const Messages = () => {
     const showDirectContent = activeTab === 'direct';
     const showGroupContent = activeTab === 'groups';
 
+    const existingConversationUserIds =
+        conversationsData?.pages
+            ?.flatMap((p) => p.data?.conversations ?? [])
+            ?.map((c) => c.other_user?.id)
+            .filter((id) => id != null) ?? [];
+
+    const mutuals = connectionsData?.mutuals ?? [];
+    const suggestedToMessage = mutuals
+        .filter((u) => !existingConversationUserIds.includes(u.id))
+        .slice(0, 5);
+
     return (
-        <div className="flex-1 flex min-h-0 overflow-hidden bg-[#1A1A1A]">
+        <div className="flex-1 flex min-h-0 overflow-hidden bg-[var(--theme-bg-main)]">
             <NewGroupModal
                 isOpen={newGroupModalOpen}
                 onClose={() => setNewGroupModalOpen(false)}
@@ -110,26 +126,57 @@ const Messages = () => {
             />
             <div className="flex flex-1 min-h-0 overflow-hidden">
                 {/* Left panel - conversation list (~1/4 width, Connectly style) */}
-                <section className="w-[280px] shrink-0 border-r border-[var(--theme-border)] flex flex-col bg-[#1A1A1A]">
+                <section className="w-[280px] shrink-0 border-r border-[var(--theme-border)] flex flex-col bg-[var(--theme-bg-main)]">
                     <div className="p-4 border-b border-[var(--theme-border)]">
-                        <div className="flex items-center gap-2 mb-4">
-                            <h1 className="text-lg font-semibold text-white">Connectly</h1>
-                            <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-primary/20 text-primary">PRO</span>
-                        </div>
+                        <h2 className="text-lg font-semibold text-[var(--text-primary)] mb-4">Messages</h2>
                         <div className="relative">
-                            <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-lg">search</span>
-                            <input type="text" placeholder="Search conversations..." className="w-full bg-[#2C2C2C] border-0 rounded-lg pl-9 pr-3 py-2.5 text-sm text-white placeholder:text-slate-500 focus:ring-2 focus:ring-primary/30 focus:outline-none" />
+                            <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-primary)]/60 text-lg">search</span>
+                            <input type="text" placeholder="Search conversations..." className="w-full bg-[var(--theme-surface)] border-0 rounded-lg pl-9 pr-3 py-2.5 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-primary)]/50 focus:ring-2 focus:ring-primary/30 focus:outline-none" />
                         </div>
-                        <div className="flex p-1 bg-[#2C2C2C] rounded-lg mt-3">
-                            <button type="button" onClick={() => setActiveTab('direct')} className={`flex-1 py-2 text-xs font-medium rounded-md transition-all ${activeTab === 'direct' ? 'bg-primary text-white' : 'text-slate-400 hover:text-white'}`}>Direct</button>
-                            <button type="button" onClick={() => setActiveTab('groups')} className={`flex-1 py-2 text-xs font-medium rounded-md transition-all ${activeTab === 'groups' ? 'bg-primary text-white' : 'text-slate-400 hover:text-white'}`}>Groups</button>
+                        <div className="flex p-1 bg-[var(--theme-surface)] rounded-lg mt-4">
+                            <button type="button" onClick={() => setActiveTab('direct')} className={`flex-1 py-2 text-xs font-medium rounded-md transition-all ${activeTab === 'direct' ? 'bg-primary text-white' : 'text-[var(--text-primary)]/70 hover:text-[var(--text-primary)]'}`}>Direct</button>
+                            <button type="button" onClick={() => setActiveTab('groups')} className={`flex-1 py-2 text-xs font-medium rounded-md transition-all ${activeTab === 'groups' ? 'bg-primary text-white' : 'text-[var(--text-primary)]/70 hover:text-[var(--text-primary)]'}`}>Groups</button>
                         </div>
                     </div>
                     {showDirectContent && (
-                        <ConversationList
-                            onSelectConversation={handleSelectConversation}
-                            selectedConversationId={displayConversation?.id}
-                        />
+                        <>
+                            {suggestedToMessage.length > 0 && (
+                                <div className="px-4 pt-3 pb-2 border-b border-[var(--theme-border)]">
+                                    <p className="text-[11px] uppercase tracking-[0.2em] text-[var(--text-primary)]/50 mb-2">
+                                        People you may want to message
+                                    </p>
+                                    <div className="space-y-1.5">
+                                        {suggestedToMessage.map((u) => (
+                                            <Link
+                                                key={u.id}
+                                                to={`/messages/${u.username}`}
+                                                className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-[var(--theme-surface)] transition-colors"
+                                            >
+                                                <div className="w-7 h-7 rounded-full overflow-hidden shrink-0">
+                                                    <img
+                                                        src={u.profile_picture}
+                                                        alt={u.name}
+                                                        className="w-full h-full object-cover"
+                                                    />
+                                                </div>
+                                                <div className="min-w-0">
+                                                    <p className="text-xs font-medium text-[var(--text-primary)] truncate">
+                                                        {u.name}
+                                                    </p>
+                                                    <p className="text-[10px] text-[var(--text-primary)]/60 truncate">
+                                                        @{u.username}
+                                                    </p>
+                                                </div>
+                                            </Link>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                            <ConversationList
+                                onSelectConversation={handleSelectConversation}
+                                selectedConversationId={displayConversation?.id}
+                            />
+                        </>
                     )}
                     {showGroupContent && (
                         <>
@@ -154,7 +201,7 @@ const Messages = () => {
                 </section>
 
                 {/* Center - chat (~1/2 width) */}
-                <main className="flex-1 flex flex-col min-h-0 min-w-0 overflow-hidden bg-[#1A1A1A]">
+                <main className="flex-1 flex flex-col min-h-0 min-w-0 overflow-hidden bg-[var(--theme-bg-main)]">
                     {showDirectContent && (
                         <>
                             {isLoadingConversation ? (
@@ -181,10 +228,10 @@ const Messages = () => {
                                     </div>
                                 </>
                             ) : (
-                                <div className="flex-1 flex items-center justify-center bg-[#1A1A1A]">
+                                <div className="flex-1 flex items-center justify-center bg-[var(--theme-bg-main)]">
                                     <div className="text-center">
-                                        <p className="text-slate-400 text-base mb-1">Select a conversation</p>
-                                        <p className="text-slate-500 text-sm">Choose from the list to start messaging</p>
+                                        <p className="text-[var(--text-primary)]/80 text-base mb-1">Select a conversation</p>
+                                        <p className="text-[var(--text-primary)]/60 text-sm">Choose from the list to start messaging</p>
                                     </div>
                                 </div>
                             )}
@@ -197,7 +244,7 @@ const Messages = () => {
                                     <div className="shrink-0">
                                         <GroupChatHeader group={selectedGroup} onInviteClick={() => setGroupAddModalOpen(true)} />
                                     </div>
-                                    <div className="flex-1 min-h-0 flex flex-col overflow-hidden bg-[#1A1A1A]">
+                                    <div className="flex-1 min-h-0 flex flex-col overflow-hidden bg-[var(--theme-bg-main)]">
                                         <GroupMessageThread groupId={selectedGroup.id} />
                                     </div>
                                     <div className="shrink-0">
@@ -205,10 +252,10 @@ const Messages = () => {
                                     </div>
                                 </>
                             ) : (
-                                <div className="flex-1 flex items-center justify-center bg-[#1A1A1A]">
+                                <div className="flex-1 flex items-center justify-center bg-[var(--theme-bg-main)]">
                                     <div className="text-center">
-                                        <p className="text-slate-400 text-base mb-1">Select a group</p>
-                                        <p className="text-slate-500 text-sm">Choose from the list or create a new one</p>
+                                        <p className="text-[var(--text-primary)]/80 text-base mb-1">Select a group</p>
+                                        <p className="text-[var(--text-primary)]/60 text-sm">Choose from the list or create a new one</p>
                                     </div>
                                 </div>
                             )}
@@ -219,7 +266,7 @@ const Messages = () => {
                 {/* Right panel - contact details (~1/4 width, Connectly style) */}
                 {showDirectContent && displayConversation && (
                     <>
-                        <section className="w-[280px] shrink-0 border-l border-[var(--theme-border)] flex flex-col bg-[#1A1A1A] overflow-hidden">
+                        <section className="w-[280px] shrink-0 border-l border-[var(--theme-border)] flex flex-col bg-[var(--theme-bg-main)] overflow-hidden">
                             <MessageUserPanel
                                 otherUser={displayConversation.other_user}
                                 mediaItems={conversationMedia}

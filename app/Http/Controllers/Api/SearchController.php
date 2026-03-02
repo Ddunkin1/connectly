@@ -121,4 +121,59 @@ class SearchController extends Controller
             'hashtags' => $results['hashtags'],
         ]);
     }
+
+    /**
+     * Lightweight suggestions for autocomplete (users + hashtags + communities).
+     */
+    public function suggestions(Request $request): JsonResponse
+    {
+        $q = trim((string) $request->input('q', ''));
+
+        if ($q === '') {
+            return response()->json([
+                'users' => [],
+                'hashtags' => [],
+                'communities' => [],
+            ]);
+        }
+
+        $user = $request->user();
+        $blockedIds = $user ? array_merge($user->blockedUserIds(), $user->blockedByUserIds()) : [];
+
+        $users = User::query()
+            ->when(!empty($blockedIds), fn ($query) => $query->whereNotIn('id', $blockedIds))
+            ->where(function ($query) use ($q) {
+                $query->where('username', 'like', $q . '%')
+                    ->orWhere('name', 'like', $q . '%');
+            })
+            ->limit(5)
+            ->get();
+
+        $hashtags = Hashtag::query()
+            ->where('name', 'like', $q . '%')
+            ->limit(5)
+            ->get();
+
+        $communities = Community::query()
+            ->where('name', 'like', $q . '%')
+            ->limit(5)
+            ->get();
+
+        return response()->json([
+            'users' => $users->map(fn (User $u) => [
+                'id' => $u->id,
+                'name' => $u->name,
+                'username' => $u->username,
+                'profile_picture' => $u->profile_picture,
+            ]),
+            'hashtags' => $hashtags->map(fn (Hashtag $h) => [
+                'id' => $h->id,
+                'name' => $h->name,
+            ]),
+            'communities' => $communities->map(fn (Community $c) => [
+                'id' => $c->id,
+                'name' => $c->name,
+            ]),
+        ]);
+    }
 }

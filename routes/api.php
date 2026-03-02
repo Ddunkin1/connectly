@@ -46,6 +46,8 @@ Route::get('/auth/facebook/callback', [SocialAuthController::class, 'handleFaceb
 
 // Public routes (with rate limiting)
 Route::middleware('throttle:60,1')->group(function () {
+    Route::get('/users/{user}/cover-image', [UserController::class, 'coverImage']);
+    Route::get('/users/{user}/profile-picture', [UserController::class, 'profilePicture']);
     Route::post('/register', [AuthController::class, 'register']);
     Route::post('/login', [AuthController::class, 'login']);
     Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
@@ -76,7 +78,8 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function () {
     // User Profile
     Route::get('/users/{user}/profile', [UserController::class, 'profile']);
     Route::get('/users/{user}/posts', [UserController::class, 'posts']);
-    Route::put('/user/profile', [UserController::class, 'updateProfile']);
+    Route::get('/user/connections', [UserController::class, 'connections']);
+    Route::match(['put', 'post'], '/user/profile', [UserController::class, 'updateProfile']);
     Route::post('/user/profile-picture', [UserController::class, 'uploadProfilePicture']);
     Route::get('/users/suggested', [UserController::class, 'suggested']);
     Route::get('/user/notification-preferences', [UserController::class, 'notificationPreferences']);
@@ -108,6 +111,7 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function () {
     // Stories
     Route::get('/stories', [StoryController::class, 'index']);
     Route::post('/stories', [StoryController::class, 'store']);
+    Route::post('/stories/{story}/view', [StoryController::class, 'view']);
     Route::get('/stories/{story}', [StoryController::class, 'show']);
 
     // Bookmarks
@@ -139,6 +143,7 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function () {
 
     // Search
     Route::get('/search', [SearchController::class, 'search']);
+    Route::get('/search/suggestions', [SearchController::class, 'suggestions']);
 
     // Trending
     Route::get('/trending/hashtags', [TrendingController::class, 'hashtags']);
@@ -189,6 +194,7 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function () {
     // Notifications (read-all must be before {id} to avoid matching "read-all" as id)
     Route::get('/notifications', [NotificationController::class, 'index']);
     Route::get('/notifications/unread-count', [NotificationController::class, 'unreadCount']);
+    Route::get('/notifications/highlights', [NotificationController::class, 'highlights']);
     Route::post('/notifications/read-all', [NotificationController::class, 'markAllAsRead']);
     Route::post('/notifications/{id}/read', [NotificationController::class, 'markAsRead']);
 

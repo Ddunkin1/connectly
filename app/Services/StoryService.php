@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Story;
+use App\Models\StoryView;
 use App\Models\User;
 use Illuminate\Support\Collection;
 
@@ -54,9 +55,18 @@ class StoryService
             ->orderBy('created_at', 'asc')
             ->get();
 
+        // Get all story IDs the current user has viewed
+        $storyIds = $stories->pluck('id')->toArray();
+        $viewedStoryIds = StoryView::where('user_id', $user->id)
+            ->whereIn('story_id', $storyIds)
+            ->pluck('story_id')
+            ->toArray();
+
         // Group by user_id
-        $grouped = $stories->groupBy('user_id')->map(function (Collection $userStories, $userId) use ($user) {
+        $grouped = $stories->groupBy('user_id')->map(function (Collection $userStories, $userId) use ($user, $viewedStoryIds) {
             $storyUser = $userStories->first()->user;
+            $groupStoryIds = $userStories->pluck('id')->toArray();
+            $allViewed = $userId == $user->id || empty(array_diff($groupStoryIds, $viewedStoryIds));
             return [
                 'user' => [
                     'id' => $storyUser->id,
@@ -72,10 +82,27 @@ class StoryService
                     'expires_at' => $s->expires_at->toIso8601String(),
                     'created_at' => $s->created_at->toIso8601String(),
                 ])->toArray(),
-                'has_unviewed' => $userId == $user->id ? false : true, // Could be enhanced with story_views table
+                'has_unviewed' => !$allViewed,
             ];
         })->values()->toArray();
 
         return $grouped;
+    }
+
+    /**
+     * Record that a user has viewed a story.
+     */
+    public function recordView(User $user, Story $story): void
+    {
+        if ($story->user_id === $user->id) {
+            return; // Don't record view for own stories
+        }
+        if ($story->expires_at <= now()) {
+            return;
+        }
+        StoryView::firstOrCreate(
+            ['user_id' => $user->id, 'story_id' => $story->id],
+            ['viewed_at' => now()]
+        );
     }
 }

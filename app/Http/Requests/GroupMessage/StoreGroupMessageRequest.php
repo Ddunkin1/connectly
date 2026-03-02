@@ -24,7 +24,7 @@ class StoreGroupMessageRequest extends FormRequest
         return [
             'group_conversation_id' => ['required', 'integer', 'exists:group_conversations,id'],
             'content' => ['required_without:media', 'nullable', 'string', 'max:5000'],
-            'media' => ['nullable', 'file', 'mimes:jpeg,jpg,png,gif,webp,mp4,webm,mov', 'max:51200'],
+            'media' => ['nullable', 'file', 'mimes:jpeg,jpg,png,gif,webp,mp4,webm,mov,pdf,doc,docx,xls,xlsx,ppt,pptx,txt,csv,zip', 'max:51200'],
         ];
     }
 }

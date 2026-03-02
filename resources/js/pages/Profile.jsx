@@ -1,15 +1,28 @@
-import React, { useState } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useUserProfile, useUserPosts, useFollow, useUnfollow } from '../hooks/useUsers';
 import { useFriendRequests, useAcceptFriendRequest, useRejectFriendRequest, useCancelFriendRequest } from '../hooks/useFriendRequests';
 import { useBlockUser } from '../hooks/useBlocks';
 import ReportModal from '../components/common/ReportModal';
+import EditProfileModal from '../components/profile/EditProfileModal';
 import useAuthStore from '../store/authStore';
 import Avatar from '../components/common/Avatar';
 import PostCard from '../components/posts/PostCard';
 import PostInput from '../components/posts/PostInput';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import { formatDate } from '../utils/formatDate';
+import { useStories } from '../hooks/useStories';
+
+const COVER_GRADIENT = 'linear-gradient(135deg, #4b5563 0%, #374151 50%, #1f2937 100%)';
+
+/** Resolve cover URL: when API returns relative path and VITE_API_URL is set (production), prepend API base */
+function resolveCoverUrl(url) {
+    if (!url || !url.startsWith('/')) return url;
+    const apiUrl = import.meta.env.VITE_API_URL;
+    if (!apiUrl) return url; // Local dev: relative path resolves via proxy
+    const base = apiUrl.replace(/\/api\/?$/, '');
+    return base ? `${base}${url}` : url;
+}
 
 const Profile = () => {
     const { username } = useParams();
@@ -18,8 +31,12 @@ const Profile = () => {
     const [activeTab, setActiveTab] = useState('posts');
     const [showBlockMenu, setShowBlockMenu] = useState(false);
     const [reportModalOpen, setReportModalOpen] = useState(false);
+    const [editModalOpen, setEditModalOpen] = useState(false);
+    const [searchParams, setSearchParams] = useSearchParams();
+    const [coverImageFailed, setCoverImageFailed] = useState(false);
     
     const { data: profile, isLoading: profileLoading } = useUserProfile(username);
+    const { data: storiesGrouped = [] } = useStories();
     const blockMutation = useBlockUser();
     const { data: postsData, isLoading: postsLoading, refetch: refetchPosts } = useUserPosts(username);
     const { data: friendRequestsData } = useFriendRequests();
@@ -30,6 +47,11 @@ const Profile = () => {
     const cancelFriendRequestMutation = useCancelFriendRequest();
 
     const isOwnProfile = currentUser?.username === username;
+    const hasActiveStory = profile
+        ? storiesGrouped.some(
+              (group) => group.user?.id === profile.id && (group.stories?.length > 0 || group.has_unviewed)
+          )
+        : false;
     const isFollowing = profile?.is_following;
     const friendRequestStatus = profile?.friend_request_status; // 'sent', 'received', or null
     const posts = postsData?.posts || [];
@@ -42,6 +64,18 @@ const Profile = () => {
     const sentRequest = friendRequestsData?.sent?.find(
         req => req.receiver?.id === profile?.id
     );
+
+    useEffect(() => {
+        if (isOwnProfile && searchParams.get('edit') === '1') {
+            setEditModalOpen(true);
+            setSearchParams({}, { replace: true });
+        }
+    }, [isOwnProfile, searchParams, setSearchParams]);
+
+    // Reset cover error state when profile/cover changes
+    useEffect(() => {
+        setCoverImageFailed(false);
+    }, [profile?.id, profile?.cover_image]);
 
     if (profileLoading) {
         return (
@@ -73,45 +107,86 @@ const Profile = () => {
     return (
         <div className="max-w-[1400px] mx-auto">
             {/* Profile Banner Section */}
-            <div className="theme-surface rounded-2xl overflow-hidden mb-6 border border-[#2A2A2A] card-shadow">
-                {/* Cover Image */}
+            <div className="theme-surface rounded-2xl overflow-hidden mb-6 border border-[#2A2A2A] card-shadow relative">
+                {/* Cover Image - img with onError fallback to detect 403/404/502 */}
                 <div 
-                    className="h-64 bg-gradient-to-r from-blue-400 via-purple-500 to-pink-500 relative"
+                    className="h-64 relative overflow-hidden"
                     style={{
-                        backgroundImage: profile.cover_image 
-                            ? `url(${profile.cover_image})` 
-                            : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                        background: COVER_GRADIENT,
                         backgroundSize: 'cover',
                         backgroundPosition: 'center',
                     }}
                 >
-                    {/* Profile Picture - Centered, overlapping bottom */}
-                    <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-1/2">
-                        <div className="relative">
-                            <div className="w-32 h-32 rounded-full border-4 border-[var(--theme-surface)] p-1 theme-surface">
-                                <Avatar 
-                                    src={profile.profile_picture} 
-                                    alt={profile.name} 
+                    {profile.cover_image && !coverImageFailed && (
+                        <img
+                            src={resolveCoverUrl(profile.cover_image)}
+                            alt=""
+                            className="absolute inset-0 w-full h-full object-cover"
+                            onError={() => setCoverImageFailed(true)}
+                        />
+                    )}
+                    {/* Subtle noise overlay when using default gradient */}
+                    {(!profile.cover_image || coverImageFailed) && (
+                        <div 
+                            className="absolute inset-0 opacity-[0.03] pointer-events-none"
+                            style={{
+                                backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
+                            }}
+                        />
+                    )}
+                </div>
+
+                {/* Profile Picture - Outside cover so it isn't clipped, overlaps cover/profile-info boundary */}
+                <div className="absolute top-44 left-6 md:left-10 z-20">
+                    <div className="relative drop-shadow-lg">
+                        {hasActiveStory ? (
+                            <div className="story-ring story-ring-thin rounded-full inline-flex">
+                                <div className="w-40 h-40 rounded-full border-4 border-[var(--theme-surface)] p-1 theme-surface bg-[var(--theme-surface)] overflow-hidden">
+                                    <Avatar
+                                        src={profile.profile_picture}
+                                        alt={profile.name}
+                                        size="2xl"
+                                        className="w-full h-full rounded-full object-cover"
+                                    />
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="w-40 h-40 rounded-full border-4 border-[var(--theme-border)] p-1 theme-surface bg-[var(--theme-surface)] overflow-hidden shadow-inner">
+                                <Avatar
+                                    src={profile.profile_picture}
+                                    alt={profile.name}
                                     size="2xl"
-                                    className="w-full h-full"
+                                    className="w-full h-full rounded-full object-cover"
                                 />
                             </div>
-                            <span className="absolute bottom-1 right-1 w-4 h-4 rounded-full bg-emerald-500 border-2 border-[var(--theme-surface)]" title="Online" aria-hidden />
-                        </div>
+                        )}
+                        <span
+                            className="absolute bottom-2 right-2 w-4 h-4 rounded-full bg-emerald-500 border-2 border-[var(--theme-surface)] ring-2 ring-[var(--theme-surface)]"
+                            title="Online"
+                            aria-hidden
+                        />
                     </div>
                 </div>
 
-                {/* Profile Info Section */}
-                <div className="pt-16 pb-6 px-8">
-                    <div className="flex flex-col md:flex-row md:items-start md:justify-between">
-                        <div className="flex-1">
-                            <h1 className="text-3xl font-bold text-white mb-1">{profile.name}</h1>
+                {/* Profile Info Section - extra top padding so name clears avatar */}
+                <div className="pt-20 md:pt-24 pb-8 px-6 md:px-8">
+                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 md:gap-6">
+                        <div className="flex-1 min-w-0">
+                            <h1 className="text-3xl md:text-4xl font-bold text-white mb-1">{profile.name}</h1>
                             {profile.username && (
                                 <p className="text-gray-400 text-base mb-2">@{profile.username}</p>
                             )}
-                            {profile.bio && (
-                                <p className="text-gray-400 mb-3">{profile.bio}</p>
-                            )}
+                            {profile.bio && profile.bio.trim().length >= 15 ? (
+                                <p className="text-gray-400 mb-3 leading-relaxed">{profile.bio}</p>
+                            ) : isOwnProfile ? (
+                                <button
+                                    type="button"
+                                    onClick={() => setEditModalOpen(true)}
+                                    className="text-slate-500 italic mb-3 inline-block hover:text-[var(--theme-accent)] transition-colors text-left"
+                                >
+                                    Add a bio to tell people about yourself
+                                </button>
+                            ) : null}
                             <div className="flex flex-wrap items-center gap-4 text-sm text-gray-400">
                                 {profile.location && (
                                     <div className="flex items-center space-x-1">
@@ -127,12 +202,13 @@ const Profile = () => {
                         </div>
                         <div className="flex items-center space-x-3 mt-4 md:mt-0">
                             {isOwnProfile ? (
-                                <Link 
-                                    to="/edit-profile"
-                                    className="px-6 py-2 border border-[#374151] rounded-xl hover:bg-white/5 font-medium text-white transition-colors inline-block"
+                                <button
+                                    type="button"
+                                    onClick={() => setEditModalOpen(true)}
+                                    className="px-6 py-2 border border-[#374151] rounded-xl hover:bg-white/5 font-medium text-white transition-all active:scale-[0.98]"
                                 >
                                     Edit Profile
-                                </Link>
+                                </button>
                             ) : (
                                 <>
                                     {friendRequestStatus === 'sent' ? (
@@ -144,7 +220,7 @@ const Profile = () => {
                                             <button
                                                 onClick={() => cancelFriendRequestMutation.mutate(sentRequest?.id)}
                                                 disabled={cancelFriendRequestMutation.isPending || !sentRequest?.id || String(sentRequest?.id).startsWith('temp-')}
-                                                className="px-6 py-2 border border-[#374151] text-white rounded-xl font-medium transition-colors hover:bg-white/5 flex items-center space-x-2 cursor-pointer"
+                                                className="px-6 py-2 border border-[#374151] text-white rounded-xl font-medium transition-all hover:bg-white/5 active:scale-[0.98] flex items-center space-x-2 cursor-pointer"
                                             >
                                                 <span className="material-symbols-outlined text-lg">close</span>
                                                 <span>Cancel request</span>
@@ -155,7 +231,7 @@ const Profile = () => {
                                             <button
                                                 onClick={() => acceptFriendRequestMutation.mutate(receivedRequest?.id)}
                                                 disabled={acceptFriendRequestMutation.isPending}
-                                                className="px-6 py-2 bg-[var(--theme-accent)] text-white rounded-xl font-medium transition-colors hover:opacity-90 flex items-center space-x-2"
+                                                className="px-6 py-2 bg-[var(--theme-accent)] text-white rounded-xl font-medium transition-all hover:opacity-90 active:scale-[0.98] flex items-center space-x-2"
                                             >
                                                 <span className="material-symbols-outlined text-lg">check</span>
                                                 <span>Accept</span>
@@ -163,7 +239,7 @@ const Profile = () => {
                                             <button
                                                 onClick={() => rejectFriendRequestMutation.mutate(receivedRequest?.id)}
                                                 disabled={rejectFriendRequestMutation.isPending}
-                                                className="px-6 py-2 bg-white/10 text-gray-400 rounded-xl font-medium transition-colors hover:bg-white/20 flex items-center space-x-2"
+                                                className="px-6 py-2 bg-white/10 text-gray-400 rounded-xl font-medium transition-all hover:bg-white/20 active:scale-[0.98] flex items-center space-x-2"
                                             >
                                                 <span className="material-symbols-outlined text-lg">close</span>
                                                 <span>Reject</span>
@@ -188,7 +264,7 @@ const Profile = () => {
                                         <button
                                             onClick={() => followMutation.mutate(profile.id)}
                                             disabled={followMutation.isPending}
-                                            className="px-6 py-2 bg-[var(--theme-accent)] text-white rounded-xl font-medium transition-colors hover:opacity-90 flex items-center space-x-2 cursor-pointer"
+                                            className="px-6 py-2 bg-[var(--theme-accent)] text-white rounded-xl font-medium transition-all hover:opacity-90 active:scale-[0.98] flex items-center space-x-2 cursor-pointer"
                                         >
                                             <span className="material-symbols-outlined text-lg">person_add</span>
                                             <span>Connect</span>
@@ -196,7 +272,7 @@ const Profile = () => {
                                     )}
                                     <Link
                                         to={`/messages/${username}`}
-                                        className="px-6 py-2 border border-[#374151] rounded-xl hover:bg-white/5 font-medium text-white transition-colors flex items-center space-x-2"
+                                        className="px-6 py-2 border border-[#374151] rounded-xl hover:bg-white/5 font-medium text-white transition-all active:scale-[0.98] flex items-center space-x-2"
                                     >
                                         <span className="material-symbols-outlined text-lg">mail</span>
                                         <span>Message</span>
@@ -264,12 +340,19 @@ const Profile = () => {
                     />
                 )}
 
+                {isOwnProfile && (
+                    <EditProfileModal
+                        isOpen={editModalOpen}
+                        onClose={() => setEditModalOpen(false)}
+                    />
+                )}
+
                 {/* Profile Navigation Tabs */}
                 <div className="border-t border-[#2A2A2A] px-8">
                     <div className="flex space-x-8">
                         <button
                             onClick={() => setActiveTab('posts')}
-                            className={`py-4 font-medium border-b-2 transition-colors ${
+                            className={`py-4 font-medium border-b-2 transition-all duration-200 ${
                                 activeTab === 'posts'
                                     ? 'text-[var(--theme-accent)] border-[var(--theme-accent)]'
                                     : 'text-gray-400 border-transparent hover:text-white'
@@ -279,7 +362,7 @@ const Profile = () => {
                         </button>
                         <button
                             onClick={() => setActiveTab('media')}
-                            className={`py-4 font-medium border-b-2 transition-colors ${
+                            className={`py-4 font-medium border-b-2 transition-all duration-200 ${
                                 activeTab === 'media'
                                     ? 'text-[var(--theme-accent)] border-[var(--theme-accent)]'
                                     : 'text-gray-400 border-transparent hover:text-white'
@@ -289,7 +372,7 @@ const Profile = () => {
                         </button>
                         <button
                             onClick={() => setActiveTab('communities')}
-                            className={`py-4 font-medium border-b-2 transition-colors ${
+                            className={`py-4 font-medium border-b-2 transition-all duration-200 ${
                                 activeTab === 'communities'
                                     ? 'text-[var(--theme-accent)] border-[var(--theme-accent)]'
                                     : 'text-gray-400 border-transparent hover:text-white'
@@ -299,7 +382,7 @@ const Profile = () => {
                         </button>
                         <button
                             onClick={() => setActiveTab('more')}
-                            className={`py-4 font-medium border-b-2 transition-colors ${
+                            className={`py-4 font-medium border-b-2 transition-all duration-200 ${
                                 activeTab === 'more'
                                     ? 'text-[var(--theme-accent)] border-[var(--theme-accent)]'
                                     : 'text-gray-400 border-transparent hover:text-white'
@@ -313,26 +396,22 @@ const Profile = () => {
 
             {/* Main Content Area */}
             <div className="flex flex-col lg:flex-row gap-6">
-                {/* Left Sidebar */}
-                <div className="lg:w-1/3 space-y-6">
-                    {/* About Section */}
-                    <div className="theme-surface rounded-2xl border border-[#2A2A2A] p-6 card-shadow">
-                        <h2 className="text-xl font-bold text-white mb-4">About</h2>
-                        {profile.bio && (
-                            <div className="mb-6">
-                                <h3 className="text-sm font-semibold text-gray-400 mb-2">Bio</h3>
-                                <p className="text-gray-400 text-sm leading-relaxed">{profile.bio}</p>
-                            </div>
-                        )}
+                {/* Left Sidebar - when About, Network, or own profile (for empty Network state) */}
+                {(profile.website || profile.location || followersPreview.length > 0 || extraCount > 0 || isOwnProfile) && (
+                <div className="lg:w-1/4 space-y-6">
+                    {/* About Section - only website/location (bio is in header) */}
+                    {(profile.website || profile.location) && (
+                    <div className="theme-surface rounded-2xl border border-[#2A2A2A] p-4 card-shadow transition-all duration-200 hover:shadow-lg hover:shadow-black/10">
+                        <h2 className="text-lg font-bold text-white mb-3">About</h2>
                         <div className="space-y-3">
                             {profile.website && (
                                 <div className="flex items-start space-x-2">
-                                    <span className="material-symbols-outlined text-gray-500 text-sm mt-0.5">link</span>
+                                    <span className="material-symbols-outlined text-gray-500 text-sm mt-0.5 shrink-0">link</span>
                                     <a
                                         href={profile.website}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="text-sm text-[var(--theme-accent)] hover:underline"
+                                        className="text-sm text-[var(--theme-accent)] hover:underline break-all"
                                     >
                                         {profile.website}
                                     </a>
@@ -340,55 +419,70 @@ const Profile = () => {
                             )}
                             {profile.location && (
                                 <div className="flex items-start space-x-2">
-                                    <span className="material-symbols-outlined text-gray-500 text-sm mt-0.5">work</span>
+                                    <span className="material-symbols-outlined text-gray-500 text-sm mt-0.5 shrink-0">work</span>
                                     <span className="text-sm text-gray-400">{profile.location}</span>
                                 </div>
                             )}
                         </div>
                     </div>
+                    )}
 
-                    {/* Network Section */}
-                    <div className="theme-surface rounded-2xl border border-[#2A2A2A] p-6 card-shadow">
-                        <div className="flex items-center justify-between mb-4">
-                            <h2 className="text-xl font-bold text-white">Network</h2>
-                            <Link to={`/profile/${username}/connections`} className="text-sm text-[var(--theme-accent)] hover:underline font-medium">
-                                SEE ALL
-                            </Link>
-                        </div>
-                        <div className="grid grid-cols-3 gap-4 mb-4">
-                            {followersPreview.slice(0, 6).map((f) => (
-                                <Link key={f.id} to={`/profile/${f.username}`} className="flex flex-col items-center group">
-                                    <div className="relative">
-                                        <Avatar
-                                            src={f.profile_picture}
-                                            alt={f.name}
-                                            size="md"
-                                            className="group-hover:ring-2 group-hover:ring-[var(--theme-accent)] rounded-full transition-all"
-                                        />
-                                    </div>
-                                    <span className="text-xs text-gray-400 mt-1 text-center truncate w-full group-hover:text-[var(--theme-accent)]">{f.name}</span>
-                                </Link>
-                            ))}
-                            {extraCount > 0 && (
-                                <Link to={`/profile/${username}/connections`} className="flex flex-col items-center justify-center">
-                                    <div className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center text-gray-400 font-semibold text-sm">
-                                        +{extraCount}
-                                    </div>
-                                    <span className="text-xs text-gray-500 mt-1">more</span>
+                    {/* Network Section - compact */}
+                    <div className="theme-surface rounded-2xl border border-[#2A2A2A] p-4 card-shadow transition-all duration-200 hover:shadow-lg hover:shadow-black/10">
+                        <div className="flex items-center justify-between mb-3">
+                            <h2 className="text-lg font-bold text-white">Network</h2>
+                            {(followersPreview.length > 0 || extraCount > 0) && (
+                                <Link to="/connections" className="text-sm text-[var(--theme-accent)] hover:underline font-medium">
+                                    SEE ALL
                                 </Link>
                             )}
                         </div>
-                        <p className="text-sm text-gray-500 text-center">
-                            {profile.followers_count || 0} connections
-                        </p>
+                        {followersPreview.length > 0 || extraCount > 0 ? (
+                            <>
+                                <div className="grid grid-cols-3 gap-3 mb-3">
+                                    {followersPreview.slice(0, 6).map((f) => (
+                                        <Link key={f.id} to={`/profile/${f.username}`} className="flex flex-col items-center group">
+                                            <div className="relative">
+                                                <Avatar
+                                                    src={f.profile_picture}
+                                                    alt={f.name}
+                                                    size="md"
+                                                    className="group-hover:ring-2 group-hover:ring-[var(--theme-accent)] rounded-full transition-all"
+                                                />
+                                            </div>
+                                            <span className="text-xs text-gray-400 mt-1 text-center truncate w-full group-hover:text-[var(--theme-accent)]">{f.name}</span>
+                                        </Link>
+                                    ))}
+                                    {extraCount > 0 && (
+                                    <Link to="/connections" className="flex flex-col items-center justify-center">
+                                            <div className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center text-gray-400 font-semibold text-sm">
+                                                +{extraCount}
+                                            </div>
+                                            <span className="text-xs text-gray-500 mt-1">more</span>
+                                        </Link>
+                                    )}
+                                </div>
+                                <p className="text-xs text-gray-500 text-center">
+                                    {profile.followers_count === 1 ? '1 connection' : `${profile.followers_count || 0} connections`}
+                                </p>
+                            </>
+                        ) : isOwnProfile ? (
+                            <Link to="/explore" className="flex flex-col items-center gap-2 py-4 text-center group">
+                                <span className="material-symbols-outlined text-2xl text-slate-500 group-hover:text-primary transition-colors">group_add</span>
+                                <p className="text-sm text-slate-400 group-hover:text-[var(--theme-accent)] transition-colors">Connect with people to grow your network</p>
+                            </Link>
+                        ) : (
+                            <p className="text-xs text-gray-500 text-center py-2">{profile.followers_count || 0} connections</p>
+                        )}
                     </div>
                 </div>
+                )}
 
                 {/* Main Content - Posts Feed */}
-                <div className="lg:w-2/3 space-y-6">
+                <div className={`${followersPreview.length > 0 || extraCount > 0 || profile.website || profile.location || isOwnProfile ? 'lg:w-3/4 min-w-0' : 'w-full'} space-y-6`}>
                     {/* Post Input - Only show if viewing own profile */}
                     {isOwnProfile && (
-                        <div className="theme-surface rounded-2xl border border-[#2A2A2A] p-6 card-shadow">
+                        <div className="theme-surface rounded-2xl border border-[#2A2A2A] p-6 card-shadow transition-all duration-200 hover:shadow-lg hover:shadow-black/10">
                             <PostInput onPostCreated={refetchPosts} />
                         </div>
                     )}
@@ -405,8 +499,19 @@ const Profile = () => {
                             ))}
                         </div>
                     ) : (
-                        <div className="theme-surface rounded-2xl border border-[#2A2A2A] p-12 text-center card-shadow">
-                            <p className="text-gray-500">No posts yet</p>
+                        <div className="theme-surface rounded-2xl border border-primary/20 p-12 text-center card-shadow">
+                            {isOwnProfile ? (
+                                <>
+                                    <span className="material-symbols-outlined text-4xl text-primary/60 mb-3 block">edit_note</span>
+                                    <p className="text-white font-medium mb-1">Share your first post!</p>
+                                    <p className="text-slate-500 text-sm mb-4">Your story starts here. Click above to create a post.</p>
+                                </>
+                            ) : (
+                                <>
+                                    <p className="text-gray-500">No posts yet</p>
+                                    <p className="text-slate-600 text-sm mt-1">Check back later</p>
+                                </>
+                            )}
                         </div>
                     )}
                 </div>

@@ -76,7 +76,14 @@ export const useSendMessage = () => {
             toast.success('Message sent successfully!');
         },
         onError: (error) => {
-            toast.error(error.response?.data?.message || 'Failed to send message');
+            const data = error.response?.data;
+            const msg = data?.message
+                || (data?.errors && typeof data.errors === 'object' && Object.values(data.errors).flat().length
+                    ? Object.values(data.errors).flat().find(Boolean)
+                    : null)
+                || (error.code === 'ECONNABORTED' ? 'Upload took too long. Try a smaller file or check your connection.' : error.message)
+                || 'Failed to send message';
+            toast.error(msg);
         },
     });
 };

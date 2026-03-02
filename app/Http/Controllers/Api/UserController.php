@@ -11,8 +11,10 @@ use App\Models\Like;
 use App\Models\Post;
 use App\Models\User;
 use App\Services\MediaService;
+use App\Services\SupabaseService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Log;
 
 class UserController extends Controller
@@ -20,6 +22,90 @@ class UserController extends Controller
     public function __construct(
         private MediaService $mediaService
     ) {
+    }
+
+    /**
+     * Stream user cover image (proxies Supabase URLs to avoid 403 when bucket is not public).
+     */
+    public function coverImage(Request $request, User $user): Response|JsonResponse
+    {
+        $currentUser = $request->user();
+        if ($currentUser && $currentUser->id !== $user->id) {
+            if ($currentUser->hasBlocked($user) || $user->hasBlocked($currentUser)) {
+                return response()->json(['message' => 'User not found'], 404);
+            }
+        }
+
+        $coverUrl = $user->cover_image;
+        if (empty($coverUrl)) {
+            return response()->json(['message' => 'No cover image'], 404);
+        }
+
+        $isSupabaseUrl = str_contains($coverUrl, 'supabase.co');
+
+        if ($isSupabaseUrl) {
+            $supabase = app(SupabaseService::class);
+            $response = $supabase->fetchFile($coverUrl);
+            if (!$response) {
+                Log::warning('Cover image proxy fetch failed', [
+                    'user_id' => $user->id,
+                    'stored_url' => $coverUrl,
+                    'check' => 'SupabaseService::fetchFile returned null - verify SUPABASE_SERVICE_ROLE_KEY and bucket access',
+                ]);
+                return response()->json(['message' => 'Failed to load cover image'], 502);
+            }
+            $contentType = $response->header('Content-Type') ?: 'image/jpeg';
+            return response($response->body(), 200, [
+                'Content-Type' => $contentType,
+                'Cache-Control' => 'public, max-age=86400',
+            ]);
+        }
+
+        // Local storage: redirect to the asset URL
+        return redirect()->away(
+            filter_var($coverUrl, FILTER_VALIDATE_URL) ? $coverUrl : asset('storage/' . $coverUrl)
+        );
+    }
+
+    /**
+     * Stream user profile picture (proxies Supabase URLs to avoid 403).
+     */
+    public function profilePicture(Request $request, User $user): Response|JsonResponse
+    {
+        $currentUser = $request->user();
+        if ($currentUser && $currentUser->id !== $user->id) {
+            if ($currentUser->hasBlocked($user) || $user->hasBlocked($currentUser)) {
+                return response()->json(['message' => 'User not found'], 404);
+            }
+        }
+
+        $pictureUrl = $user->profile_picture;
+        if (empty($pictureUrl)) {
+            return response()->json(['message' => 'No profile picture'], 404);
+        }
+
+        $isSupabaseUrl = str_contains($pictureUrl, 'supabase.co');
+
+        if ($isSupabaseUrl) {
+            $supabase = app(SupabaseService::class);
+            $response = $supabase->fetchFile($pictureUrl);
+            if (!$response) {
+                Log::warning('Profile picture proxy fetch failed', [
+                    'user_id' => $user->id,
+                    'stored_url' => $pictureUrl,
+                ]);
+                return response()->json(['message' => 'Failed to load profile picture'], 502);
+            }
+            $contentType = $response->header('Content-Type') ?: 'image/jpeg';
+            return response($response->body(), 200, [
+                'Content-Type' => $contentType,
+                'Cache-Control' => 'public, max-age=86400',
+            ]);
+        }
+
+        return redirect()->away(
+            filter_var($pictureUrl, FILTER_VALIDATE_URL) ? $pictureUrl : asset('storage/' . $pictureUrl)
+        );
     }
 
     /**
@@ -44,15 +130,25 @@ class UserController extends Controller
 
         try {
             $user->loadCount(['followers', 'following', 'posts']);
+            $imageBase = config('services.supabase.cover_proxy_base')
+                ?: $request->getSchemeAndHttpHost()
+                ?: rtrim(config('app.url'), '/');
+            $imageBase = rtrim($imageBase, '/');
             $followersPreview = $user->followers()
                 ->limit(9)
                 ->get(['id', 'name', 'username', 'profile_picture'])
-                ->map(fn ($u) => [
-                    'id' => $u->id,
-                    'name' => $u->name,
-                    'username' => $u->username,
-                    'profile_picture' => $u->profile_picture ? (filter_var($u->profile_picture, FILTER_VALIDATE_URL) ? $u->profile_picture : asset('storage/' . $u->profile_picture)) : null,
-                ]);
+                ->map(function ($u) use ($imageBase) {
+                    $pic = $u->profile_picture;
+                    if (empty($pic)) {
+                        return ['id' => $u->id, 'name' => $u->name, 'username' => $u->username, 'profile_picture' => null];
+                    }
+                    if (str_contains($pic, 'supabase.co')) {
+                        $pic = "{$imageBase}/api/users/{$u->username}/profile-picture";
+                    } elseif (!filter_var($pic, FILTER_VALIDATE_URL)) {
+                        $pic = asset('storage/' . $pic);
+                    }
+                    return ['id' => $u->id, 'name' => $u->name, 'username' => $u->username, 'profile_picture' => $pic];
+                });
         } catch (\Throwable $e) {
             Log::warning('Profile followers_preview failed', ['user_id' => $user->id, 'error' => $e->getMessage()]);
             $followersPreview = collect();
@@ -61,6 +157,40 @@ class UserController extends Controller
         return response()->json([
             'user' => new UserResource($user),
             'followers_preview' => $followersPreview,
+        ]);
+    }
+
+    /**
+     * Get followers, following, and mutual connections for the authenticated user.
+     */
+    public function connections(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        // Exclude blocked relationships from connection lists
+        $blockedIds = array_merge($user->blockedUserIds(), $user->blockedByUserIds());
+
+        $followersQuery = $user->followers()->withCount(['followers', 'following']);
+        $followingQuery = $user->following()->withCount(['followers', 'following']);
+
+        if (!empty($blockedIds)) {
+            $followersQuery->whereNotIn('users.id', $blockedIds);
+            $followingQuery->whereNotIn('users.id', $blockedIds);
+        }
+
+        $followers = $followersQuery->get();
+        $following = $followingQuery->get();
+
+        $followerIds = $followers->pluck('id')->toArray();
+        $followingIds = $following->pluck('id')->toArray();
+        $mutualIds = array_values(array_intersect($followerIds, $followingIds));
+
+        $mutuals = $followers->whereIn('id', $mutualIds)->values();
+
+        return response()->json([
+            'followers' => UserResource::collection($followers),
+            'following' => UserResource::collection($following),
+            'mutuals' => UserResource::collection($mutuals),
         ]);
     }
 
@@ -162,36 +292,63 @@ class UserController extends Controller
         $user = $request->user();
         $data = $request->validated();
         $supabaseService = app(\App\Services\SupabaseService::class);
-        
-        // Handle profile picture upload
+        $imageUploadFailed = false;
+
+        // Handle profile picture upload (upload first, then delete old — so we keep old if upload fails)
         if ($request->hasFile('profile_picture')) {
-            // Delete old profile picture if exists
-            if ($user->profile_picture) {
-                $supabaseService->deleteFile($user->profile_picture);
-            }
-            $profilePictureUrl = $supabaseService->uploadFile($request->file('profile_picture'), 'profile-pictures');
-            if ($profilePictureUrl) {
-                $data['profile_picture'] = $profilePictureUrl;
+            try {
+                $profilePictureUrl = $supabaseService->uploadFile($request->file('profile_picture'), 'profile-pictures');
+                if ($profilePictureUrl) {
+                    if ($user->profile_picture) {
+                        $supabaseService->deleteFile($user->profile_picture);
+                    }
+                    $data['profile_picture'] = $profilePictureUrl;
+                }
+            } catch (\Throwable $e) {
+                Log::warning('Profile picture upload failed', ['error' => $e->getMessage()]);
+                $imageUploadFailed = true;
             }
         }
-        
+
         // Handle cover image upload
         if ($request->hasFile('cover_image')) {
-            // Delete old cover image if exists
-            if ($user->cover_image) {
-                $supabaseService->deleteFile($user->cover_image);
-            }
-            $coverImageUrl = $supabaseService->uploadFile($request->file('cover_image'), 'cover-images');
-            if ($coverImageUrl) {
-                $data['cover_image'] = $coverImageUrl;
+            try {
+                $coverImageUrl = $supabaseService->uploadFile($request->file('cover_image'), 'cover-images');
+                if ($coverImageUrl) {
+                    if ($user->cover_image) {
+                        $supabaseService->deleteFile($user->cover_image);
+                    }
+                    $data['cover_image'] = $coverImageUrl;
+                } else {
+                    Log::warning('Cover image upload returned null', ['user_id' => $user->id]);
+                    $imageUploadFailed = true;
+                }
+            } catch (\Throwable $e) {
+                Log::warning('Cover image upload failed', ['error' => $e->getMessage(), 'user_id' => $user->id]);
+                $imageUploadFailed = true;
             }
         }
-        
+
         $user->update($data);
 
+        if (config('app.debug')) {
+            Log::debug('Profile update result', [
+                'user_id' => $user->id,
+                'cover_in_data' => $data['cover_image'] ?? null,
+                'image_upload_failed' => $imageUploadFailed,
+                'cover_after_update' => $user->fresh()->cover_image,
+            ]);
+        }
+
+        $message = 'Profile updated successfully';
+        if ($imageUploadFailed) {
+            $message .= '. Image upload failed — please try again or use a smaller image.';
+        }
+
         return response()->json([
-            'message' => 'Profile updated successfully',
+            'message' => $message,
             'user' => new UserResource($user->fresh()),
+            'image_upload_failed' => $imageUploadFailed,
         ]);
     }
 
@@ -267,6 +424,9 @@ class UserController extends Controller
 
         return response()->json([
             'notification_preferences' => array_merge(User::defaultNotificationPreferences(), $prefs),
+            'muted_topics' => $user->muted_topics ?? [],
+            'muted_users' => $user->muted_users ?? [],
+            'muted_communities' => $user->muted_communities ?? [],
         ]);
     }
 
@@ -282,16 +442,30 @@ class UserController extends Controller
             'notification_preferences.follows' => 'boolean',
             'notification_preferences.mentions' => 'boolean',
             'notification_preferences.messages' => 'boolean',
+            'muted_topics' => 'array',
+            'muted_topics.*' => 'string',
+            'muted_users' => 'array',
+            'muted_users.*' => 'integer',
+            'muted_communities' => 'array',
+            'muted_communities.*' => 'integer',
         ]);
 
         $user = $request->user();
         $prefs = $user->notification_preferences ?? User::defaultNotificationPreferences();
         $updated = array_merge($prefs, $request->input('notification_preferences', []));
-        $user->update(['notification_preferences' => $updated]);
+        $user->update([
+            'notification_preferences' => $updated,
+            'muted_topics' => $request->input('muted_topics', $user->muted_topics ?? []),
+            'muted_users' => $request->input('muted_users', $user->muted_users ?? []),
+            'muted_communities' => $request->input('muted_communities', $user->muted_communities ?? []),
+        ]);
 
         return response()->json([
             'message' => 'Notification preferences updated',
             'notification_preferences' => $user->fresh()->notification_preferences,
+            'muted_topics' => $user->fresh()->muted_topics ?? [],
+            'muted_users' => $user->fresh()->muted_users ?? [],
+            'muted_communities' => $user->fresh()->muted_communities ?? [],
         ]);
     }
 

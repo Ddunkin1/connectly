@@ -1,9 +1,14 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import Avatar from '../common/Avatar';
+import { storiesAPI } from '../../services/api';
+import useAuthStore from '../../store/authStore';
 
 const STORY_DURATION_MS = 5000;
 
 const StoryViewer = ({ storiesGrouped, initialUserIndex = 0, onClose }) => {
+    const queryClient = useQueryClient();
+    const user = useAuthStore((s) => s.user);
     const [userIndex, setUserIndex] = useState(initialUserIndex);
     const [storyIndex, setStoryIndex] = useState(0);
     const [progress, setProgress] = useState(0);
@@ -38,6 +43,16 @@ const StoryViewer = ({ storiesGrouped, initialUserIndex = 0, onClose }) => {
             onClose();
         }
     }, [storyIndex, userIndex, storiesGrouped, onClose]);
+
+    // Record story view for accurate has_unviewed (backend ignores own stories)
+    useEffect(() => {
+        if (!currentStory?.id || !user) return;
+        const storyUserId = group?.user?.id;
+        if (storyUserId === user.id) return; // Skip recording for own stories
+        storiesAPI.view(currentStory.id).then(() => {
+            queryClient.invalidateQueries({ queryKey: ['stories'] });
+        }).catch(() => {});
+    }, [currentStory?.id, group?.user?.id, user?.id, queryClient]);
 
     // Progress bar timer
     useEffect(() => {
@@ -75,7 +90,7 @@ const StoryViewer = ({ storiesGrouped, initialUserIndex = 0, onClose }) => {
 
     if (!group || !currentStory) return null;
 
-    const user = group.user;
+    const storyUser = group.user;
 
     return (
         <div className="fixed inset-0 z-[100] bg-black flex items-center justify-center" onClick={goNext}>
@@ -106,9 +121,9 @@ const StoryViewer = ({ storiesGrouped, initialUserIndex = 0, onClose }) => {
                 className="absolute top-0 left-0 right-0 flex items-center gap-3 p-4 pt-14 z-10"
                 onClick={(e) => e.stopPropagation()}
             >
-                <Avatar src={user?.profile_picture} alt={user?.name} size="sm" />
-                <span className="text-white font-medium">{user?.name}</span>
-                <span className="text-gray-400 text-sm">@{user?.username}</span>
+                <Avatar src={storyUser?.profile_picture} alt={storyUser?.name} size="sm" />
+                <span className="text-white font-medium">{storyUser?.name}</span>
+                <span className="text-gray-400 text-sm">@{storyUser?.username}</span>
             </div>
 
             {/* Media - click areas for prev/next */}

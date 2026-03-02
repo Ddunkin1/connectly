@@ -29,11 +29,15 @@ const LABELS = {
 const Settings = () => {
     const queryClient = useQueryClient();
     const [prefs, setPrefs] = useState(DEFAULT_PREFS);
+    const [mutedTopics, setMutedTopics] = useState([]);
+    const [mutedUsers, setMutedUsers] = useState([]);
+    const [mutedCommunities, setMutedCommunities] = useState([]);
+    const [newMutedTopic, setNewMutedTopic] = useState('');
 
     const { data, isLoading } = useQuery({
         queryKey: ['notification-preferences'],
         queryFn: () => userAPI.getNotificationPreferences(),
-        select: (res) => res.data?.notification_preferences ?? DEFAULT_PREFS,
+        select: (res) => res.data ?? {},
     });
 
     const { data: twoFactorStatus } = useQuery({
@@ -147,13 +151,53 @@ const Settings = () => {
     });
 
     useEffect(() => {
-        if (data) setPrefs(data);
+        if (!data) return;
+        const np = data.notification_preferences ?? DEFAULT_PREFS;
+        setPrefs({ ...DEFAULT_PREFS, ...np });
+        setMutedTopics(Array.isArray(data.muted_topics) ? data.muted_topics : []);
+        setMutedUsers(Array.isArray(data.muted_users) ? data.muted_users : []);
+        setMutedCommunities(Array.isArray(data.muted_communities) ? data.muted_communities : []);
     }, [data]);
 
     const handleToggle = (key) => {
         const next = { ...prefs, [key]: !prefs[key] };
         setPrefs(next);
-        updateMutation.mutate({ notification_preferences: next });
+        updateMutation.mutate({
+            notification_preferences: next,
+            muted_topics: mutedTopics,
+            muted_users: mutedUsers,
+            muted_communities: mutedCommunities,
+        });
+    };
+
+    const handleAddMutedTopic = (e) => {
+        e.preventDefault();
+        const value = newMutedTopic.trim();
+        if (!value) return;
+        if (mutedTopics.includes(value)) {
+            setNewMutedTopic('');
+            return;
+        }
+        const next = [...mutedTopics, value];
+        setMutedTopics(next);
+        setNewMutedTopic('');
+        updateMutation.mutate({
+            notification_preferences: prefs,
+            muted_topics: next,
+            muted_users: mutedUsers,
+            muted_communities: mutedCommunities,
+        });
+    };
+
+    const handleRemoveMutedTopic = (topic) => {
+        const next = mutedTopics.filter((t) => t !== topic);
+        setMutedTopics(next);
+        updateMutation.mutate({
+            notification_preferences: prefs,
+            muted_topics: next,
+            muted_users: mutedUsers,
+            muted_communities: mutedCommunities,
+        });
     };
 
     const handleEnablePush = async () => {
@@ -254,6 +298,48 @@ const Settings = () => {
                         </div>
                     ))}
                 </div>
+            </section>
+
+            <section className="theme-surface rounded-xl p-6 mb-6">
+                <h2 className="text-lg font-semibold text-white mb-3">Muted words & topics</h2>
+                <p className="text-sm text-gray-400 mb-4">
+                    Hide posts and notifications that contain specific words or phrases. This only affects what you see.
+                </p>
+                <form onSubmit={handleAddMutedTopic} className="flex flex-col sm:flex-row gap-3 mb-4">
+                    <input
+                        type="text"
+                        value={newMutedTopic}
+                        onChange={(e) => setNewMutedTopic(e.target.value)}
+                        placeholder="Add word or phrase to mute"
+                        className="flex-1 px-4 py-2 rounded-lg bg-[#1A1A1A] border border-gray-600 text-white placeholder-gray-500 text-sm"
+                    />
+                    <Button type="submit" disabled={updateMutation.isPending || !newMutedTopic.trim()}>
+                        Add
+                    </Button>
+                </form>
+                {mutedTopics.length === 0 ? (
+                    <p className="text-sm text-gray-500">
+                        You haven&apos;t muted any words yet.
+                    </p>
+                ) : (
+                    <div className="flex flex-wrap gap-2">
+                        {mutedTopics.map((topic) => (
+                            <span
+                                key={topic}
+                                className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-white/5 text-xs text-gray-200"
+                            >
+                                {topic}
+                                <button
+                                    type="button"
+                                    onClick={() => handleRemoveMutedTopic(topic)}
+                                    className="ml-1 text-gray-400 hover:text-white"
+                                >
+                                    ×
+                                </button>
+                            </span>
+                        ))}
+                    </div>
+                )}
             </section>
 
             <section className="theme-surface rounded-xl p-6 mb-6">

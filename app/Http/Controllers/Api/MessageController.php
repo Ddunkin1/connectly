@@ -16,6 +16,8 @@ use App\Services\MessageService;
 use App\Services\SupabaseService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Throwable;
 
 class MessageController extends Controller
 {
@@ -34,38 +36,50 @@ class MessageController extends Controller
      */
     public function store(StoreMessageRequest $request): JsonResponse
     {
-        $data = $request->validated();
-        $sender = $request->user();
-        $receiver = User::findOrFail($data['receiver_id']);
+        try {
+            $data = $request->validated();
+            $sender = $request->user();
+            $receiver = User::findOrFail($data['receiver_id']);
 
-        // Get or create conversation
-        $conversation = $this->conversationService->getOrCreateConversation($sender, $receiver);
-        if (! $conversation) {
-            return response()->json([
-                'message' => 'You cannot message this user.',
-            ], 403);
-        }
-
-        $messageText = $data['message'] ?? '';
-        $options = [];
-
-        if ($request->hasFile('media')) {
-            $file = $request->file('media');
-            $url = $this->supabaseService->uploadFile($file, 'message-attachments');
-            if ($url) {
-                $mime = $file->getMimeType();
-                $type = str_starts_with($mime, 'video/') ? 'video' : (str_starts_with($mime, 'image/') ? 'image' : 'file');
-                $options['attachment_url'] = $url;
-                $options['attachment_type'] = $type;
+            // Get or create conversation
+            $conversation = $this->conversationService->getOrCreateConversation($sender, $receiver);
+            if (! $conversation) {
+                return response()->json([
+                    'message' => 'You cannot message this user.',
+                ], 403);
             }
+
+            $messageText = $data['message'] ?? '';
+            $options = [];
+
+            if ($request->hasFile('media')) {
+                $file = $request->file('media');
+                $url = $this->supabaseService->uploadFile($file, 'message-attachments');
+                if ($url) {
+                    $mime = $file->getMimeType();
+                    $type = str_starts_with($mime, 'video/') ? 'video' : (str_starts_with($mime, 'image/') ? 'image' : 'file');
+                    $options['attachment_url'] = $url;
+                    $options['attachment_type'] = $type;
+                }
+            }
+
+            $message = $this->messageService->sendMessage($conversation, $sender, $messageText, $options);
+
+            return response()->json([
+                'message' => 'Message sent successfully',
+                'data' => new MessageResource($message),
+            ], 201);
+        } catch (Throwable $e) {
+            Log::error('Message store failed', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            $message = $e->getMessage();
+            $isSupabase = str_contains($message, 'Supabase') || $e instanceof \RuntimeException;
+            $status = $isSupabase ? 502 : 500;
+            $userMessage = config('app.debug') ? $message : ($isSupabase ? 'File upload failed. Check your connection and try again.' : 'Failed to send message. Please try again.');
+            return response()->json(['message' => $userMessage], $status);
         }
-
-        $message = $this->messageService->sendMessage($conversation, $sender, $messageText, $options);
-
-        return response()->json([
-            'message' => 'Message sent successfully',
-            'data' => new MessageResource($message),
-        ], 201);
     }
 
     /**

@@ -40,6 +40,7 @@ return [
         'key' => env('SUPABASE_KEY'),
         'service_role_key' => env('SUPABASE_SERVICE_ROLE_KEY'), // Optional: for bucket creation
         'bucket' => env('SUPABASE_BUCKET', 'publicConnectly'),
+        'cover_proxy_base' => env('COVER_PROXY_BASE'), // e.g. http://localhost for Sail
     ],
 
     // FFmpeg for video transcoding (VideoTranscodeService). Use if ffmpeg is not in system PATH.

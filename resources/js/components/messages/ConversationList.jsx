@@ -78,7 +78,7 @@ const ConversationList = ({ onSelectConversation, selectedConversationId }) => {
                 key={conversation.id}
                 onClick={() => onSelectConversation(conversation)}
                 className={`w-full px-3 py-2.5 rounded-xl flex gap-3 cursor-pointer transition-all duration-200 text-left ${
-                    isSelected ? 'bg-[#2C2C2C]' : 'hover:bg-[#252525]'
+                    isSelected ? 'bg-[var(--theme-surface)]' : 'hover:bg-[var(--theme-surface-hover)]'
                 }`}
             >
                 <div className="relative shrink-0">
@@ -89,14 +89,14 @@ const ConversationList = ({ onSelectConversation, selectedConversationId }) => {
                 </div>
                 <div className="flex-1 min-w-0">
                     <div className="flex justify-between items-center gap-1 mb-0.5">
-                        <h3 className="text-sm font-medium text-white truncate">{otherUser?.name}</h3>
+                        <h3 className="text-sm font-medium text-[var(--text-primary)] truncate">{otherUser?.name}</h3>
                         {lastMessage && (
-                            <span className={`text-[10px] shrink-0 rounded ${justNow ? 'bg-primary/20 text-primary px-1.5 py-0.5' : 'text-slate-500'}`}>
+                            <span className={`text-[10px] shrink-0 rounded ${justNow ? 'bg-primary/20 text-primary px-1.5 py-0.5' : 'text-[var(--text-primary)]/60'}`}>
                                 {justNow ? 'Just now' : formatTime(lastMessage.created_at)}
                             </span>
                         )}
                     </div>
-                    {lastMessage && <p className={`text-xs truncate ${conversation.unread_count > 0 ? 'text-slate-300' : 'text-slate-500'}`}>{preview}</p>}
+                    {lastMessage && <p className={`text-xs truncate ${conversation.unread_count > 0 ? 'text-[var(--text-primary)]/80' : 'text-[var(--text-primary)]/60'}`}>{preview}</p>}
                 </div>
             </button>
         );
@@ -107,17 +107,17 @@ const ConversationList = ({ onSelectConversation, selectedConversationId }) => {
             <div className="flex-1 overflow-y-auto custom-scrollbar px-2 py-2">
                 {conversations.length === 0 ? (
                     <div className="flex justify-center items-center py-12 px-4">
-                        <p className="text-slate-500 text-sm text-center">No conversations yet</p>
+                        <p className="text-[var(--text-primary)]/60 text-sm text-center">No conversations yet</p>
                     </div>
                 ) : (
                     <>
                         {pinnedConversations.length > 0 && (
                             <>
-                                <h4 className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider px-2 mb-1 mt-2">PINNED</h4>
+                                <h4 className="text-[10px] font-semibold text-[var(--text-primary)]/60 uppercase tracking-wider px-2 mb-1 mt-2">PINNED</h4>
                                 {conversations.filter((c) => pinnedConversations.includes(c.id)).map(renderConversationRow)}
                             </>
                         )}
-                        <h4 className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider px-2 mb-1 mt-2">RECENT</h4>
+                        <h4 className="text-[10px] font-semibold text-[var(--text-primary)]/60 uppercase tracking-wider px-2 mb-1 mt-2">RECENT</h4>
                         <div className="space-y-0.5">
                             {recentConversations.map(renderConversationRow)}
                         </div>

@@ -80,11 +80,16 @@ export const authAPI = {
 export const userAPI = {
     getProfile: (userId) => api.get(`/users/${userId}/profile`),
     getUserPosts: (userId, page = 1) => api.get(`/users/${userId}/posts`, { params: { page } }),
+    getConnections: () => api.get('/user/connections'),
     updateProfile: (data) => {
-        // Handle FormData - don't set Content-Type, let browser set it with boundary
+        // Handle FormData - POST with _method=PUT because PHP doesn't parse multipart on PUT
         const config = data instanceof FormData
             ? { headers: { 'Content-Type': undefined } }
             : {};
+        if (data instanceof FormData) {
+            data.append('_method', 'PUT');
+            return api.post('/user/profile', data, config);
+        }
         return api.put('/user/profile', data, config);
     },
     uploadProfilePicture: (data) => {
@@ -162,6 +167,7 @@ export const friendRequestAPI = {
 // Search API
 export const searchAPI = {
     search: (query, type = 'all') => api.get('/search', { params: { q: query, type } }),
+    suggestions: (query) => api.get('/search/suggestions', { params: { q: query } }),
 };
 
 // Reports API
@@ -197,9 +203,9 @@ export const conversationsAPI = {
     getConversationByUsername: (username) => api.get(`/conversations/by-username/${username}`),
 };
 
-// Messages API
+// Messages API (longer timeout for file uploads so Supabase upload can complete)
 export const messagesAPI = {
-    sendMessage: (data) => api.post('/messages', data),
+    sendMessage: (data) => api.post('/messages', data, { timeout: 130000 }),
     updateMessage: (messageId, data) => api.patch(`/messages/${messageId}`, data),
     deleteMessage: (messageId) => api.delete(`/messages/${messageId}`),
     getMessages: (conversationId, page = 1, perPage = 25) => api.get(`/conversations/${conversationId}/messages`, { params: { page, per_page: perPage } }),
@@ -232,6 +238,7 @@ export const storiesAPI = {
         return api.post('/stories', formData, config);
     },
     getOne: (storyId) => api.get(`/stories/${storyId}`),
+    view: (storyId) => api.post(`/stories/${storyId}/view`),
 };
 
 // Push Subscriptions API
@@ -244,6 +251,7 @@ export const pushAPI = {
 export const notificationsAPI = {
     getNotifications: () => api.get('/notifications'),
     getUnreadCount: () => api.get('/notifications/unread-count'),
+    getHighlights: () => api.get('/notifications/highlights'),
     markAsRead: (notificationId) => api.post(`/notifications/${notificationId}/read`),
     markAllAsRead: () => api.post('/notifications/read-all'),
 };

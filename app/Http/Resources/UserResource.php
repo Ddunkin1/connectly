@@ -5,6 +5,7 @@ namespace App\Http\Resources;
 use App\Models\FriendRequest;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Facades\Log;
 
 class UserResource extends JsonResource
 {
@@ -61,8 +62,8 @@ class UserResource extends JsonResource
             'has_blocked_you' => $this->when($currentUser && $currentUser->id !== $this->id, $hasBlockedYou ?? false),
             'email' => $this->when($request->user()?->id === $this->id, $this->email),
             'bio' => $this->bio,
-            'profile_picture' => $this->profile_picture ? (filter_var($this->profile_picture, FILTER_VALIDATE_URL) ? $this->profile_picture : asset('storage/' . $this->profile_picture)) : null,
-            'cover_image' => $this->cover_image ? (filter_var($this->cover_image, FILTER_VALIDATE_URL) ? $this->cover_image : asset('storage/' . $this->cover_image)) : null,
+            'profile_picture' => $this->formatProfilePictureUrl($request),
+            'cover_image' => $this->formatCoverImageUrl($request),
             'location' => $this->location,
             'website' => $this->website,
             'privacy_settings' => $this->privacy_settings,
@@ -73,5 +74,58 @@ class UserResource extends JsonResource
             'email_verified_at' => $this->when($request->user()?->id === $this->id, $this->email_verified_at),
             'created_at' => $this->created_at,
         ];
+    }
+
+    /**
+     * Format profile_picture URL: use proxy for Supabase URLs (avoids 403), otherwise asset URL.
+     */
+    private function formatProfilePictureUrl(Request $request): ?string
+    {
+        $picture = $this->profile_picture;
+        if (empty($picture)) {
+            return null;
+        }
+        $isSupabase = str_contains($picture, 'supabase.co');
+        if ($isSupabase) {
+            return $this->buildProxyUrl($request, 'profile-picture');
+        }
+        return filter_var($picture, FILTER_VALIDATE_URL) ? $picture : asset('storage/' . $picture);
+    }
+
+    /**
+     * Format cover_image URL: use proxy for Supabase URLs (avoids 403), otherwise asset URL.
+     */
+    private function formatCoverImageUrl(Request $request): ?string
+    {
+        $cover = $this->cover_image;
+        if (empty($cover)) {
+            return null;
+        }
+
+        // Any Supabase storage URL (including signed URLs with tokens) should use our proxy
+        $isSupabase = str_contains($cover, 'supabase.co');
+        if ($isSupabase) {
+            $proxyUrl = $this->buildProxyUrl($request, 'cover-image');
+            if (config('app.debug')) {
+                Log::debug('formatCoverImageUrl', [
+                    'stored_cover' => substr($cover, 0, 80) . '...',
+                    'proxy_url' => $proxyUrl,
+                ]);
+            }
+            return $proxyUrl;
+        }
+
+        return filter_var($cover, FILTER_VALIDATE_URL) ? $cover : asset('storage/' . $cover);
+    }
+
+    /**
+     * Build proxy URL for user images (cover or profile picture).
+     */
+    private function buildProxyUrl(Request $request, string $type): string
+    {
+        $base = config('services.supabase.cover_proxy_base')
+            ?: $request->getSchemeAndHttpHost()
+            ?: rtrim(config('app.url'), '/');
+        return rtrim($base, '/') . '/api/users/' . $this->username . '/' . $type;
     }
 }

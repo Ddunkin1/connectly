@@ -55,12 +55,15 @@ class SupabaseService
             // Upload to Supabase Storage
             // Use service_role key if available (bypasses RLS), otherwise use anon key
             // Use withBody() to send raw binary data instead of JSON encoding
-            $response = Http::withHeaders([
-                'apikey' => $this->activeKey,
-                'Authorization' => 'Bearer ' . $this->activeKey,
-                'Content-Type' => $file->getMimeType(),
-            ])->withBody($fileContents, $file->getMimeType())
-              ->put("{$this->supabaseUrl}/storage/v1/object/{$this->bucket}/{$path}");
+            // Longer timeouts to avoid cURL 28 (SSL/connection timeout) on slow or distant networks
+            $response = Http::connectTimeout(60)
+                ->timeout(180)
+                ->withHeaders([
+                    'apikey' => $this->activeKey,
+                    'Authorization' => 'Bearer ' . $this->activeKey,
+                    'Content-Type' => $file->getMimeType(),
+                ])->withBody($fileContents, $file->getMimeType())
+                ->put("{$this->supabaseUrl}/storage/v1/object/{$this->bucket}/{$path}");
 
             if ($response->successful()) {
                 // Return public URL
@@ -122,7 +125,7 @@ class SupabaseService
         try {
             $key = $serviceRoleKey ?? $this->serviceRoleKey ?? $this->supabaseKey;
             
-            $response = Http::withHeaders([
+            $response = Http::connectTimeout(30)->timeout(60)->withHeaders([
                 'apikey' => $key,
                 'Authorization' => 'Bearer ' . $key,
                 'Content-Type' => 'application/json',
@@ -159,6 +162,53 @@ class SupabaseService
     }
 
     /**
+     * Fetch file contents from Supabase Storage (uses service role to bypass RLS).
+     * Use this when the public URL returns 403 (e.g. bucket not public).
+     *
+     * @param string $publicUrl The stored public URL (e.g. .../object/public/bucket/path)
+     * @return \Illuminate\Http\Client\Response|null Response or null on failure
+     */
+    public function fetchFile(string $publicUrl): ?\Illuminate\Http\Client\Response
+    {
+        $key = $this->serviceRoleKey ?: $this->supabaseKey;
+        if (empty($key)) {
+            return null;
+        }
+
+        // Convert to authenticated object URL (works for both public and signed Supabase URLs)
+        // .../storage/v1/object/public/bucket/path -> .../storage/v1/object/bucket/path
+        // .../storage/v1/object/sign/bucket/path?token=xxx -> .../storage/v1/object/bucket/path
+        $objectUrl = str_replace('/object/public/', '/object/', $publicUrl);
+        $objectUrl = preg_replace('#/object/sign/([^?]+)(\?.*)?$#', '/object/$1', $objectUrl);
+        if ($objectUrl === $publicUrl && !str_contains($publicUrl, '/object/')) {
+            return null; // Not a recognized Supabase storage URL
+        }
+
+        try {
+            $response = Http::connectTimeout(30)
+                ->timeout(60)
+                ->withHeaders([
+                    'apikey' => $key,
+                    'Authorization' => 'Bearer ' . $key,
+                ])
+                ->get($objectUrl);
+
+            if (!$response->successful()) {
+                Log::warning('Supabase fetchFile non-2xx response', [
+                    'url' => $objectUrl,
+                    'status' => $response->status(),
+                    'body' => substr($response->body(), 0, 200),
+                ]);
+                return null;
+            }
+            return $response;
+        } catch (\Exception $e) {
+            Log::error('Supabase fetch file error: ' . $e->getMessage(), ['url' => $objectUrl]);
+            return null;
+        }
+    }
+
+    /**
      * Delete a file from Supabase Storage.
      *
      * @param string $filePath
@@ -173,7 +223,7 @@ class SupabaseService
                 $path = str_replace("{$this->supabaseUrl}/storage/v1/object/public/{$this->bucket}/", '', $filePath);
             }
 
-            $response = Http::withHeaders([
+            $response = Http::connectTimeout(30)->timeout(60)->withHeaders([
                 'apikey' => $this->activeKey,
                 'Authorization' => 'Bearer ' . $this->activeKey,
             ])->delete(

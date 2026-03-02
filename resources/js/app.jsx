@@ -15,13 +15,18 @@ import Profile from './pages/Profile';
 import PostDetail from './pages/PostDetail';
 import Communities from './pages/Communities';
 import CommunityDetail from './pages/CommunityDetail';
-import EditProfile from './pages/EditProfile';
+import EditProfileRedirect from './pages/EditProfileRedirect';
 import Search from './pages/Search';
+import Explore from './pages/Explore';
 import Messages from './pages/Messages';
 import Notifications from './pages/Notifications';
 import Bookmarks from './pages/Bookmarks';
 import Analytics from './pages/Analytics';
 import Settings from './pages/Settings';
+import Onboarding from './pages/Onboarding';
+import Connections from './pages/Connections';
+import SafetyCenter from './pages/SafetyCenter';
+import Invites from './pages/Invites';
 import AdminReports from './pages/Admin/AdminReports';
 import AdminUsers from './pages/Admin/AdminUsers';
 import useAuthStore from './store/authStore';
@@ -152,13 +157,21 @@ function AppContent() {
                     </div>
                 ) : (
                 <div className="flex-1 overflow-y-auto custom-scrollbar min-w-0 flex justify-center bg-[var(--bg-primary)]">
-                    <div className="w-full max-w-4xl min-w-0 flex flex-col pt-8 px-6 pb-6">
+                    <div className="w-full max-w-5xl min-w-0 flex flex-col pt-8 px-6 pb-6">
                         <Routes>
                         <Route
                             path="/home"
                             element={
                                 <ProtectedRoute>
                                     <Home />
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/onboarding"
+                            element={
+                                <ProtectedRoute>
+                                    <Onboarding />
                                 </ProtectedRoute>
                             }
                         />
@@ -198,7 +211,7 @@ function AppContent() {
                             path="/edit-profile"
                             element={
                                 <ProtectedRoute>
-                                    <EditProfile />
+                                    <EditProfileRedirect />
                                 </ProtectedRoute>
                             }
                         />
@@ -207,6 +220,14 @@ function AppContent() {
                             element={
                                 <ProtectedRoute>
                                     <Search />
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/explore"
+                            element={
+                                <ProtectedRoute>
+                                    <Explore />
                                 </ProtectedRoute>
                             }
                         />
@@ -235,10 +256,34 @@ function AppContent() {
                             }
                         />
                         <Route
+                            path="/connections"
+                            element={
+                                <ProtectedRoute>
+                                    <Connections />
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
                             path="/settings"
                             element={
                                 <ProtectedRoute>
                                     <Settings />
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/invites"
+                            element={
+                                <ProtectedRoute>
+                                    <Invites />
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/safety"
+                            element={
+                                <ProtectedRoute>
+                                    <SafetyCenter />
                                 </ProtectedRoute>
                             }
                         />

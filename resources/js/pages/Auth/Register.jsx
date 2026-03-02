@@ -201,7 +201,7 @@ const Register = () => {
             }
 
             await registerMutation.mutateAsync(formData);
-            navigate('/home');
+            navigate('/onboarding', { replace: true });
         } catch (error) {
             // Error handled by mutation
         }

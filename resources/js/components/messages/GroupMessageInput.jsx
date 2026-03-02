@@ -25,15 +25,15 @@ const GroupMessageInput = ({ groupId, onMessageSent }) => {
     const canSend = message.trim();
 
     return (
-        <div className="px-4 py-3 bg-[#1A1A1A] border-t border-[#3A3A3A]">
+        <div className="px-4 pt-3 pb-0 bg-[var(--theme-bg-main)] border-t border-[var(--theme-border)]">
             <form onSubmit={handleSubmit(onSubmit)}>
-                <div className="bg-[#2C2C2C] rounded-2xl px-3 py-2 flex items-center gap-2 border border-[#3A3A3A] focus-within:border-[#4A4A4A] transition-colors duration-200">
+                <div className="bg-[var(--theme-surface)] rounded-2xl px-3 py-2 flex items-center gap-2 border border-[var(--theme-border)] focus-within:border-[var(--theme-accent)]/50 transition-colors duration-200">
                     <input
                         {...register('message', {
                             maxLength: { value: 5000, message: 'Message cannot exceed 5000 characters' },
                         })}
                         placeholder="Type a message..."
-                        className="flex-1 bg-transparent border-none focus:ring-0 text-sm py-2 text-white placeholder:text-slate-500 min-w-0"
+                        className="flex-1 bg-transparent border-none focus:ring-0 text-sm py-2 text-[var(--text-primary)] placeholder:text-[var(--text-primary)]/50 min-w-0"
                         onKeyDown={(e) => {
                             if (e.key === 'Enter' && !e.shiftKey) {
                                 e.preventDefault();
@@ -55,7 +55,7 @@ const GroupMessageInput = ({ groupId, onMessageSent }) => {
                     </button>
                 </div>
                 {message.length > 0 && (
-                    <p className="text-[10px] text-slate-500 mt-1.5 px-1">{message.length}/5000</p>
+                    <p className="text-[10px] text-[var(--text-primary)]/60 mt-1.5 px-1">{message.length}/5000</p>
                 )}
             </form>
         </div>

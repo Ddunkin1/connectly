@@ -39,6 +39,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'provider_id',
         'bio',
         'profile_picture',
+        'cover_image',
         'location',
         'website',
         'privacy_settings',
@@ -70,6 +71,9 @@ class User extends Authenticatable implements MustVerifyEmail
             'notification_preferences' => 'array',
             'two_factor_recovery_codes' => 'array',
             'two_factor_confirmed_at' => 'datetime',
+            'muted_topics' => 'array',
+            'muted_users' => 'array',
+            'muted_communities' => 'array',
         ];
     }
 

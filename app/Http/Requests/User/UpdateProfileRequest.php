@@ -16,6 +16,16 @@ class UpdateProfileRequest extends FormRequest
     }
 
     /**
+     * Prepare the data for validation.
+     */
+    protected function prepareForValidation(): void
+    {
+        $this->merge([
+            'website' => $this->website ?: null,
+        ]);
+    }
+
+    /**
      * Get the validation rules that apply to the request.
      *
      * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
@@ -33,6 +43,21 @@ class UpdateProfileRequest extends FormRequest
             'privacy_settings' => ['sometimes', 'in:public,private'],
             'profile_picture' => ['nullable', 'file', 'mimes:jpeg,jpg,png,webp', 'max:5120'], // 5MB max
             'cover_image' => ['nullable', 'file', 'mimes:jpeg,jpg,png,webp', 'max:5120'], // 5MB max
+        ];
+    }
+
+    /**
+     * Get custom validation messages.
+     *
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'username.regex' => 'Username may only contain letters, numbers, underscores and hyphens.',
+            'website.url' => 'Please enter a valid URL.',
+            'profile_picture.max' => 'Profile picture must be under 5MB.',
+            'cover_image.max' => 'Cover image must be under 5MB.',
         ];
     }
 }

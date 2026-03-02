@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import useAuthStore from '../../store/authStore';
-import useThemeStore from '../../store/themeStore';
 import { useLogout } from '../../hooks/useAuth';
 import Avatar from '../common/Avatar';
 import { useUnreadNotificationsCount } from '../../hooks/useNotifications';
@@ -21,18 +20,18 @@ const LeftSidebar = ({ className = '', onNavigate, positionBelowNav = false }) =
 
     const navItems = [
         { icon: 'home', label: 'Home', path: '/home' },
-        { icon: 'explore', label: 'Explore', path: '/search' },
+        { icon: 'explore', label: 'Explore', path: '/explore' },
         { icon: 'notifications', label: 'Notifications', path: '/notifications', badge: notificationsBadge },
         { icon: 'mail', label: 'Messages', path: '/messages', badge: messagesBadge },
+        { icon: 'group', label: 'Connections', path: '/connections' },
+        { icon: 'groups', label: 'Communities', path: '/communities' },
         { icon: 'bookmark', label: 'Bookmarks', path: '/bookmarks' },
         { icon: 'monitoring', label: 'Analytics', path: '/analytics' },
-        { icon: 'palette', label: 'Theme', path: null, isTheme: true },
+        { icon: 'person_add', label: 'Invites', path: '/invites' },
         { icon: 'settings', label: 'Settings', path: '/settings' },
         ...(user?.role === 'admin' ? [{ icon: 'shield', label: 'Admin', path: '/admin/reports' }] : []),
     ];
 
-    const openThemeCustomizer = useThemeStore((s) => s.openCustomizer);
-    const isThemeCustomizerOpen = useThemeStore((s) => s.isCustomizerOpen);
     const logoutMutation = useLogout();
     const [showUserMenu, setShowUserMenu] = useState(false);
     const userMenuRef = useRef(null);
@@ -57,7 +56,7 @@ const LeftSidebar = ({ className = '', onNavigate, positionBelowNav = false }) =
         setTimeout(() => window.dispatchEvent(new CustomEvent('open-create-post')), 100);
     };
 
-    const wrapperClass = `w-[250px] fixed left-10 border-r border-white/5 flex flex-col p-4 bg-[var(--theme-bg-sidebar)] z-30 overflow-y-auto
+    const wrapperClass = `w-[240px] fixed left-10 border-r border-white/5 flex flex-col p-4 bg-[var(--theme-bg-sidebar)] z-30 overflow-y-auto
         ${positionBelowNav ? 'top-[60px] h-[calc(100vh-60px)]' : 'top-0 h-screen'}
         ${className}`.trim();
 
@@ -113,23 +112,6 @@ const LeftSidebar = ({ className = '', onNavigate, positionBelowNav = false }) =
 
             <nav className="flex-1 space-y-1.5 mb-4" aria-label="Main navigation">
                 {navItems.map((item) => {
-                    if (item.isTheme) {
-                        return (
-                            <button
-                                key="theme"
-                                type="button"
-                                onClick={openThemeCustomizer}
-                                className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all w-full ${
-                                    isThemeCustomizerOpen
-                                        ? 'bg-primary/10 text-primary active-tab-glow font-medium'
-                                        : 'text-slate-400 hover:text-white hover:bg-white/5'
-                                }`}
-                            >
-                                <span className="material-symbols-outlined text-[22px]">{item.icon}</span>
-                                <span>Theme</span>
-                            </button>
-                        );
-                    }
                     const isActive =
                         item.path === location.pathname ||
                         (item.path === '/search' && location.pathname === '/search') ||

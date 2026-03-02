@@ -9,7 +9,7 @@ import LoadingSpinner from '../common/LoadingSpinner';
 
 const RightSidebar = () => {
     const [messageSearch, setMessageSearch] = useState('');
-    const [activeTab, setActiveTab] = useState('primary');
+    const [activeTab, setActiveTab] = useState('chats');
     const { data: conversationsData, isLoading: conversationsLoading } = useConversations();
     const { data: friendRequestsData, isLoading: friendRequestsLoading } = useFriendRequests();
     const acceptMutation = useAcceptFriendRequest();
@@ -30,7 +30,7 @@ const RightSidebar = () => {
     const requestsCount = receivedRequests.length;
 
     return (
-        <aside className="w-[320px] fixed right-10 top-[60px] h-[calc(100vh-60px)] border-l border-white/5 p-4 bg-[var(--theme-bg-sidebar)] z-10 overflow-y-auto">
+        <aside className="w-[240px] fixed right-10 top-[60px] h-[calc(100vh-60px)] border-l border-white/5 px-4 py-5 bg-[var(--theme-bg-sidebar)] z-10 overflow-y-auto">
             <div className="flex items-center justify-between mb-6">
                 <h3 className="text-lg font-bold text-white">Messages</h3>
                 <Link to="/messages" className="p-1.5 rounded-lg hover:bg-white/5 text-slate-400 transition-colors" aria-label="Compose message">
@@ -50,21 +50,12 @@ const RightSidebar = () => {
             <div className="flex p-1 bg-white/5 rounded-xl mb-6">
                 <button
                     type="button"
-                    onClick={() => setActiveTab('primary')}
+                    onClick={() => setActiveTab('chats')}
                     className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all ${
-                        activeTab === 'primary' ? 'bg-primary text-white' : 'text-slate-500 hover:text-slate-300'
+                        activeTab === 'chats' ? 'bg-primary text-white' : 'text-slate-500 hover:text-slate-300'
                     }`}
                 >
-                    Primary
-                </button>
-                <button
-                    type="button"
-                    onClick={() => setActiveTab('general')}
-                    className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all ${
-                        activeTab === 'general' ? 'bg-primary text-white' : 'text-slate-500 hover:text-slate-300'
-                    }`}
-                >
-                    General
+                    Chats
                 </button>
                 <button
                     type="button"
@@ -77,68 +68,70 @@ const RightSidebar = () => {
                 </button>
             </div>
 
-            {conversationsLoading ? (
-                <div className="flex justify-center py-4"><LoadingSpinner size="sm" /></div>
-            ) : recentConversations.length === 0 ? (
-                <div className="p-4 rounded-2xl bg-[var(--theme-surface)] text-center">
-                    <p className="text-sm text-slate-500">No conversations yet</p>
-                    <Link to="/messages" className="text-sm text-primary hover:underline mt-2 inline-block">Start a conversation</Link>
-                </div>
-            ) : (
-                <div className="flex-1 overflow-y-auto custom-scrollbar space-y-1">
-                    {recentConversations.map((conversation) => {
-                        const otherUser = conversation.other_user;
-                        const lastMessage = conversation.last_message;
-                        const rawPreview = lastMessagePreview(lastMessage);
-                        const friendlyPreview = rawPreview === '📷 Photo' ? 'Sent you a photo' : rawPreview === '🎬 Video' ? 'Sent you a video' : rawPreview;
-                        const status = conversation.unread_count > 0 ? `${conversation.unread_count} new message${conversation.unread_count > 1 ? 's' : ''}` : friendlyPreview;
-                        return (
-                            <Link
-                                key={conversation.id}
-                                to={`/messages/${otherUser?.username}`}
-                                className="group flex items-center gap-3 p-3 rounded-xl hover:bg-white/5 transition-colors cursor-pointer"
-                            >
-                                <div className="relative shrink-0">
-                                    <Avatar src={otherUser?.profile_picture} alt={otherUser?.name} size="md" className="w-11 h-11 rounded-full object-cover" />
-                                    <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-[var(--theme-bg-sidebar)] rounded-full" />
-                                    {conversation.unread_count > 0 && (
-                                        <span className="absolute -top-0.5 -right-0.5 bg-red-500 text-white text-[10px] rounded-full w-4 h-4 flex items-center justify-center">{conversation.unread_count > 9 ? '9+' : conversation.unread_count}</span>
-                                    )}
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                    <div className="flex items-center justify-between mb-0.5">
-                                        <h5 className="text-sm font-bold truncate text-white">{otherUser?.name}</h5>
-                                        {lastMessage && <span className="text-[10px] text-slate-500 shrink-0">{formatDate(lastMessage.created_at)}</span>}
-                                    </div>
-                                    <p className="text-xs text-slate-500 truncate font-medium">{status}</p>
-                                </div>
-                            </Link>
-                        );
-                    })}
-                </div>
+            {activeTab === 'chats' && (
+                <>
+                    {conversationsLoading ? (
+                        <div className="flex justify-center py-4"><LoadingSpinner size="sm" /></div>
+                    ) : recentConversations.length === 0 ? (
+                        <div className="p-4 rounded-2xl bg-[var(--theme-surface)] text-center">
+                            <p className="text-sm text-slate-500">No conversations yet</p>
+                            <Link to="/messages" className="text-sm text-primary hover:underline mt-2 inline-block">Start a conversation</Link>
+                        </div>
+                    ) : (
+                        <div className="flex-1 overflow-y-auto custom-scrollbar space-y-1">
+                            {recentConversations.map((conversation) => {
+                                const otherUser = conversation.other_user;
+                                const lastMessage = conversation.last_message;
+                                const rawPreview = lastMessagePreview(lastMessage);
+                                const friendlyPreview = rawPreview === '📷 Photo' ? 'Sent you a photo' : rawPreview === '🎬 Video' ? 'Sent you a video' : rawPreview;
+                                const status = conversation.unread_count > 0 ? `${conversation.unread_count} new message${conversation.unread_count > 1 ? 's' : ''}` : friendlyPreview;
+                                return (
+                                    <Link
+                                        key={conversation.id}
+                                        to={`/messages/${otherUser?.username}`}
+                                        className="group flex items-center gap-3 p-3 rounded-xl hover:bg-white/5 transition-colors cursor-pointer"
+                                    >
+                                        <div className="relative shrink-0">
+                                            <Avatar src={otherUser?.profile_picture} alt={otherUser?.name} size="md" className="w-11 h-11 rounded-full object-cover" />
+                                            <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-[var(--theme-bg-sidebar)] rounded-full" />
+                                            {conversation.unread_count > 0 && (
+                                                <span className="absolute -top-0.5 -right-0.5 bg-red-500 text-white text-[10px] rounded-full w-4 h-4 flex items-center justify-center">{conversation.unread_count > 9 ? '9+' : conversation.unread_count}</span>
+                                            )}
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex items-center justify-between mb-0.5">
+                                                <h5 className="text-sm font-bold truncate text-white">{otherUser?.name}</h5>
+                                                {lastMessage && <span className="text-[10px] text-slate-500 shrink-0">{formatDate(lastMessage.created_at)}</span>}
+                                            </div>
+                                            <p className="text-xs text-slate-500 truncate font-medium">{status}</p>
+                                        </div>
+                                    </Link>
+                                );
+                            })}
+                        </div>
+                    )}
+                </>
             )}
 
-            <div className="mt-8">
-                <p className="text-[10px] uppercase font-bold text-slate-600 tracking-widest px-2 mb-4">Requests</p>
+            {activeTab === 'requests' && (
+            <div>
                 {friendRequestsLoading ? (
                     <div className="flex justify-center py-4"><LoadingSpinner size="sm" /></div>
                 ) : receivedRequests.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center p-8 bg-white/[0.02] border border-dashed border-white/10 rounded-2xl">
-                        <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center mb-3">
-                            <span className="material-symbols-outlined text-slate-500">mark_email_unread</span>
-                        </div>
-                        <p className="text-xs text-slate-500 text-center font-medium">No pending message requests</p>
+                    <div className="flex items-center gap-2 py-3 px-3 rounded-xl bg-white/[0.02]">
+                        <span className="material-symbols-outlined text-slate-500 text-lg">mark_email_unread</span>
+                        <p className="text-xs text-slate-500">No pending requests</p>
                     </div>
                 ) : (
-                        <div className="space-y-3">
+                        <div className="space-y-4">
                             {receivedRequests.slice(0, 3).map((request) => {
                                 const sender = request.sender;
                                 const isAccepting = acceptMutation.isPending && acceptMutation.variables === request.id;
                                 const isRejecting = rejectMutation.isPending && rejectMutation.variables === request.id;
                                 const isPending = isAccepting || isRejecting;
                                 return (
-                                    <div key={request.id} className="p-3 rounded-xl theme-surface">
-                                        <div className="flex items-center gap-3 mb-3">
+                                    <div key={request.id} className="p-4 rounded-xl theme-surface border border-white/5">
+                                        <div className="flex items-center gap-3 mb-4">
                                             <Link to={`/profile/${sender?.username}`} className="shrink-0">
                                                 <Avatar src={sender?.profile_picture} alt={sender?.name} size="lg" className="w-12 h-12" />
                                             </Link>
@@ -146,16 +139,16 @@ const RightSidebar = () => {
                                                 <Link to={`/profile/${sender?.username}`} className="text-sm font-medium text-white hover:text-[var(--theme-accent)] truncate block">
                                                     {sender?.name}
                                                 </Link>
-                                                <p className="text-xs text-gray-400">
+                                                <p className="text-xs text-gray-400 mt-0.5">
                                                     {sender?.followers_count != null ? `${sender.followers_count} mutual friends` : 'Wants to connect'}
                                                 </p>
                                             </div>
                                         </div>
-                                        <div className="flex gap-2">
-                                            <Button size="sm" variant="primary" onClick={() => acceptMutation.mutate(request.id)} disabled={isPending} loading={isAccepting} className="flex-1">
+                                        <div className="flex gap-3">
+                                            <Button size="sm" variant="primary" onClick={() => acceptMutation.mutate(request.id)} disabled={isPending} loading={isAccepting} className="flex-1 min-w-0">
                                                 Accept
                                             </Button>
-                                            <Button size="sm" variant="outline" onClick={() => rejectMutation.mutate(request.id)} disabled={isPending} loading={isRejecting} className="flex-1">
+                                            <Button size="sm" variant="outline" onClick={() => rejectMutation.mutate(request.id)} disabled={isPending} loading={isRejecting} className="flex-1 min-w-0">
                                                 Decline
                                             </Button>
                                         </div>
@@ -165,6 +158,7 @@ const RightSidebar = () => {
                         </div>
                     )}
             </div>
+            )}
         </aside>
     );
 };

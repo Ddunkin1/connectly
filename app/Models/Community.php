@@ -16,6 +16,7 @@ class Community extends Model
         'name',
         'slug',
         'description',
+        'avatar',
         'creator_id',
         'privacy',
         'requires_approval',

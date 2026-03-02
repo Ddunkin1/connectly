@@ -62,6 +62,18 @@ class StoryController extends Controller
     }
 
     /**
+     * Record that the current user viewed a story.
+     */
+    public function view(Request $request, Story $story): JsonResponse
+    {
+        if ($story->expires_at <= now()) {
+            return response()->json(['message' => 'Story has expired'], 404);
+        }
+        $this->storyService->recordView($request->user(), $story);
+        return response()->json(['message' => 'OK']);
+    }
+
+    /**
      * Get a single story (for viewer navigation).
      */
     public function show(Request $request, Story $story): JsonResponse

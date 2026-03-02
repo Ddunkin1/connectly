@@ -34,6 +34,20 @@ class AnalyticsController extends Controller
         $followerIds = $user->followers()->pluck('id');
         $reach = $followerIds->merge($likerIds)->merge($commenterIds)->unique()->count();
 
+        $posts = $user->posts()
+            ->where('is_archived', false)
+            ->withCount(['likes', 'allComments'])
+            ->orderBy('created_at', 'desc')
+            ->limit(10)
+            ->get()
+            ->map(fn (Post $post) => [
+                'id' => $post->id,
+                'content_preview' => mb_substr((string) $post->content, 0, 100),
+                'likes_count' => $post->likes_count ?? 0,
+                'comments_count' => $post->all_comments_count ?? 0,
+                'created_at' => $post->created_at?->toIso8601String(),
+            ]);
+
         return response()->json([
             'analytics' => [
                 'posts_count' => $postsCount,
@@ -42,6 +56,7 @@ class AnalyticsController extends Controller
                 'followers_count' => $followersCount,
                 'following_count' => $followingCount,
                 'reach_estimate' => $reach,
+                'recent_posts' => $posts,
             ],
         ]);
     }

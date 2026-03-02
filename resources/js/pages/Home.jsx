@@ -1,12 +1,12 @@
-import React, { useRef, useCallback, useState, useEffect } from 'react';
+import React, { useRef, useCallback, useEffect } from 'react';
 import { useFeed, useSuggestedPosts } from '../hooks/usePosts';
 import PostInput from '../components/posts/PostInput';
 import StoriesRow from '../components/feed/StoriesRow';
 import PostCard from '../components/posts/PostCard';
 import LoadingSpinner from '../components/common/LoadingSpinner';
+import OnboardingChecklistCard from '../components/onboarding/OnboardingChecklistCard';
 
 const Home = () => {
-    const [activeTab, setActiveTab] = useState('for-you');
     const postInputRef = useRef(null);
     const {
         data,
@@ -65,32 +65,17 @@ const Home = () => {
         }) || [];
 
     return (
-        <div className="w-full max-w-4xl">
-            <StoriesRow />
-            {/* Feed Tabs - glass-morphism oval, active-tab-glow */}
-            <div className="flex items-center justify-center mb-6">
-                <div className="glass-morphism p-1 rounded-full flex items-center">
-                    {['for-you', 'following', 'recent'].map((tab) => (
-                        <button
-                            key={tab}
-                            onClick={() => setActiveTab(tab)}
-                            className={`px-8 py-2 rounded-full text-sm font-medium transition-all ${
-                                activeTab === tab
-                                    ? 'bg-primary text-white active-tab-glow'
-                                    : 'text-slate-400 hover:text-white'
-                            }`}
-                        >
-                            {tab === 'for-you' ? 'For You' : tab === 'following' ? 'Following' : 'Recent'}
-                        </button>
-                    ))}
-                </div>
+        <div className="w-full">
+            <div className="mb-6">
+                <StoriesRow />
             </div>
+            <OnboardingChecklistCard />
 
             {/* Post creator - "What's on your mind?" pattern in card */}
             <div ref={postInputRef}>
                 <PostInput />
             </div>
-            <div className="space-y-4 pt-5">
+            <div className="space-y-5 pt-5">
                 {posts.length === 0 ? (
                     <div className="text-center py-12 glass-effect rounded-2xl">
                         <p className="text-sm text-slate-500">No posts yet. Start following people to see their posts!</p>

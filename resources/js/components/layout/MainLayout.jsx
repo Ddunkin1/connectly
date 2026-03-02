@@ -5,12 +5,12 @@ import RightSidebar from './RightSidebar';
 
 /**
  * MainLayout - 3-column layout with TopNav, LeftSidebar, Main, RightPanel.
- * Spec: Left 250px, Right 320px, Main flexible (Stitch AI reference).
- * Sidebars inset 24px from viewport edges to reduce gap between sidebars and feed.
+ * Target proportions: left ~18%, main ~64%, right ~18% (reference layout sizes).
+ * Sidebars equal width (240px) so main gets more space; inset from viewport edges.
  * Responsive: Desktop 1200+ full, Tablet 768-1199 hide right, Mobile <768 hamburger.
  */
-const SIDEBAR_LEFT = 250;
-const SIDEBAR_RIGHT = 320;
+const SIDEBAR_LEFT = 240;
+const SIDEBAR_RIGHT = 240;
 const SIDEBAR_INSET = 40; // px from viewport edge (left-10 / right-10)
 const BREAKPOINT_TABLET = 768;
 const BREAKPOINT_DESKTOP = 1200;

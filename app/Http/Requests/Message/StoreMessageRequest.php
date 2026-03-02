@@ -24,7 +24,7 @@ class StoreMessageRequest extends FormRequest
         return [
             'receiver_id' => ['required', 'exists:users,id', 'different:' . $this->user()->id],
             'message' => ['required_without:media', 'nullable', 'string', 'max:5000'],
-            'media' => ['nullable', 'file', 'mimes:jpeg,jpg,png,gif,webp,mp4,webm,mov', 'max:51200'], // 50MB
+            'media' => ['nullable', 'file', 'mimes:jpeg,jpg,png,gif,webp,mp4,webm,mov,pdf,doc,docx,xls,xlsx,ppt,pptx,txt,csv,zip', 'max:51200'], // 50MB
         ];
     }
 

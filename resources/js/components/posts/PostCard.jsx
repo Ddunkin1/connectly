@@ -110,7 +110,7 @@ const PostCard = ({ post, onDeleted, onCommentClick }) => {
     };
 
     return (
-        <article className="glass-effect overflow-hidden group mb-4 last:mb-0 p-4 rounded-2xl shadow-xl">
+        <article className="glass-effect overflow-hidden group mb-4 last:mb-0 p-5 rounded-2xl shadow-xl">
             {/* Post Header - Stitch: avatar ring-2 ring-primary/20, 1 HOUR AGO, public icon */}
             <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center space-x-3">
@@ -122,7 +122,7 @@ const PostCard = ({ post, onDeleted, onCommentClick }) => {
                             to={`/profile/${post.user?.username}`}
                             className="font-bold text-sm text-[var(--text-primary)] hover:text-primary block"
                         >
-                            {post.user?.name}
+                            {post.shared_post ? post.user?.username : post.user?.name}
                         </Link>
                         <div className="flex items-center gap-1.5 text-xs text-slate-500">
                             <span>{formatDateUppercase(post.created_at)}</span>
@@ -239,7 +239,7 @@ const PostCard = ({ post, onDeleted, onCommentClick }) => {
                 </div>
             )}
 
-            {/* Original post embed (when this is a share) – content clickable to post; like/comment/share on embed */}
+            {/* Original post embed (when this is a share) – content only, actions live on the sharing post */}
             {post.shared_post && (
                 <div className="mb-2 rounded-lg border border-gray-600 overflow-hidden bg-[var(--theme-surface)]">
                     <Link
@@ -270,75 +270,24 @@ const PostCard = ({ post, onDeleted, onCommentClick }) => {
                             </div>
                         )}
                         {post.shared_post.media_url && (
-                            <div className="mt-2 rounded overflow-hidden max-h-48">
+                            <div className="mt-2 rounded overflow-hidden bg-black/20">
                                 {post.shared_post.media_type === 'image' ? (
-                                    <img src={post.shared_post.media_url} alt="" className="w-full h-auto object-cover" />
+                                    <img
+                                        src={post.shared_post.media_url}
+                                        alt=""
+                                        className="w-full h-auto max-h-[650px] object-contain block"
+                                    />
                                 ) : (
-                                    <video src={post.shared_post.media_url} className="w-full max-h-48" controls onClick={(e) => e.stopPropagation()} />
+                                    <video
+                                        src={post.shared_post.media_url}
+                                        className="w-full max-h-[650px]"
+                                        controls
+                                        onClick={(e) => e.stopPropagation()}
+                                    />
                                 )}
                             </div>
                         )}
                     </Link>
-                    <div className="flex items-center gap-4 px-3 py-2 border-t border-gray-600 bg-[var(--theme-surface-hover)]/50">
-                        <button
-                            type="button"
-                            onClick={handleLikeInner(post.shared_post)}
-                            disabled={isLikePendingFor(post.shared_post.id)}
-                            className={`flex items-center gap-1.5 flex-shrink-0 transition-colors cursor-pointer disabled:opacity-60 ${
-                                post.shared_post.is_liked ? 'text-red-500 hover:text-red-400' : 'text-gray-400 hover:text-white'
-                            }`}
-                        >
-                            {post.shared_post.is_liked ? (
-                                <UilHeartAlt size={22} color="currentColor" />
-                            ) : (
-                                <UilHeart size={22} color="currentColor" />
-                            )}
-                            <span className="text-xs tabular-nums">{post.shared_post.likes_count ?? 0}</span>
-                        </button>
-                        <Link
-                            to={`/post/${post.shared_post.id}`}
-                            className="flex items-center gap-1.5 flex-shrink-0 text-gray-400 hover:text-[var(--theme-accent)] transition-colors cursor-pointer text-xs"
-                        >
-                            <UilComment size={22} color="currentColor" />
-                            {post.shared_post.comments_count ?? 0}
-                        </Link>
-                        <div className="relative flex-shrink-0">
-                            <button
-                                type="button"
-                                onClick={(e) => {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    setShareOpenInner((open) => !open);
-                                }}
-                                className="flex items-center gap-1.5 text-gray-400 hover:text-[var(--theme-accent)] transition-colors cursor-pointer text-xs"
-                            >
-                                <UilShare size={22} color="currentColor" />
-                                {post.shared_post.shares_count ?? 0}
-                            </button>
-                            {shareOpenInner && (
-                                <>
-                                    <div
-                                        className="fixed inset-0 z-10"
-                                        aria-hidden="true"
-                                        onClick={() => setShareOpenInner(false)}
-                                    />
-                                    <div className="absolute left-0 top-full mt-1 z-20 py-1 w-52 theme-surface rounded-lg border border-[var(--theme-border)] shadow-xl">
-                                        <button
-                                            type="button"
-                                            onClick={() => {
-                                                setShareOpenInner(false);
-                                                setShareToTimelinePost(post.shared_post);
-                                            }}
-                                            className="w-full px-4 py-2 text-left text-sm text-gray-300 hover:bg-white/10 flex items-center gap-2 cursor-pointer"
-                                        >
-                                            <UilMegaphone size={18} color="currentColor" />
-                                            Share to my timeline
-                                        </button>
-                                    </div>
-                                </>
-                            )}
-                        </div>
-                    </div>
                 </div>
             )}
 
@@ -349,13 +298,13 @@ const PostCard = ({ post, onDeleted, onCommentClick }) => {
                         <img
                             src={post.media_url}
                             alt="Post media"
-                            className="w-full h-auto max-h-[500px] object-contain block"
+                            className="w-full h-auto max-h-[650px] object-contain block"
                         />
                     ) : (
                         <video
                             src={post.media_url}
                             controls
-                            className="w-full h-auto max-h-[500px] object-contain block"
+                            className="w-full h-auto max-h-[650px] object-contain block"
                         >
                             Your browser does not support the video tag.
                         </video>
@@ -365,7 +314,7 @@ const PostCard = ({ post, onDeleted, onCommentClick }) => {
             {/* Text content - for text-only posts (no media) */}
             {!post.shared_post && !post.media_url && post.content && (
                 <Link to={`/post/${post.id}`}>
-                    <p className="text-slate-100 text-[15px] leading-relaxed mb-4 whitespace-pre-wrap">{highlightHashtags(post.content)}</p>
+                    <p className="text-slate-100 text-base leading-relaxed mb-4 whitespace-pre-wrap">{highlightHashtags(post.content)}</p>
                 </Link>
             )}
 
@@ -426,18 +375,18 @@ const PostCard = ({ post, onDeleted, onCommentClick }) => {
 
             {/* Post Actions - Stitch: like/comment/share left, bookmark right */}
             <div className="flex items-center justify-between pt-3 border-t border-white/5">
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-5">
                     <button
                         type="button"
                         onClick={handleLike}
                         disabled={isLikePendingFor(post.id)}
-                        className={`flex items-center gap-2 text-slate-400 transition-colors group/btn cursor-pointer disabled:opacity-60 ${
+                        className={`flex items-center gap-2.5 min-w-[44px] min-h-[44px] py-2 px-3 -my-2 -mx-1 rounded-xl text-slate-400 transition-colors group/btn cursor-pointer disabled:opacity-60 ${
                             post.is_liked
                                 ? 'text-rose-500 hover:text-rose-500'
                                 : 'hover:text-rose-500'
-                            }`}
+                            } hover:bg-white/5`}
                         >
-                            <span className={`material-symbols-outlined text-[20px] ${post.is_liked ? 'fill-rose-500' : ''}`}>favorite</span>
+                            <span className={`material-symbols-outlined text-[22px] ${post.is_liked ? 'fill-rose-500' : ''}`}>favorite</span>
                             <span className="text-xs font-medium">{(post.likes_count ?? 0) > 999 ? `${((post.likes_count ?? 0) / 1000).toFixed(1)}k` : post.likes_count ?? 0}</span>
                         </button>
 
@@ -445,17 +394,17 @@ const PostCard = ({ post, onDeleted, onCommentClick }) => {
                             <button
                                 type="button"
                                 onClick={onCommentClick}
-                                className="flex items-center gap-2 text-slate-400 hover:text-primary transition-colors cursor-pointer"
+                                className="flex items-center gap-2.5 min-w-[44px] min-h-[44px] py-2 px-3 -my-2 -mx-1 rounded-xl text-slate-400 hover:text-primary hover:bg-white/5 transition-colors cursor-pointer"
                             >
-                                <span className="material-symbols-outlined text-[20px]">chat_bubble</span>
+                                <span className="material-symbols-outlined text-[22px]">chat_bubble</span>
                                 <span className="text-xs font-medium">{post.comments_count ?? 0}</span>
                             </button>
                         ) : (
                             <Link
                                 to={`/post/${post.id}`}
-                                className="flex items-center gap-2 text-slate-400 hover:text-primary transition-colors cursor-pointer"
+                                className="flex items-center gap-2.5 min-w-[44px] min-h-[44px] py-2 px-3 -my-2 -mx-1 rounded-xl text-slate-400 hover:text-primary hover:bg-white/5 transition-colors cursor-pointer"
                             >
-                                <span className="material-symbols-outlined text-[20px]">chat_bubble</span>
+                                <span className="material-symbols-outlined text-[22px]">chat_bubble</span>
                                 <span className="text-xs font-medium">{post.comments_count ?? 0}</span>
                             </Link>
                         )}
@@ -467,9 +416,9 @@ const PostCard = ({ post, onDeleted, onCommentClick }) => {
                                     e.preventDefault();
                                     setShareOpen((open) => !open);
                                 }}
-                                className="flex items-center gap-2 text-slate-400 hover:text-sky-500 transition-colors cursor-pointer"
+                                className="flex items-center gap-2.5 min-w-[44px] min-h-[44px] py-2 px-3 -my-2 -mx-1 rounded-xl text-slate-400 hover:text-sky-500 hover:bg-white/5 transition-colors cursor-pointer"
                             >
-                                <span className="material-symbols-outlined text-[20px]">share</span>
+                                <span className="material-symbols-outlined text-[22px]">share</span>
                                 <span className="text-xs font-medium">{post.shares_count ?? 0}</span>
                             </button>
                         {shareOpen && (
@@ -501,11 +450,11 @@ const PostCard = ({ post, onDeleted, onCommentClick }) => {
                         type="button"
                         onClick={handleBookmark}
                         disabled={isBookmarkPending}
-                        className={`p-2 transition-colors cursor-pointer disabled:opacity-60 ${
-                            post.is_bookmarked ? 'text-primary' : 'text-slate-400 hover:text-primary'
+                        className={`min-w-[44px] min-h-[44px] py-2 px-3 -my-2 -mr-3 rounded-xl transition-colors cursor-pointer disabled:opacity-60 ${
+                            post.is_bookmarked ? 'text-primary' : 'text-slate-400 hover:text-primary hover:bg-white/5'
                         }`}
                     >
-                        <span className={`material-symbols-outlined text-[20px] ${post.is_bookmarked ? 'fill-primary' : ''}`}>bookmark</span>
+                        <span className={`material-symbols-outlined text-[22px] ${post.is_bookmarked ? 'fill-primary' : ''}`}>bookmark</span>
                     </button>
                 </div>
 
