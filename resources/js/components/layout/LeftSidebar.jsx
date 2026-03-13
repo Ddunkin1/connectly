@@ -28,7 +28,6 @@ const LeftSidebar = ({ className = '', onNavigate, positionBelowNav = false }) =
         { icon: 'bookmark', label: 'Bookmarks', path: '/bookmarks' },
         { icon: 'monitoring', label: 'Analytics', path: '/analytics' },
         { icon: 'person_add', label: 'Invites', path: '/invites' },
-        { icon: 'settings', label: 'Settings', path: '/settings' },
         ...(user?.role === 'admin' ? [{ icon: 'shield', label: 'Admin', path: '/admin/reports' }] : []),
     ];
 
@@ -51,13 +50,7 @@ const LeftSidebar = ({ className = '', onNavigate, positionBelowNav = false }) =
         });
     };
 
-    const handleCreatePost = () => {
-        navigate('/home');
-        setTimeout(() => window.dispatchEvent(new CustomEvent('open-create-post')), 100);
-    };
-
-    const wrapperClass = `w-[240px] fixed left-10 border-r border-white/5 flex flex-col p-4 bg-[var(--theme-bg-sidebar)] z-30 overflow-y-auto
-        ${positionBelowNav ? 'top-[60px] h-[calc(100vh-60px)]' : 'top-0 h-screen'}
+    const wrapperClass = `w-[240px] flex flex-col px-4 pt-6 pb-4 bg-[var(--theme-bg-sidebar)]/95 backdrop-blur-xl z-30 overflow-y-auto h-full
         ${className}`.trim();
 
     const handleNavClick = () => { onNavigate?.(); };
@@ -65,21 +58,21 @@ const LeftSidebar = ({ className = '', onNavigate, positionBelowNav = false }) =
     return (
         <aside className={wrapperClass}>
             {user && (
-                <div className="mb-8 px-2 relative" ref={userMenuRef}>
+                <div className="mb-8 px-1 relative" ref={userMenuRef}>
                     <button
                         type="button"
                         onClick={() => setShowUserMenu((v) => !v)}
-                        className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-white/5 transition-colors cursor-pointer text-left"
+                        className="w-full flex items-center gap-3 px-3 py-2.5 rounded-2xl bg-[var(--theme-surface)] hover:bg-[var(--theme-surface-hover)] transition-colors cursor-pointer text-left shadow-sm"
                     >
                         <Avatar src={user.profile_picture} alt={user.name} size="md" className="w-10 h-10 rounded-full shrink-0" />
                         <div className="flex flex-col overflow-hidden">
-                            <span className="text-sm font-bold text-[var(--text-primary)] truncate">{user.name}</span>
+                            <span className="text-sm font-semibold text-[var(--text-primary)] truncate">{user.name}</span>
                             <span className="text-xs text-slate-500 truncate">@{user.username}</span>
                         </div>
-                        <span className="material-symbols-outlined text-slate-500 ml-auto">expand_more</span>
+                        <span className="material-symbols-outlined text-slate-400 ml-auto text-lg">expand_more</span>
                     </button>
                     {showUserMenu && (
-                        <div className="absolute left-2 right-2 mt-1 py-1 rounded-xl theme-surface border border-[var(--theme-border)] shadow-xl z-50">
+                        <div className="absolute left-2 right-2 mt-2 py-1 rounded-2xl theme-surface border border-[var(--theme-border)] shadow-xl z-50">
                             <Link
                                 to={`/profile/${user.username}`}
                                 className="flex items-center gap-2 px-4 py-2.5 text-sm text-[var(--text-primary)] hover:bg-[var(--theme-surface-hover)]"
@@ -110,7 +103,7 @@ const LeftSidebar = ({ className = '', onNavigate, positionBelowNav = false }) =
                 </div>
             )}
 
-            <nav className="flex-1 space-y-1.5 mb-4" aria-label="Main navigation">
+            <nav className="flex-1 space-y-1 mb-4" aria-label="Main navigation">
                 {navItems.map((item) => {
                     const isActive =
                         item.path === location.pathname ||
@@ -121,14 +114,20 @@ const LeftSidebar = ({ className = '', onNavigate, positionBelowNav = false }) =
                             key={item.path}
                             to={item.path}
                             onClick={handleNavClick}
-                            className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all relative ${
+                            className={`group flex items-center gap-3 px-4 py-2.5 rounded-2xl transition-all relative ${
                                 isActive
-                                    ? 'bg-primary/10 text-primary active-tab-glow font-medium'
-                                    : 'text-slate-400 hover:text-white hover:bg-white/5'
+                                    ? 'bg-primary/10 text-primary shadow-[0_10px_30px_rgba(37,99,235,0.25)]'
+                                    : 'text-slate-500 hover:text-[var(--text-primary)] hover:bg-white/5'
                             }`}
                         >
-                            <span className="material-symbols-outlined text-[22px]">{item.icon}</span>
-                            <span>{item.label}</span>
+                            <span
+                                className={`material-symbols-outlined text-[22px] ${
+                                    isActive ? 'text-primary' : 'text-slate-400 group-hover:text-[var(--text-primary)]'
+                                }`}
+                            >
+                                {item.icon}
+                            </span>
+                            <span className="text-sm font-medium">{item.label}</span>
                             {item.badge > 0 && (
                                 <span className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 bg-red-500 text-[10px] flex items-center justify-center text-white rounded-full" aria-label={`${item.badge} unread`}>
                                     {item.badge > 99 ? '99+' : item.badge}
@@ -139,14 +138,19 @@ const LeftSidebar = ({ className = '', onNavigate, positionBelowNav = false }) =
                 })}
             </nav>
 
-            <button
-                type="button"
-                onClick={handleCreatePost}
-                className="mesh-gradient w-full h-12 min-h-12 py-3.5 rounded-xl font-semibold text-white shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center space-x-2"
-            >
-                <span className="material-symbols-outlined text-sm">add</span>
-                <span>Create Post</span>
-            </button>
+            <div className="mt-2">
+                <button
+                    type="button"
+                    onClick={() => { navigate('/settings'); handleNavClick(); }}
+                    className="w-full h-11 min-h-11 px-4 rounded-2xl font-medium text-sm flex items-center justify-between bg-[var(--theme-surface)] hover:bg-[var(--theme-surface-hover)] text-[var(--text-primary)] transition-colors cursor-pointer border border-[var(--theme-border)]/60"
+                >
+                    <div className="flex items-center gap-3">
+                        <span className="material-symbols-outlined text-[20px] text-[var(--text-primary)]/80">settings</span>
+                        <span>Settings</span>
+                    </div>
+                    <span className="material-symbols-outlined text-[18px] text-[var(--text-primary)]/50">chevron_right</span>
+                </button>
+            </div>
         </aside>
     );
 };

@@ -29,6 +29,7 @@ const Messages = () => {
     const [newGroupModalOpen, setNewGroupModalOpen] = useState(false);
     const [groupAddModalOpen, setGroupAddModalOpen] = useState(false);
     const [conversationMedia, setConversationMedia] = useState([]);
+    const [conversationPinned, setConversationPinned] = useState([]);
     const [sharedMediaModalOpen, setSharedMediaModalOpen] = useState(false);
     
     // If username is provided, get or create conversation by username
@@ -134,8 +135,28 @@ const Messages = () => {
                             <input type="text" placeholder="Search conversations..." className="w-full bg-[var(--theme-surface)] border-0 rounded-lg pl-9 pr-3 py-2.5 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-primary)]/50 focus:ring-2 focus:ring-primary/30 focus:outline-none" />
                         </div>
                         <div className="flex p-1 bg-[var(--theme-surface)] rounded-lg mt-4">
-                            <button type="button" onClick={() => setActiveTab('direct')} className={`flex-1 py-2 text-xs font-medium rounded-md transition-all ${activeTab === 'direct' ? 'bg-primary text-white' : 'text-[var(--text-primary)]/70 hover:text-[var(--text-primary)]'}`}>Direct</button>
-                            <button type="button" onClick={() => setActiveTab('groups')} className={`flex-1 py-2 text-xs font-medium rounded-md transition-all ${activeTab === 'groups' ? 'bg-primary text-white' : 'text-[var(--text-primary)]/70 hover:text-[var(--text-primary)]'}`}>Groups</button>
+                            <button
+                                type="button"
+                                onClick={() => setActiveTab('direct')}
+                                className={`flex-1 py-2 text-xs font-medium rounded-md transition-all cursor-pointer ${
+                                    activeTab === 'direct'
+                                        ? 'bg-primary text-white'
+                                        : 'text-[var(--text-primary)]/70 hover:text-[var(--text-primary)]'
+                                }`}
+                            >
+                                Direct
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setActiveTab('groups')}
+                                className={`flex-1 py-2 text-xs font-medium rounded-md transition-all cursor-pointer ${
+                                    activeTab === 'groups'
+                                        ? 'bg-primary text-white'
+                                        : 'text-[var(--text-primary)]/70 hover:text-[var(--text-primary)]'
+                                }`}
+                            >
+                                Groups
+                            </button>
                         </div>
                     </div>
                     {showDirectContent && (
@@ -217,6 +238,7 @@ const Messages = () => {
                                         <MessageThread
                                             conversationId={displayConversation.id}
                                             onMediaFromMessages={setConversationMedia}
+                                            onPinnedFromMessages={setConversationPinned}
                                         />
                                     </div>
                                     <div className="shrink-0">
@@ -270,6 +292,7 @@ const Messages = () => {
                             <MessageUserPanel
                                 otherUser={displayConversation.other_user}
                                 mediaItems={conversationMedia}
+                                pinnedItems={conversationPinned}
                                 onViewAllMedia={() => setSharedMediaModalOpen(true)}
                             />
                         </section>

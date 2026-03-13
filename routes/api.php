@@ -187,6 +187,8 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function () {
     Route::post('/messages', [MessageController::class, 'store']);
     Route::patch('/messages/{message}', [MessageController::class, 'update']);
     Route::delete('/messages/{message}', [MessageController::class, 'destroy']);
+    Route::post('/messages/{message}/pin', [MessageController::class, 'pin']);
+    Route::post('/messages/{message}/unpin', [MessageController::class, 'unpin']);
     Route::get('/conversations/{conversation}/messages', [MessageController::class, 'index']);
     Route::get('/conversations/{conversation}/media', [MessageController::class, 'media']);
     Route::post('/conversations/{conversation}/read', [MessageController::class, 'markAsRead']);

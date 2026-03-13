@@ -22,6 +22,8 @@ class Message extends Model
         'read_at',
         'edited_at',
         'deleted_by',
+        'is_pinned',
+        'pinned_at',
     ];
 
     protected function casts(): array
@@ -33,6 +35,8 @@ class Message extends Model
             'deleted_at' => 'datetime',
             'created_at' => 'datetime',
             'updated_at' => 'datetime',
+            'is_pinned' => 'boolean',
+            'pinned_at' => 'datetime',
         ];
     }
 

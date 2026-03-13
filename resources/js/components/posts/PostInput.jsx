@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useId } from 'react';
 import { useForm } from 'react-hook-form';
 import { useCreatePost } from '../../hooks/usePosts';
 import useAuthStore from '../../store/authStore';
@@ -9,7 +9,7 @@ import { UilGlobe, UilUsersAlt, UilTimes } from '../common/Icons';
 
 /* Post input: 64px height pill, 40px avatar, 80x40 Post button */
 
-const PostInput = ({ onPostCreated }) => {
+const PostInput = ({ onPostCreated, variant = 'feed' }) => {
     const user = useAuthStore((state) => state.user);
     const { register, handleSubmit, reset, watch } = useForm({ defaultValues: { visibility: 'public' } });
     const createPostMutation = useCreatePost();
@@ -22,6 +22,7 @@ const PostInput = ({ onPostCreated }) => {
     const [pollOptions, setPollOptions] = useState(['', '']);
 
     const content = watch('content', '');
+    const mediaInputId = useId();
     const hasPoll = pollMode && pollQuestion.trim() && pollOptions.filter((o) => o.trim()).length >= 2;
     const isFormValid = content.trim().length > 0 || mediaFile !== null || hasPoll;
 
@@ -127,8 +128,13 @@ const PostInput = ({ onPostCreated }) => {
         }
     };
 
+    const containerClasses =
+        variant === 'modal'
+            ? 'rounded-2xl p-5 shadow-xl bg-[var(--theme-surface)] border border-[var(--theme-border)]'
+            : 'glass-effect rounded-2xl p-5 mb-6 shadow-xl transition-all duration-200 focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary/30 border border-transparent';
+
     return (
-        <div className="glass-effect rounded-2xl p-5 mb-6 shadow-xl transition-all duration-200 focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary/30 border border-transparent">
+        <div className={containerClasses}>
             <form onSubmit={handleSubmit(onSubmit)}>
                 <div className="flex items-start gap-4">
                     <Avatar src={user?.profile_picture} alt={user?.name} size="lg" className="w-10 h-10 shrink-0 rounded-full ring-2 ring-primary/20" />
@@ -138,13 +144,13 @@ const PostInput = ({ onPostCreated }) => {
                             placeholder="Share a thought, a photo, or a poll..."
                             onFocus={() => setIsExpanded(true)}
                             rows={2}
-                            className="w-full bg-transparent border-none focus:ring-0 text-[15px] leading-relaxed resize-none min-h-[48px] py-3 text-white placeholder:text-slate-500 focus:outline-none"
+                            className="w-full bg-transparent border-none focus:ring-0 text-[15px] leading-relaxed resize-none min-h-[48px] py-3 text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] focus:outline-none"
                         />
                         <div className="flex items-center justify-between pt-4 border-t border-white/5">
                             <div className="flex items-center gap-2">
-                                <label htmlFor="media-upload" className="p-2 rounded-xl hover:bg-white/5 text-primary cursor-pointer transition-colors">
+                                <label htmlFor={mediaInputId} className="p-2 rounded-xl hover:bg-white/5 text-primary cursor-pointer transition-colors">
                                     <span className="material-symbols-outlined">image</span>
-                                    <input type="file" id="media-upload" accept="image/*,video/*" onChange={handleFileChange} className="hidden" />
+                                    <input type="file" id={mediaInputId} accept="image/*,video/*" onChange={handleFileChange} className="hidden" />
                                 </label>
                                 <button type="button" className="p-2 rounded-xl hover:bg-white/5 text-primary transition-colors">
                                     <span className="material-symbols-outlined">videocam</span>
@@ -175,13 +181,13 @@ const PostInput = ({ onPostCreated }) => {
                 {isExpanded && (
                     <div className="mt-4 pt-4 border-t border-white/5 flex items-center justify-between flex-wrap gap-2">
                         <div className="flex items-center gap-6">
-                            <span className="text-sm text-[#9CA3AF]">Who can see this?</span>
-                            <label className="flex items-center gap-1.5 cursor-pointer text-[#9CA3AF] hover:text-white text-sm">
+                            <span className="text-sm text-[var(--text-secondary)]">Who can see this?</span>
+                            <label className="flex items-center gap-1.5 cursor-pointer text-[var(--text-secondary)] hover:text-[var(--text-primary)] text-sm">
                                 <input type="radio" value="public" {...register('visibility')} className="text-[var(--theme-accent)]" />
                                 <UilGlobe size={16} color="currentColor" />
                                 Public
                             </label>
-                            <label className="flex items-center gap-1.5 cursor-pointer text-[#9CA3AF] hover:text-white text-sm">
+                            <label className="flex items-center gap-1.5 cursor-pointer text-[var(--text-secondary)] hover:text-[var(--text-primary)] text-sm">
                                 <input type="radio" value="followers" {...register('visibility')} className="text-[var(--theme-accent)]" />
                                 <UilUsersAlt size={16} color="currentColor" />
                                 Friends only
@@ -194,13 +200,13 @@ const PostInput = ({ onPostCreated }) => {
                 )}
 
                 {pollMode && (
-                    <div className="mt-4 p-4 rounded-xl bg-white/5 border border-white/10 space-y-3">
+                    <div className="mt-4 p-4 rounded-xl bg-[var(--theme-surface)] border border-[var(--theme-border)] space-y-3">
                         <input
                             type="text"
                             value={pollQuestion}
                             onChange={(e) => setPollQuestion(e.target.value)}
                             placeholder="Ask a question..."
-                            className="w-full px-4 py-2 rounded-lg bg-[#1A1A1A] border border-gray-700 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[var(--theme-accent)]"
+                            className="w-full px-4 py-2 rounded-lg bg-[var(--theme-bg-main)] border border-[var(--theme-border)] text-[var(--text-primary)] placeholder:[color:var(--text-secondary)] focus:outline-none focus:ring-2 focus:ring-[var(--theme-accent)]"
                         />
                         <div className="space-y-2">
                             {pollOptions.map((opt, i) => (
@@ -210,7 +216,7 @@ const PostInput = ({ onPostCreated }) => {
                                         value={opt}
                                         onChange={(e) => setPollOption(i, e.target.value)}
                                         placeholder={`Option ${i + 1}`}
-                                        className="flex-1 px-4 py-2 rounded-lg bg-[#1A1A1A] border border-gray-700 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[var(--theme-accent)]"
+                                        className="flex-1 px-4 py-2 rounded-lg bg-[var(--theme-bg-main)] border border-[var(--theme-border)] text-[var(--text-primary)] placeholder:[color:var(--text-secondary)] focus:outline-none focus:ring-2 focus:ring-[var(--theme-accent)]"
                                     />
                                     <button
                                         type="button"

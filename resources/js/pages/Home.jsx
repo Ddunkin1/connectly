@@ -65,60 +65,77 @@ const Home = () => {
         }) || [];
 
     return (
-        <div className="w-full">
-            <div className="mb-6">
-                <StoriesRow />
-            </div>
-            <OnboardingChecklistCard />
+        <div className="w-full space-y-6">
+            {/* Main content + right column */}
+            <div className="flex gap-8 xl:gap-10 items-start">
+                {/* Center column */}
+                <div className="flex-1 min-w-0 space-y-6">
+                    {/* Stories / onboarding */}
+                    <div className="space-y-4">
+                        <div>
+                            <StoriesRow />
+                        </div>
+                        <OnboardingChecklistCard />
+                    </div>
 
-            {/* Post creator - "What's on your mind?" pattern in card */}
-            <div ref={postInputRef}>
-                <PostInput />
-            </div>
-            <div className="space-y-5 pt-5">
-                {posts.length === 0 ? (
-                    <div className="text-center py-12 glass-effect rounded-2xl">
-                        <p className="text-sm text-slate-500">No posts yet. Start following people to see their posts!</p>
+                    {/* Post composer */}
+                    <div ref={postInputRef}>
+                        <PostInput />
                     </div>
-                ) : (
-                    posts.map((post, index) => {
-                        const isLast = posts.length === index + 1;
-                        const showSuggestedAfter = index === 2 && suggestedPosts.length > 0;
-                        return (
-                            <React.Fragment key={post.id}>
-                                {isLast ? (
-                                    <div ref={lastPostElementRef}>
-                                        <PostCard post={post} onCommentClick={() => {}} />
-                                    </div>
-                                ) : (
-                                    <PostCard post={post} onCommentClick={() => {}} />
-                                )}
-                                {showSuggestedAfter && (
-                                    <>
-                                    <div className="flex items-center gap-3 px-2 py-2">
-                                        <div className="h-px flex-1 bg-white/10" />
-                                        <span className="text-[10px] uppercase font-bold text-slate-600 tracking-widest">Suggested for you</span>
-                                        <div className="h-px flex-1 bg-white/10" />
-                                    </div>
-                                    <div className="glass-effect rounded-2xl p-6 shadow-xl">
-                                        <p className="text-sm font-semibold mb-4 text-slate-100">Suggested for you</p>
-                                        <div className="space-y-6">
-                                            {suggestedPosts.map((sp) => (
-                                                <PostCard key={sp.id} post={sp} onCommentClick={() => {}} />
-                                            ))}
-                                        </div>
-                                    </div>
-                                    </>
-                                )}
-                            </React.Fragment>
-                        );
-                    })
-                )}
-                {isFetchingNextPage && (
-                    <div className="flex justify-center py-2">
-                        <LoadingSpinner />
+
+                    {/* Feed - single column list */}
+                    <div className="space-y-5">
+                        {posts.length === 0 ? (
+                            <div className="text-center py-12 glass-effect rounded-2xl">
+                                <p className="text-sm text-slate-500">
+                                    No posts yet. Start following people to see their posts!
+                                </p>
+                            </div>
+                        ) : (
+                            posts.map((post, index) => {
+                                const isLast = posts.length === index + 1;
+                                const showSuggestedAfter = index === 2 && suggestedPosts.length > 0;
+                                return (
+                                    <React.Fragment key={post.id}>
+                                        {isLast ? (
+                                            <div ref={lastPostElementRef}>
+                                                <PostCard post={post} onCommentClick={() => {}} />
+                                            </div>
+                                        ) : (
+                                            <PostCard post={post} onCommentClick={() => {}} />
+                                        )}
+                                        {showSuggestedAfter && (
+                                            <>
+                                                <div className="flex items-center gap-3 px-2 py-2">
+                                                    <div className="h-px flex-1 bg-white/10" />
+                                                    <span className="text-[10px] uppercase font-bold text-slate-600 tracking-widest">
+                                                        Suggested for you
+                                                    </span>
+                                                    <div className="h-px flex-1 bg-white/10" />
+                                                </div>
+                                                <div className="glass-effect rounded-2xl p-6 shadow-xl">
+                                                    <p className="text-sm font-semibold mb-4 text-slate-100">
+                                                        Suggested for you
+                                                    </p>
+                                                    <div className="space-y-6">
+                                                        {suggestedPosts.map((sp) => (
+                                                            <PostCard key={sp.id} post={sp} onCommentClick={() => {}} />
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            </>
+                                        )}
+                                    </React.Fragment>
+                                );
+                            })
+                        )}
+                        {isFetchingNextPage && (
+                            <div className="flex justify-center py-2">
+                                <LoadingSpinner />
+                            </div>
+                        )}
                     </div>
-                )}
+                </div>
             </div>
         </div>
     );

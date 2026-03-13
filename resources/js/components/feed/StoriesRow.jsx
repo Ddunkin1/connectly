@@ -50,8 +50,11 @@ const StoriesRow = () => {
                         className="flex flex-col items-center space-y-2 flex-shrink-0 cursor-pointer group"
                         aria-label="Add your story"
                     >
-                        <div className="w-14 h-14 rounded-xl bg-primary flex items-center justify-center shrink-0 transition-all duration-200 group-hover:opacity-90 group-hover:scale-105">
-                            <span className="material-symbols-outlined text-white text-xl font-bold">add</span>
+                        <div
+                            className="w-14 h-14 rounded-full bg-primary flex items-center justify-center shrink-0 transition-all duration-200 group-hover:opacity-90 group-hover:scale-105"
+                            style={{ borderRadius: '9999px' }}
+                        >
+                            <span className="material-symbols-outlined text-white text-2xl font-bold">add</span>
                         </div>
                         <span className="text-[10px] font-bold text-primary">Add story</span>
                     </button>

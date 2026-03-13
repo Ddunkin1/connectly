@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { useDeleteMessage, useMessages, useUpdateMessage, useSendMessage } from '../../hooks/useMessages';
+import { useDeleteMessage, useMessages, useUpdateMessage, useSendMessage, usePinMessage, useUnpinMessage } from '../../hooks/useMessages';
 import { useConversations } from '../../hooks/useConversations';
 import { getEcho } from '../../echo';
 import LoadingSpinner from '../common/LoadingSpinner';
@@ -24,7 +24,7 @@ const formatMessageTime = (dateStr) => {
     return new Date(dateStr).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
 };
 
-const MessageThread = ({ conversationId, onMediaFromMessages }) => {
+const MessageThread = ({ conversationId, onMediaFromMessages, onPinnedFromMessages }) => {
     const user = useAuthStore((state) => state.user);
     const queryClient = useQueryClient();
     const updateMessageMutation = useUpdateMessage();
@@ -49,6 +49,7 @@ const MessageThread = ({ conversationId, onMediaFromMessages }) => {
     const [editingMediaPreview, setEditingMediaPreview] = useState(null);
     const [openMenuMessageId, setOpenMenuMessageId] = useState(null);
     const [messageToDelete, setMessageToDelete] = useState(null);
+    const [hiddenMessageIds, setHiddenMessageIds] = useState([]);
     const [imagePreviewUrl, setImagePreviewUrl] = useState(null);
     const [imageMenuOpen, setImageMenuOpen] = useState(false);
     const [forwardModalOpen, setForwardModalOpen] = useState(false);
@@ -56,9 +57,12 @@ const MessageThread = ({ conversationId, onMediaFromMessages }) => {
     const imageMenuRef = useRef(null);
     const { data: conversationsData } = useConversations();
     const sendMessageMutation = useSendMessage();
+    const pinMessageMutation = usePinMessage();
+    const unpinMessageMutation = useUnpinMessage();
     const conversations = conversationsData?.pages?.flatMap((p) => p?.data?.conversations || []) || [];
 
     const messages = data?.pages.flatMap((page) => page.data.messages).reverse() || [];
+    const visibleMessages = messages.filter((m) => !hiddenMessageIds.includes(m.id));
 
     const patchMessageInCache = (patchedMessage) => {
         if (!patchedMessage) return;
@@ -90,6 +94,40 @@ const MessageThread = ({ conversationId, onMediaFromMessages }) => {
             onMediaFromMessages(mediaForPanel);
         }
     }, [mediaDeps, onMediaFromMessages]); // eslint-disable-line react-hooks/exhaustive-deps -- mediaForPanel derived from mediaDeps
+
+    // Derive pinned messages for right panel (local, per-session)
+    const pinnedForPanel = messages
+        .filter((m) => m.is_pinned && !m.is_deleted)
+        .map((m) => ({
+            id: m.id,
+            title:
+                m.message ||
+                (m.attachment_url
+                    ? m.attachment_type === 'video'
+                        ? '🎬 Video'
+                        : m.attachment_type === 'file'
+                            ? '📎 File'
+                            : '📷 Photo'
+                    : 'Pinned message'),
+            meta: formatMessageTime(m.created_at),
+        }));
+    const pinnedDeps = pinnedForPanel.length + pinnedForPanel.map((p) => p.id).join(',');
+    useEffect(() => {
+        if (!onPinnedFromMessages) return;
+        // Attach scroll handlers lazily so callbacks don't break serialization
+        const itemsWithHandlers = pinnedForPanel.map((item) => ({
+            ...item,
+            onClick: () => {
+                const el = messagesContainerRef.current?.querySelector?.(
+                    `[data-message-id=\"${item.id}\"]`
+                );
+                if (el) {
+                    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            },
+        }));
+        onPinnedFromMessages(itemsWithHandlers);
+    }, [pinnedDeps, onPinnedFromMessages]); // eslint-disable-line react-hooks/exhaustive-deps
 
     // Subscribe to real-time messages via Reverb
     useEffect(() => {
@@ -297,7 +335,13 @@ const MessageThread = ({ conversationId, onMediaFromMessages }) => {
         setMessageToDelete(messageId);
     };
 
-    const deleteMessage = async () => {
+    const hideMessageForMe = (messageId) => {
+        setHiddenMessageIds((prev) => (prev.includes(messageId) ? prev : [...prev, messageId]));
+        setMessageToDelete(null);
+        toast.success('Message deleted for you.');
+    };
+
+    const deleteMessageForEveryone = async () => {
         if (!messageToDelete) return;
         try {
             await deleteMessageMutation.mutateAsync(messageToDelete);
@@ -305,6 +349,20 @@ const MessageThread = ({ conversationId, onMediaFromMessages }) => {
         } catch {
             // Toast handled by hook
         }
+    };
+
+    const togglePin = (message) => {
+        const messageId = message.id;
+        const isPinned = !!message.is_pinned;
+        const mutate = isPinned ? unpinMessageMutation : pinMessageMutation;
+        mutate
+            .mutateAsync(messageId)
+            .catch(() => {
+                // toast handled in hook
+            })
+            .finally(() => {
+                setOpenMenuMessageId(null);
+            });
     };
 
     // Close message menu when clicking outside
@@ -340,10 +398,10 @@ const MessageThread = ({ conversationId, onMediaFromMessages }) => {
         );
     }
 
-    // Group messages by date for separators
+    // Group messages by date for separators (only visible messages)
     const grouped = [];
     let lastDateKey = null;
-    messages.forEach((msg) => {
+    visibleMessages.forEach((msg) => {
         const dateKey = msg.created_at ? new Date(msg.created_at).toDateString() : '';
         if (dateKey && dateKey !== lastDateKey) {
             grouped.push({ type: 'separator', date: msg.created_at });
@@ -388,8 +446,15 @@ const MessageThread = ({ conversationId, onMediaFromMessages }) => {
                     const isDeleted = !!message.is_deleted;
                     const isEditing = editingMessageId === message.id;
                     const menuOpen = openMenuMessageId === message.id;
+                    const isPinned = !!message.is_pinned;
                     return (
-                        <div key={message.id} className={`flex items-end gap-3 w-full max-w-[94%] min-w-0 ${isOwnMessage ? 'self-end flex-row-reverse' : ''}`}>
+                        <div
+                            key={message.id}
+                            data-message-id={message.id}
+                            className={`flex items-end gap-3 w-full max-w-[94%] min-w-0 ${
+                                isOwnMessage ? 'self-end flex-row-reverse' : ''
+                            }`}
+                        >
                             {!isOwnMessage && (
                                 <img src={message.sender?.profile_picture} alt={message.sender?.name} className="w-8 h-8 rounded-full object-cover shrink-0" />
                             )}
@@ -501,7 +566,11 @@ const MessageThread = ({ conversationId, onMediaFromMessages }) => {
                                             </div>
                                         </div>
                                         <div className={`flex items-center gap-1.5 mt-1.5 text-[11px] text-[var(--text-primary)]/60 ${isOwnMessage ? 'justify-end' : 'justify-start'}`}>
-                                            <span>{formatMessageTime(message.created_at)}{message.edited_at && !isDeleted ? ' · edited' : ''}</span>
+                                            <span>
+                                                {formatMessageTime(message.created_at)}
+                                                {message.edited_at && !isDeleted ? ' · edited' : ''}
+                                                {isPinned && !isDeleted ? ' · Pinned' : ''}
+                                            </span>
                                             {isOwnMessage && <span className="material-symbols-outlined text-[14px]" aria-hidden>done_all</span>}
                                             {isOwnMessage && !isDeleted && (
                                                 <div className="relative" ref={menuOpen ? menuRef : null}>
@@ -516,7 +585,17 @@ const MessageThread = ({ conversationId, onMediaFromMessages }) => {
                                                     {menuOpen && (
                                                         <>
                                                             <div className="fixed inset-0 z-10" onClick={() => setOpenMenuMessageId(null)} aria-hidden="true" />
-                                                            <div className="message-menu-dropdown absolute bottom-full right-0 mb-1.5 py-1 min-w-[160px] rounded-xl bg-[var(--theme-surface-hover)] border border-[var(--theme-border)] z-20 overflow-hidden shadow-lg">
+                                                            <div className="message-menu-dropdown absolute bottom-full right-0 mb-1.5 py-1 min-w-[180px] rounded-xl bg-[var(--theme-surface-hover)] border border-[var(--theme-border)] z-20 overflow-hidden shadow-lg">
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => togglePin(message)}
+                                                                    className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-[var(--text-primary)] hover:bg-[var(--theme-surface)] transition-colors text-left"
+                                                                >
+                                                                    <span className="material-symbols-outlined text-lg text-[var(--text-primary)]/70">
+                                                                        {isPinned ? 'bookmark_remove' : 'bookmark_add'}
+                                                                    </span>
+                                                                    {isPinned ? 'Unpin message' : 'Pin message'}
+                                                                </button>
                                                                 <button
                                                                     type="button"
                                                                     onClick={() => { setOpenMenuMessageId(null); startEdit(message); }}
@@ -541,7 +620,7 @@ const MessageThread = ({ conversationId, onMediaFromMessages }) => {
                                                                     className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-400 hover:bg-red-500/10 transition-colors text-left disabled:opacity-50"
                                                                 >
                                                                     <span className="material-symbols-outlined text-lg">delete</span>
-                                                                    Delete
+                                                                    Delete…
                                                                 </button>
                                                             </div>
                                                         </>
@@ -564,29 +643,45 @@ const MessageThread = ({ conversationId, onMediaFromMessages }) => {
                 title="Delete message?"
                 size="sm"
             >
-                <p className="text-[var(--text-primary)]/90 text-sm mb-6">This message will be removed for everyone in the chat. You can't undo this.</p>
-                <div className="flex justify-end gap-3">
-                    <button
-                        type="button"
-                        onClick={() => setMessageToDelete(null)}
-                        className="px-4 py-2 rounded-xl text-sm font-medium bg-[var(--theme-border)] text-[var(--text-primary)] hover:opacity-80 transition-colors"
-                    >
-                        Cancel
-                    </button>
-                    <button
-                        type="button"
-                        onClick={deleteMessage}
-                        disabled={deleteMessageMutation.isPending}
-                        className="px-4 py-2 rounded-xl text-sm font-medium bg-red-500 text-white hover:bg-red-600 disabled:opacity-50 flex items-center gap-2 transition-colors"
-                    >
-                        {deleteMessageMutation.isPending ? (
-                            <span className="material-symbols-outlined text-lg animate-spin">progress_activity</span>
-                        ) : (
-                            <span className="material-symbols-outlined text-lg">delete</span>
-                        )}
-                        Delete
-                    </button>
-                </div>
+                {(() => {
+                    const msg = messages.find((m) => m.id === messageToDelete);
+                    const isOwn = msg?.sender?.id === user?.id;
+                    return (
+                        <>
+                            <p className="text-[var(--text-primary)]/90 text-sm mb-6">
+                                {isOwn
+                                    ? 'Choose how you want to delete this message.'
+                                    : 'This message will be removed from your view only.'}
+                            </p>
+                            <div className="flex flex-col sm:flex-row justify-end gap-3">
+                                <button
+                                    type="button"
+                                    onClick={() => hideMessageForMe(messageToDelete)}
+                                    className="px-4 py-2 rounded-xl text-sm font-medium bg-[var(--theme-surface)] text-[var(--text-primary)] hover:bg-[var(--theme-surface-hover)] transition-colors"
+                                >
+                                    Delete for me
+                                </button>
+                                {isOwn && (
+                                    <button
+                                        type="button"
+                                        onClick={deleteMessageForEveryone}
+                                        disabled={deleteMessageMutation.isPending}
+                                        className="px-4 py-2 rounded-xl text-sm font-medium bg-red-500 text-white hover:bg-red-600 disabled:opacity-50 flex items-center gap-2 transition-colors"
+                                    >
+                                        {deleteMessageMutation.isPending ? (
+                                            <span className="material-symbols-outlined text-lg animate-spin">
+                                                progress_activity
+                                            </span>
+                                        ) : (
+                                            <span className="material-symbols-outlined text-lg">delete</span>
+                                        )}
+                                        Delete for everyone
+                                    </button>
+                                )}
+                            </div>
+                        </>
+                    );
+                })()}
             </Modal>
 
             <Modal isOpen={!!imagePreviewUrl} onClose={() => { setImagePreviewUrl(null); setImageMenuOpen(false); setForwardModalOpen(false); }} size="xl">

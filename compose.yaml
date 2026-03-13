@@ -25,6 +25,10 @@ services:
             - sail
         depends_on:
             - mysql
+            - redis
+            - meilisearch
+            - mailpit
+            - selenium
     reverb:
         build:
             context: ./vendor/laravel/sail/runtimes/8.5
@@ -45,7 +49,7 @@ services:
             - laravel.test
         ports:
             - '8080:8080'
-        command: php artisan reverb:start
+        command: 'php artisan reverb:start'
     queue:
         build:
             context: ./vendor/laravel/sail/runtimes/8.5
@@ -64,7 +68,7 @@ services:
             - sail
         depends_on:
             - laravel.test
-        command: php artisan queue:work --queue=default,broadcasting --tries=3
+        command: 'php artisan queue:work --queue=default,broadcasting --tries=3'
     vite:
         build:
             context: ./vendor/laravel/sail/runtimes/8.5
@@ -85,7 +89,7 @@ services:
             - laravel.test
         ports:
             - '${VITE_PORT:-5174}:5174'
-        command: npx vite --host 0.0.0.0 --port 5174
+        command: 'npx vite --host 0.0.0.0 --port 5174'
     mysql:
         image: 'mysql:8.4'
         ports:
@@ -111,9 +115,62 @@ services:
                 - '-p${DB_PASSWORD}'
             retries: 3
             timeout: 5s
+    redis:
+        image: 'redis:alpine'
+        ports:
+            - '${FORWARD_REDIS_PORT:-6379}:6379'
+        volumes:
+            - 'sail-redis:/data'
+        networks:
+            - sail
+        healthcheck:
+            test:
+                - CMD
+                - redis-cli
+                - ping
+            retries: 3
+            timeout: 5s
+    meilisearch:
+        image: 'getmeili/meilisearch:latest'
+        ports:
+            - '${FORWARD_MEILISEARCH_PORT:-7700}:7700'
+        environment:
+            MEILI_NO_ANALYTICS: '${MEILISEARCH_NO_ANALYTICS:-false}'
+        volumes:
+            - 'sail-meilisearch:/meili_data'
+        networks:
+            - sail
+        healthcheck:
+            test:
+                - CMD
+                - wget
+                - '--no-verbose'
+                - '--spider'
+                - 'http://127.0.0.1:7700/health'
+            retries: 3
+            timeout: 5s
+    mailpit:
+        image: 'axllent/mailpit:latest'
+        ports:
+            - '${FORWARD_MAILPIT_PORT:-1025}:1025'
+            - '${FORWARD_MAILPIT_DASHBOARD_PORT:-8025}:8025'
+        networks:
+            - sail
+    selenium:
+        image: selenium/standalone-chromium
+        extra_hosts:
+            - 'host.docker.internal:host-gateway'
+        volumes:
+            - '/dev/shm:/dev/shm'
+        networks:
+            - sail
 networks:
     sail:
         driver: bridge
 volumes:
     sail-mysql:
+        driver: local
+    sail-redis:
+        driver: local
+    sail-meilisearch:
         driver: local

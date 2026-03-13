@@ -291,7 +291,7 @@ const PostCard = ({ post, onDeleted, onCommentClick }) => {
                 </div>
             )}
 
-            {/* Media first (reference order), then text content for text-only posts */}
+            {/* Media first (reference order) */}
             {!post.shared_post && post.media_url && (
                 <div className="my-2 rounded-[12px] overflow-hidden bg-[var(--theme-surface)]">
                     {post.media_type === 'image' ? (
@@ -311,11 +311,18 @@ const PostCard = ({ post, onDeleted, onCommentClick }) => {
                     )}
                 </div>
             )}
-            {/* Text content - for text-only posts (no media) */}
-            {!post.shared_post && !post.media_url && post.content && (
-                <Link to={`/post/${post.id}`}>
-                    <p className="text-slate-100 text-base leading-relaxed mb-4 whitespace-pre-wrap">{highlightHashtags(post.content)}</p>
-                </Link>
+            {/* Caption / text content
+                - If there is media + content: show caption directly under media
+                - If text-only (no media): show as full-width text block
+            */}
+            {!post.shared_post && post.content && (
+                <div className="mt-3 mb-2">
+                    <Link to={`/post/${post.id}`}>
+                        <p className="text-base leading-relaxed whitespace-pre-wrap text-[var(--text-primary)]">
+                            {highlightHashtags(post.content)}
+                        </p>
+                    </Link>
+                </div>
             )}
 
             {/* Poll - for posts with poll */}
@@ -514,16 +521,6 @@ const PostCard = ({ post, onDeleted, onCommentClick }) => {
                             );
                         })()}
                     </div>
-                )}
-                {/* Caption for media posts - author + content (reference format) */}
-                {!post.shared_post && post.content && post.media_url && (
-                    <p className="text-sm text-[var(--text-feed)]">
-                        <Link to={`/profile/${post.user?.username}`} className="font-semibold hover:text-[var(--theme-accent)]">
-                            {post.user?.name}
-                        </Link>
-                        {' '}
-                        {highlightHashtags(post.content)}
-                    </p>
                 )}
                 {post.comments_count > 0 && (
                     <Link to={`/post/${post.id}`} className="text-sm text-gray-400 hover:text-[var(--theme-accent)] block">

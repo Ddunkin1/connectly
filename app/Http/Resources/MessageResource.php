@@ -32,6 +32,8 @@ class MessageResource extends JsonResource
             'is_deleted' => $isDeleted,
             'deleted_at' => $this->deleted_at,
             'deleted_by' => $this->deleted_by,
+            'is_pinned' => (bool) $this->is_pinned,
+            'pinned_at' => $this->pinned_at,
             'can_edit' => $isOwner && ! $isDeleted,
             'can_delete' => $isOwner && ! $isDeleted,
             'created_at' => $this->created_at,

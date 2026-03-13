@@ -148,7 +148,7 @@ function AppContent() {
 
     return (
         <RealtimeMessagesProvider>
-        <MainLayout showRightPanel={!isMessagesPage}>
+        <MainLayout showRightPanel={!isMessagesPage} showLeftPanel={!isMessagesPage}>
                 {isMessagesPage ? (
                     <div className={`flex-1 flex min-h-0 overflow-hidden ${isMessagesPage ? 'h-[calc(100vh-60px)]' : ''}`}>
                         <Routes>

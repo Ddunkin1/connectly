@@ -203,4 +203,36 @@ class MessageController extends Controller
             'data' => new MessageResource($deletedMessage),
         ]);
     }
+
+    /**
+     * Pin a message for all participants in the conversation.
+     */
+    public function pin(Request $request, Message $message): JsonResponse
+    {
+        $this->authorize('update', $message);
+
+        $pinned = $this->messageService->pinMessage($message, $request->user());
+        broadcast(new MessageUpdated($pinned))->toOthers();
+
+        return response()->json([
+            'message' => 'Message pinned successfully',
+            'data' => new MessageResource($pinned),
+        ]);
+    }
+
+    /**
+     * Unpin a previously pinned message.
+     */
+    public function unpin(Request $request, Message $message): JsonResponse
+    {
+        $this->authorize('update', $message);
+
+        $unpinned = $this->messageService->unpinMessage($message, $request->user());
+        broadcast(new MessageUpdated($unpinned))->toOthers();
+
+        return response()->json([
+            'message' => 'Message unpinned successfully',
+            'data' => new MessageResource($unpinned),
+        ]);
+    }
 }

@@ -396,11 +396,10 @@ const Profile = () => {
 
             {/* Main Content Area */}
             <div className="flex flex-col lg:flex-row gap-6">
-                {/* Left Sidebar - when About, Network, or own profile (for empty Network state) */}
-                {(profile.website || profile.location || followersPreview.length > 0 || extraCount > 0 || isOwnProfile) && (
+                {/* Left Sidebar - About card */}
+                {(profile.website || profile.location) && (
                 <div className="lg:w-1/4 space-y-6">
                     {/* About Section - only website/location (bio is in header) */}
-                    {(profile.website || profile.location) && (
                     <div className="theme-surface rounded-2xl border border-[#2A2A2A] p-4 card-shadow transition-all duration-200 hover:shadow-lg hover:shadow-black/10">
                         <h2 className="text-lg font-bold text-white mb-3">About</h2>
                         <div className="space-y-3">
@@ -425,61 +424,11 @@ const Profile = () => {
                             )}
                         </div>
                     </div>
-                    )}
-
-                    {/* Network Section - compact */}
-                    <div className="theme-surface rounded-2xl border border-[#2A2A2A] p-4 card-shadow transition-all duration-200 hover:shadow-lg hover:shadow-black/10">
-                        <div className="flex items-center justify-between mb-3">
-                            <h2 className="text-lg font-bold text-white">Network</h2>
-                            {(followersPreview.length > 0 || extraCount > 0) && (
-                                <Link to="/connections" className="text-sm text-[var(--theme-accent)] hover:underline font-medium">
-                                    SEE ALL
-                                </Link>
-                            )}
-                        </div>
-                        {followersPreview.length > 0 || extraCount > 0 ? (
-                            <>
-                                <div className="grid grid-cols-3 gap-3 mb-3">
-                                    {followersPreview.slice(0, 6).map((f) => (
-                                        <Link key={f.id} to={`/profile/${f.username}`} className="flex flex-col items-center group">
-                                            <div className="relative">
-                                                <Avatar
-                                                    src={f.profile_picture}
-                                                    alt={f.name}
-                                                    size="md"
-                                                    className="group-hover:ring-2 group-hover:ring-[var(--theme-accent)] rounded-full transition-all"
-                                                />
-                                            </div>
-                                            <span className="text-xs text-gray-400 mt-1 text-center truncate w-full group-hover:text-[var(--theme-accent)]">{f.name}</span>
-                                        </Link>
-                                    ))}
-                                    {extraCount > 0 && (
-                                    <Link to="/connections" className="flex flex-col items-center justify-center">
-                                            <div className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center text-gray-400 font-semibold text-sm">
-                                                +{extraCount}
-                                            </div>
-                                            <span className="text-xs text-gray-500 mt-1">more</span>
-                                        </Link>
-                                    )}
-                                </div>
-                                <p className="text-xs text-gray-500 text-center">
-                                    {profile.followers_count === 1 ? '1 connection' : `${profile.followers_count || 0} connections`}
-                                </p>
-                            </>
-                        ) : isOwnProfile ? (
-                            <Link to="/explore" className="flex flex-col items-center gap-2 py-4 text-center group">
-                                <span className="material-symbols-outlined text-2xl text-slate-500 group-hover:text-primary transition-colors">group_add</span>
-                                <p className="text-sm text-slate-400 group-hover:text-[var(--theme-accent)] transition-colors">Connect with people to grow your network</p>
-                            </Link>
-                        ) : (
-                            <p className="text-xs text-gray-500 text-center py-2">{profile.followers_count || 0} connections</p>
-                        )}
-                    </div>
                 </div>
                 )}
 
                 {/* Main Content - Posts Feed */}
-                <div className={`${followersPreview.length > 0 || extraCount > 0 || profile.website || profile.location || isOwnProfile ? 'lg:w-3/4 min-w-0' : 'w-full'} space-y-6`}>
+                <div className={`${profile.website || profile.location ? 'lg:w-3/4 min-w-0' : 'w-full'} space-y-6`}>
                     {/* Post Input - Only show if viewing own profile */}
                     {isOwnProfile && (
                         <div className="theme-surface rounded-2xl border border-[#2A2A2A] p-6 card-shadow transition-all duration-200 hover:shadow-lg hover:shadow-black/10">

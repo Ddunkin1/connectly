@@ -142,3 +142,41 @@ export const useDeleteMessage = () => {
         },
     });
 };
+
+export const usePinMessage = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: (messageId) => messagesAPI.pinMessage(messageId),
+        onSuccess: (response) => {
+            const updatedMessage = response?.data?.data;
+            const conversationId = updatedMessage?.conversation_id;
+            if (!updatedMessage || !conversationId) return;
+
+            queryClient.setQueryData(['messages', conversationId], (old) => patchMessageInInfiniteCache(old, updatedMessage));
+            toast.success('Message pinned');
+        },
+        onError: (error) => {
+            toast.error(error.response?.data?.message || 'Failed to pin message');
+        },
+    });
+};
+
+export const useUnpinMessage = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: (messageId) => messagesAPI.unpinMessage(messageId),
+        onSuccess: (response) => {
+            const updatedMessage = response?.data?.data;
+            const conversationId = updatedMessage?.conversation_id;
+            if (!updatedMessage || !conversationId) return;
+
+            queryClient.setQueryData(['messages', conversationId], (old) => patchMessageInInfiniteCache(old, updatedMessage));
+            toast.success('Message unpinned');
+        },
+        onError: (error) => {
+            toast.error(error.response?.data?.message || 'Failed to unpin message');
+        },
+    });
+};

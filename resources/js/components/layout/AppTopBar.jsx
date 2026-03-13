@@ -8,6 +8,7 @@ import { useUnreadNotificationsCount } from '../../hooks/useNotifications';
 import { useConversations } from '../../hooks/useConversations';
 import { useQuery } from '@tanstack/react-query';
 import { searchAPI } from '../../services/api';
+import CreatePostModal from '../modal/createPostModal';
 
 const AppTopBar = ({ onMenuToggle, showMenuButton = false }) => {
     const navigate = useNavigate();
@@ -18,6 +19,7 @@ const AppTopBar = ({ onMenuToggle, showMenuButton = false }) => {
     const [searchQuery, setSearchQuery] = useState('');
     const [showSuggestions, setShowSuggestions] = useState(false);
     const [showProfileMenu, setShowProfileMenu] = useState(false);
+    const [isCreatePostOpen, setIsCreatePostOpen] = useState(false);
     const menuRef = useRef(null);
     const suggestionsRef = useRef(null);
     const logoutMutation = useLogout();
@@ -67,7 +69,7 @@ const AppTopBar = ({ onMenuToggle, showMenuButton = false }) => {
 
     return (
         <header className="fixed top-0 left-0 right-0 h-[60px] z-40 flex items-center px-4 lg:px-6 glass-effect border-b border-white/5">
-            <div className="flex items-center justify-between w-full max-w-[1600px] mx-auto">
+            <div className="flex items-center justify-between w-full max-w-6xl mx-auto">
                 {/* Left: Hamburger (mobile) or Logo */}
                 <div className="flex items-center w-[240px] shrink-0">
                     {showMenuButton ? (
@@ -200,6 +202,15 @@ const AppTopBar = ({ onMenuToggle, showMenuButton = false }) => {
                             </span>
                         )}
                     </Link>
+                    {/* Create post */}
+                    <button
+                        type="button"
+                        onClick={() => setIsCreatePostOpen(true)}
+                        className="p-2 rounded-xl hover:bg-white/5 text-slate-300 cursor-pointer"
+                        aria-label="Create post"
+                    >
+                        <span className="material-symbols-outlined">add</span>
+                    </button>
                     {/* Messages shortcut */}
                     <Link
                         to="/messages"
@@ -269,6 +280,10 @@ const AppTopBar = ({ onMenuToggle, showMenuButton = false }) => {
                     )}
                 </div>
             </div>
+            <CreatePostModal
+                isOpen={isCreatePostOpen}
+                onClose={() => setIsCreatePostOpen(false)}
+            />
         </header>
     );
 };

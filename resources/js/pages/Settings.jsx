@@ -255,7 +255,7 @@ const Settings = () => {
     if (isLoading) {
         return (
             <div className="max-w-2xl mx-auto py-8">
-                <h1 className="text-2xl font-bold text-white mb-4">Settings</h1>
+                <h1 className="text-2xl font-bold text-[var(--text-primary)] mb-4">Settings</h1>
                 <div className="flex justify-center py-12">
                     <LoadingSpinner />
                 </div>
@@ -265,20 +265,22 @@ const Settings = () => {
 
     return (
         <div className="max-w-2xl mx-auto py-8">
-            <h1 className="text-2xl font-bold text-white mb-6">Settings</h1>
+            <h1 className="text-2xl font-bold text-[var(--text-primary)] mb-6">Settings</h1>
 
             <section className="theme-surface rounded-xl p-6 mb-6">
-                <h2 className="text-lg font-semibold text-white mb-4">Notification preferences</h2>
-                <p className="text-sm text-gray-400 mb-6">
+                <h2 className="text-lg font-semibold text-[var(--text-primary)] mb-4">
+                    Notification preferences
+                </h2>
+                <p className="text-sm text-[var(--text-secondary)] mb-6">
                     Choose which notifications you want to receive.
                 </p>
                 <div className="space-y-4">
                     {Object.entries(LABELS).map(([key, label]) => (
                         <div
                             key={key}
-                            className="flex items-center justify-between py-2 border-b border-gray-700/50 last:border-0"
+                            className="flex items-center justify-between py-2 border-b border-[var(--theme-border)]/60 last:border-0"
                         >
-                            <span className="text-white">{label}</span>
+                            <span className="text-[var(--text-primary)]">{label}</span>
                             <button
                                 type="button"
                                 role="switch"
@@ -301,8 +303,10 @@ const Settings = () => {
             </section>
 
             <section className="theme-surface rounded-xl p-6 mb-6">
-                <h2 className="text-lg font-semibold text-white mb-3">Muted words & topics</h2>
-                <p className="text-sm text-gray-400 mb-4">
+                <h2 className="text-lg font-semibold text-[var(--text-primary)] mb-3">
+                    Muted words & topics
+                </h2>
+                <p className="text-sm text-[var(--text-secondary)] mb-4">
                     Hide posts and notifications that contain specific words or phrases. This only affects what you see.
                 </p>
                 <form onSubmit={handleAddMutedTopic} className="flex flex-col sm:flex-row gap-3 mb-4">
@@ -311,14 +315,14 @@ const Settings = () => {
                         value={newMutedTopic}
                         onChange={(e) => setNewMutedTopic(e.target.value)}
                         placeholder="Add word or phrase to mute"
-                        className="flex-1 px-4 py-2 rounded-lg bg-[#1A1A1A] border border-gray-600 text-white placeholder-gray-500 text-sm"
+                        className="flex-1 px-4 py-2 rounded-lg bg-[var(--theme-surface)] border border-[var(--theme-border)] text-[var(--text-primary)] placeholder-[var(--text-secondary)]/70 text-sm"
                     />
                     <Button type="submit" disabled={updateMutation.isPending || !newMutedTopic.trim()}>
                         Add
                     </Button>
                 </form>
                 {mutedTopics.length === 0 ? (
-                    <p className="text-sm text-gray-500">
+                    <p className="text-sm text-[var(--text-secondary)]">
                         You haven&apos;t muted any words yet.
                     </p>
                 ) : (
@@ -326,13 +330,13 @@ const Settings = () => {
                         {mutedTopics.map((topic) => (
                             <span
                                 key={topic}
-                                className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-white/5 text-xs text-gray-200"
+                                className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-[var(--theme-surface-hover)] text-xs text-[var(--text-primary)]"
                             >
                                 {topic}
                                 <button
                                     type="button"
                                     onClick={() => handleRemoveMutedTopic(topic)}
-                                    className="ml-1 text-gray-400 hover:text-white"
+                                    className="ml-1 text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
                                 >
                                     ×
                                 </button>
@@ -343,15 +347,19 @@ const Settings = () => {
             </section>
 
             <section className="theme-surface rounded-xl p-6 mb-6">
-                <h2 className="text-lg font-semibold text-white mb-4">Push notifications</h2>
-                <p className="text-sm text-gray-400 mb-6">
+                <h2 className="text-lg font-semibold text-[var(--text-primary)] mb-4">
+                    Push notifications
+                </h2>
+                <p className="text-sm text-[var(--text-secondary)] mb-6">
                     Receive notifications in your browser when you're not on the site.
                 </p>
                 {typeof Notification === 'undefined' ? (
-                    <p className="text-gray-500 text-sm">Push notifications are not supported in this browser.</p>
+                    <p className="text-[var(--text-secondary)] text-sm">
+                        Push notifications are not supported in this browser.
+                    </p>
                 ) : (
                     <div className="space-y-4">
-                        <p className="text-sm text-gray-400">
+                        <p className="text-sm text-[var(--text-secondary)]">
                             Status: {pushEndpoint ? 'Enabled' : pushPermission === 'granted' ? 'Permission granted (click Enable to finish)' : pushPermission === 'denied' ? 'Blocked' : 'Not enabled'}
                         </p>
                         <div className="flex gap-2">
@@ -377,8 +385,10 @@ const Settings = () => {
             </section>
 
             <section className="theme-surface rounded-xl p-6 mb-6">
-                <h2 className="text-lg font-semibold text-white mb-4">Two-factor authentication</h2>
-                <p className="text-sm text-gray-400 mb-6">
+                <h2 className="text-lg font-semibold text-[var(--text-primary)] mb-4">
+                    Two-factor authentication
+                </h2>
+                <p className="text-sm text-[var(--text-secondary)] mb-6">
                     Add an extra layer of security to your account.
                 </p>
                 {twoFactorStatus ? (
@@ -390,7 +400,7 @@ const Settings = () => {
                                 value={disablePassword}
                                 onChange={(e) => setDisablePassword(e.target.value)}
                                 placeholder="Enter your password to disable"
-                                className="flex-1 px-4 py-2 rounded-lg bg-[#1A1A1A] border border-gray-600 text-white placeholder-gray-500"
+                                className="flex-1 px-4 py-2 rounded-lg bg-[var(--theme-surface)] border border-[var(--theme-border)] text-[var(--text-primary)] placeholder-[var(--text-secondary)]/70"
                             />
                             <Button
                                 onClick={() => disable2FAMutation.mutate(disablePassword)}
@@ -402,7 +412,9 @@ const Settings = () => {
                     </div>
                 ) : twoFactorSetup ? (
                     <div className="space-y-4">
-                        <p className="text-sm text-gray-400">Scan this QR code with your authenticator app:</p>
+                        <p className="text-sm text-[var(--text-secondary)]">
+                            Scan this QR code with your authenticator app:
+                        </p>
                         {twoFactorQrUrl && (
                             <img
                                 src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(twoFactorQrUrl)}`}
@@ -411,14 +423,16 @@ const Settings = () => {
                             />
                         )}
                         <div>
-                            <label className="block text-sm text-gray-400 mb-2">Enter the 6-digit code to confirm:</label>
+                            <label className="block text-sm text-[var(--text-secondary)] mb-2">
+                                Enter the 6-digit code to confirm:
+                            </label>
                             <input
                                 type="text"
                                 value={twoFactorCode}
                                 onChange={(e) => setTwoFactorCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
                                 placeholder="000000"
                                 maxLength={6}
-                                className="w-full max-w-xs px-4 py-2 rounded-lg bg-[#1A1A1A] border border-gray-600 text-white text-center tracking-widest"
+                                className="w-full max-w-xs px-4 py-2 rounded-lg bg-[var(--theme-surface)] border border-[var(--theme-border)] text-[var(--text-primary)] text-center tracking-widest"
                             />
                         </div>
                         <div className="flex gap-2">
@@ -431,15 +445,17 @@ const Settings = () => {
                             <button
                                 type="button"
                                 onClick={() => { setTwoFactorSetup(false); setTwoFactorCode(''); }}
-                                className="px-4 py-2 text-gray-400 hover:text-white"
+                                className="px-4 py-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
                             >
                                 Cancel
                             </button>
                         </div>
                     </div>
                 ) : showRecoveryCodes && recoveryCodes.length > 0 ? (
-                    <div className="p-4 bg-[#1A1A1A] rounded-lg">
-                        <p className="text-sm text-amber-400 mb-2">Save these recovery codes in a secure place. You can use them to access your account if you lose your authenticator device.</p>
+                    <div className="p-4 bg-[var(--theme-surface)] rounded-lg">
+                        <p className="text-sm text-amber-400 mb-2">
+                            Save these recovery codes in a secure place. You can use them to access your account if you lose your authenticator device.
+                        </p>
                         <div className="flex flex-wrap gap-2 font-mono text-sm mb-4">
                             {recoveryCodes.map((code) => (
                                 <span key={code} className="px-2 py-1 bg-[#252538] rounded">{code}</span>
@@ -461,7 +477,7 @@ const Settings = () => {
 
             <section className="theme-surface rounded-xl p-6 mb-6">
                 <h2 className="text-lg font-semibold text-white mb-4">Blocked users</h2>
-                <p className="text-sm text-gray-400 mb-6">
+                        <p className="text-sm text-[var(--text-secondary)] mb-6">
                     Users you have blocked cannot see your profile, message you, or see your posts.
                 </p>
                 {blockedLoading ? (
@@ -480,8 +496,8 @@ const Settings = () => {
                                 <div className="flex items-center gap-3">
                                     <Avatar src={user.profile_picture} alt={user.name} size="md" />
                                     <div>
-                                        <p className="text-white font-medium">{user.name}</p>
-                                        <p className="text-gray-400 text-sm">@{user.username}</p>
+                                        <p className="text-[var(--text-primary)] font-medium">{user.name}</p>
+                                        <p className="text-[var(--text-secondary)] text-sm">@{user.username}</p>
                                     </div>
                                 </div>
                                 <Button
@@ -517,8 +533,10 @@ const Settings = () => {
             </section>
 
             <section className="theme-surface rounded-xl p-6 mb-6">
-                <h2 className="text-lg font-semibold text-white mb-4">Privacy & Data</h2>
-                <p className="text-sm text-gray-400 mb-6">
+                <h2 className="text-lg font-semibold text-[var(--text-primary)] mb-4">
+                    Privacy & Data
+                </h2>
+                <p className="text-sm text-[var(--text-secondary)] mb-6">
                     Export your data or permanently delete your account (GDPR/CCPA).
                 </p>
                 <div className="space-y-4">

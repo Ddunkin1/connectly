@@ -208,6 +208,8 @@ export const messagesAPI = {
     sendMessage: (data) => api.post('/messages', data, { timeout: 130000 }),
     updateMessage: (messageId, data) => api.patch(`/messages/${messageId}`, data),
     deleteMessage: (messageId) => api.delete(`/messages/${messageId}`),
+    pinMessage: (messageId) => api.post(`/messages/${messageId}/pin`),
+    unpinMessage: (messageId) => api.post(`/messages/${messageId}/unpin`),
     getMessages: (conversationId, page = 1, perPage = 25) => api.get(`/conversations/${conversationId}/messages`, { params: { page, per_page: perPage } }),
     getConversationMedia: (conversationId, page = 1) => api.get(`/conversations/${conversationId}/media`, { params: { page } }),
     markAsRead: (conversationId) => api.post(`/conversations/${conversationId}/read`),

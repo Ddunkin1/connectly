@@ -1,0 +1,329 @@
+[33mcommit 85260291a1993d9b041a63beba3ef5e3aa4d50fd[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mfeature1[m[33m, [m[1;31morigin/feature1[m[33m, [m[1;31morigin/HEAD[m[33m, [m[1;32mmarch2Dev[m[33m)[m
+Author: Ddunkin1 <jamesnocasa@gmail.com>
+Date:   Mon Mar 2 21:03:09 2026 +0800
+
+    fix
+
+[33mcommit 7718274ffe8212f7b58de0494d522f5832e71e05[m
+Author: Ddunkin1 <jamesnocasa@gmail.com>
+Date:   Sat Feb 21 05:53:20 2026 +0800
+
+    fix ui
+
+[33mcommit 6f9ab226cdee8a32e6a87a5843b65cd2fadbe333[m
+Author: Ddunkin1 <jamesnocasa@gmail.com>
+Date:   Sun Feb 15 23:58:03 2026 +0800
+
+    idk fix
+
+[33mcommit fd31e0cac95b24318c4e92d32ec9bc566d22ecc9[m
+Author: Ddunkin1 <jamesnocasa@gmail.com>
+Date:   Sun Feb 15 23:33:12 2026 +0800
+
+    fix
+
+[33mcommit e784f786fb80baf4916def9722b1835647fb185d[m
+Author: Ddunkin1 <jamesnocasa@gmail.com>
+Date:   Sun Feb 15 23:27:04 2026 +0800
+
+    idk
+
+[33mcommit 8f18bb7a61ab187b2dfc07dd16ec732f13b7edec[m
+Author: Ddunkin1 <jamesnocasa@gmail.com>
+Date:   Sun Feb 15 22:40:17 2026 +0800
+
+    try fix
+
+[33mcommit 08f9cd0f9acb707302aff74b33971f219382803e[m
+Author: Ddunkin1 <jamesnocasa@gmail.com>
+Date:   Sun Feb 15 22:32:44 2026 +0800
+
+    fix vite url
+
+[33mcommit 2715b426a253bd35df9f2c77fa61ed9429548f82[m
+Author: Ddunkin1 <jamesnocasa@gmail.com>
+Date:   Sun Feb 15 18:27:33 2026 +0800
+
+    vercel fix
+
+[33mcommit 83ae41cdaa059cddcd712584dd578bec2294f6d8[m
+Author: Ddunkin1 <jamesnocasa@gmail.com>
+Date:   Sun Feb 15 18:11:05 2026 +0800
+
+    fix text
+
+[33mcommit 85b3c68433ab081b26ad6a9e67a0b0a50cfa42c3[m
+Author: Ddunkin1 <jamesnocasa@gmail.com>
+Date:   Sun Feb 15 18:08:08 2026 +0800
+
+    fix
+
+[33mcommit f90140dd38c37018736bdda4d8f691fbe6381ba9[m
+Author: Ddunkin1 <jamesnocasa@gmail.com>
+Date:   Sun Feb 15 18:01:58 2026 +0800
+
+    fix
+
+[33mcommit 644b9dcbdf09ddf48ab0d9ba35e3dc8afa6f2fb2[m
+Author: Ddunkin1 <jamesnocasa@gmail.com>
+Date:   Sun Feb 15 17:59:06 2026 +0800
+
+    fix vercel
+
+[33mcommit b1af94281582181c2a12417df4d755ff8d0e8b82[m
+Author: Ddunkin1 <jamesnocasa@gmail.com>
+Date:   Sun Feb 15 17:54:59 2026 +0800
+
+    add features, can add story
+
+[33mcommit ff4f14200b87dd2cb31a93d30a0dd22686b86b20[m
+Author: Ddunkin1 <jamesnocasa@gmail.com>
+Date:   Fri Feb 13 05:26:05 2026 +0800
+
+    add theme features and google auth
+
+[33mcommit a9b9d120732169827b80866dfd61fdbed73c106e[m
+Author: Ddunkin1 <jamesnocasa@gmail.com>
+Date:   Fri Feb 13 04:18:24 2026 +0800
+
+    add features, responsiveness
+
+[33mcommit c40762563a6c238ec8fdfb21db119f6d827bab7b[m
+Author: Ddunkin1 <jamesnocasa@gmail.com>
+Date:   Thu Feb 12 04:03:44 2026 +0800
+
+    implement socket for messaging
+
+[33mcommit a3ec8988ab711c55df6234c0f510611225162e4d[m
+Author: Ddunkin1 <jamesnocasa@gmail.com>
+Date:   Wed Feb 11 22:39:13 2026 +0800
+
+    add features
+
+[33mcommit aea8f2610db31534ad686492fcc379c735aa121a[m
+Author: Ddunkin1 <jamesnocasa@gmail.com>
+Date:   Wed Feb 11 20:05:14 2026 +0800
+
+    add laravel sail
+
+[33mcommit 86a1dab4163fec7103a607090dae969ab0df238f[m
+Author: nelvjims <nelvi.anoc@urios.edu.ph>
+Date:   Sun Feb 1 18:33:53 2026 +0800
+
+    fix
+
+[33mcommit 3feaba472a7ec6810cdb7021ea481866bde0e038[m
+Author: nelvjims <nelvi.anoc@urios.edu.ph>
+Date:   Sun Feb 1 04:30:19 2026 +0800
+
+    add supabase for photos, video
+
+[33mcommit 4bc67974110d5eb772d4ddf248af326f92c83dea[m
+Author: nelvjims <nelvi.anoc@urios.edu.ph>
+Date:   Sun Feb 1 04:11:13 2026 +0800
+
+    add visibility public, private, archived
+
+[33mcommit 5b7f8e75def12b54961812813711afd06f4cf5c3[m
+Author: nelvjims <nelvi.anoc@urios.edu.ph>
+Date:   Sun Feb 1 03:46:18 2026 +0800
+
+    fix sidebars height
+
+[33mcommit be2204790aa4f730b19b0bee1ca6f1a20a8e602b[m
+Author: nelvjims <nelvi.anoc@urios.edu.ph>
+Date:   Sun Feb 1 03:09:00 2026 +0800
+
+    add feature and icons
+
+[33mcommit e229b9915e24d0a2f7961252c589a5a65a553d3f[m
+Author: nelvjims <nelvi.anoc@urios.edu.ph>
+Date:   Sun Feb 1 02:01:52 2026 +0800
+
+    add feature
+
+[33mcommit 6db81ea2de2d9bc5b4a5c4ce40c2cd58340611ec[m
+Author: nelvjims <nelvi.anoc@urios.edu.ph>
+Date:   Sun Feb 1 00:11:34 2026 +0800
+
+    add features
+
+[33mcommit e424103ab076ab40060c089b04a475f25140456c[m
+Author: nelvjims <nelvi.anoc@urios.edu.ph>
+Date:   Sat Jan 31 04:50:01 2026 +0800
+
+    fix
+
+[33mcommit 894aa63cff0fe51c0840a7fc080755167e4f279b[m
+Author: nelvjims <nelvi.anoc@urios.edu.ph>
+Date:   Sat Jan 31 04:49:43 2026 +0800
+
+    fix
+
+[33mcommit 2e33ec5fe93f7076376545f89f720f2c7db73898[m
+Author: nelvjims <nelvi.anoc@urios.edu.ph>
+Date:   Sat Jan 31 01:48:20 2026 +0800
+
+    fix
+
+[33mcommit 75e66c62e6f12424f69b798696fa448a3129d36d[m
+Author: nelvjims <nelvi.anoc@urios.edu.ph>
+Date:   Sat Jan 31 01:44:22 2026 +0800
+
+    fix
+
+[33mcommit 262e046b177d7a9d7fb1541ebc0d052b2caf88c8[m
+Author: nelvjims <nelvi.anoc@urios.edu.ph>
+Date:   Sat Jan 31 01:40:45 2026 +0800
+
+    add vercel
+
+[33mcommit 0eb42734c0af315581801fd90d009e886ce10a05[m
+Author: nelvjims <nelvi.anoc@urios.edu.ph>
+Date:   Sat Jan 31 01:28:36 2026 +0800
+
+    registration fix
+
+[33mcommit be247d70394a074f29172187383c20175099c385[m
+Author: nelvjims <nelvi.anoc@urios.edu.ph>
+Date:   Fri Jan 30 03:40:41 2026 +0800
+
+    add auto reload
+
+[33mcommit c2411be8ac7ab639158c9db6ca8e3869f91e4277[m
+Author: nelvjims <nelvi.anoc@urios.edu.ph>
+Date:   Fri Jan 30 03:20:39 2026 +0800
+
+    add vercel json
+
+[33mcommit 95edf4c491cb18b64010d91ae8bcb823e4080fac[m
+Author: nelvjims <nelvi.anoc@urios.edu.ph>
+Date:   Fri Jan 30 03:18:11 2026 +0800
+
+    try deploy
+
+[33mcommit 99c505cfd5fe76e6d5917d6f095bda7db6016e40[m
+Author: nelvjims <nelvi.anoc@urios.edu.ph>
+Date:   Fri Jan 30 03:14:08 2026 +0800
+
+    add comment thread
+
+[33mcommit 065cbe86922351363f81a0c0839c03cbb57a2f30[m
+Author: nelvjims <nelvi.anoc@urios.edu.ph>
+Date:   Fri Jan 30 02:54:52 2026 +0800
+
+    add like count and reply
+
+[33mcommit 57d068bb1db3b270c0d7d9414bd414e16a5d63c5[m
+Author: nelvjims <nelvi.anoc@urios.edu.ph>
+Date:   Fri Jan 30 02:48:11 2026 +0800
+
+    like.share,comment live count
+
+[33mcommit 4631dfeb7abd8333954854d3ffb77b03e2ca7468[m
+Author: nelvjims <nelvi.anoc@urios.edu.ph>
+Date:   Fri Jan 30 01:51:51 2026 +0800
+
+    add cancel button for friend request\
+
+[33mcommit bc4f37667c0eb321c8fe3986a0e4c859587be43f[m
+Author: nelvjims <nelvi.anoc@urios.edu.ph>
+Date:   Fri Jan 30 01:42:53 2026 +0800
+
+    add cursor pointer
+
+[33mcommit 7ccb501320b6d78512db9523acafff4dba0857da[m
+Author: nelvjims <nelvi.anoc@urios.edu.ph>
+Date:   Fri Jan 30 01:31:59 2026 +0800
+
+    can select friends or public post
+
+[33mcommit 33fb8e3e924130970b6c11204a8fbc5f77c5deda[m
+Author: nelvjims <nelvi.anoc@urios.edu.ph>
+Date:   Fri Jan 30 01:21:35 2026 +0800
+
+    add icons for public and friends
+
+[33mcommit 766e3f479fc2fb2b537180ecf48f61ca3f0d6161[m
+Author: nelvjims <nelvi.anoc@urios.edu.ph>
+Date:   Fri Jan 30 00:59:58 2026 +0800
+
+    add likes count and share
+
+[33mcommit dda2728ef33e9d8059464768364dd036ea26a029[m
+Author: nelvjims <nelvi.anoc@urios.edu.ph>
+Date:   Fri Jan 30 00:07:29 2026 +0800
+
+    can message and like counts
+
+[33mcommit 64b80c4e69bf675528d80e4c8a322f1463a65483[m
+Author: nelvjims <nelvi.anoc@urios.edu.ph>
+Date:   Thu Jan 29 23:37:24 2026 +0800
+
+    implement can message and timeline
+
+[33mcommit 8d63e4436442e69c6eb423f13c3eb89648fa680e[m
+Author: nelvjims <nelvi.anoc@urios.edu.ph>
+Date:   Thu Jan 29 23:00:51 2026 +0800
+
+    message fix\
+
+[33mcommit fcd9a883ac3ca90ac67b51e3410087c5a619f857[m
+Author: nelvjims <nelvi.anoc@urios.edu.ph>
+Date:   Thu Jan 29 17:44:03 2026 +0800
+
+    fix supabase
+
+[33mcommit a47cc1302097bf44ac13647fad32bc44b8995b65[m
+Author: nelvjims <nelvi.anoc@urios.edu.ph>
+Date:   Thu Jan 29 17:35:49 2026 +0800
+
+    fix error fetching
+
+[33mcommit e05b0231d363796cdf8d2e465d4ab4065899b36c[m
+Author: nelvjims <nelvi.anoc@urios.edu.ph>
+Date:   Thu Jan 29 16:39:18 2026 +0800
+
+    add feature
+
+[33mcommit 961db29741360c36cc87486e5ed2894b943e945a[m
+Author: nelvjims <nelvi.anoc@urios.edu.ph>
+Date:   Thu Jan 29 16:09:42 2026 +0800
+
+    add egdestore for storing images
+
+[33mcommit b24e910c436de5dd9aaa50cbea6a90d7eacbf763[m
+Author: nelvjims <nelvi.anoc@urios.edu.ph>
+Date:   Thu Jan 29 05:53:08 2026 +0800
+
+    Backend accepts media files
+
+[33mcommit 13bf8ef05bcadd8eb4321a383d4e0df003500b4b[m
+Author: nelvjims <nelvi.anoc@urios.edu.ph>
+Date:   Thu Jan 29 05:51:39 2026 +0800
+
+    Update Post Request Validation
+
+[33mcommit f6d4d00a9339df8b0232666a849ee65454fcb511[m
+Author: nelvjims <nelvi.anoc@urios.edu.ph>
+Date:   Thu Jan 29 05:37:16 2026 +0800
+
+    add details to ui
+
+[33mcommit 16539473dd0097b7678f49edf2110a94a29d8d0a[m
+Author: nelvjims <nelvi.anoc@urios.edu.ph>
+Date:   Thu Jan 29 05:30:25 2026 +0800
+
+    fix
+
+[33mcommit 2a94e64862d18c011f1bc9b47f4e82956dc3a96e[m
+Author: nelvjims <nelvi.anoc@urios.edu.ph>
+Date:   Thu Jan 29 05:24:59 2026 +0800
+
+    fix register error
+
+[33mcommit a32df64929ab3607658db6cd53dbd11f11467b8f[m[33m ([m[1;31morigin/master[m[33m)[m
+Author: nelvjims <nelvi.anoc@urios.edu.ph>
+Date:   Thu Jan 29 04:17:47 2026 +0800
+
+    set up ui

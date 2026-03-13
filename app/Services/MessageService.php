@@ -144,6 +144,32 @@ class MessageService
     }
 
     /**
+     * Pin a message in a conversation.
+     */
+    public function pinMessage(Message $message, User $actor): Message
+    {
+        $message->update([
+            'is_pinned' => true,
+            'pinned_at' => now(),
+        ]);
+
+        return $message->fresh(['sender', 'receiver']);
+    }
+
+    /**
+     * Unpin a previously pinned message.
+     */
+    public function unpinMessage(Message $message, User $actor): Message
+    {
+        $message->update([
+            'is_pinned' => false,
+            'pinned_at' => null,
+        ]);
+
+        return $message->fresh(['sender', 'receiver']);
+    }
+
+    /**
      * Mark all messages in a conversation as read for a user.
      */
     public function markAsRead(Conversation $conversation, User $user): void
