@@ -124,6 +124,14 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
+     * Get all comments left on this user's profile.
+     */
+    public function profileComments(): HasMany
+    {
+        return $this->hasMany(ProfileComment::class);
+    }
+
+    /**
      * Get all likes made by the user.
      */
     public function likes(): HasMany

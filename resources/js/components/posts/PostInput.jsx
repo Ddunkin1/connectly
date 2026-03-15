@@ -1,4 +1,4 @@
-import React, { useState, useId } from 'react';
+import React, { useState, useId, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { useCreatePost } from '../../hooks/usePosts';
 import useAuthStore from '../../store/authStore';
@@ -23,6 +23,7 @@ const PostInput = ({ onPostCreated, variant = 'feed' }) => {
 
     const content = watch('content', '');
     const mediaInputId = useId();
+    const mediaInputRef = useRef(null);
     const hasPoll = pollMode && pollQuestion.trim() && pollOptions.filter((o) => o.trim()).length >= 2;
     const isFormValid = content.trim().length > 0 || mediaFile !== null || hasPoll;
 
@@ -148,11 +149,11 @@ const PostInput = ({ onPostCreated, variant = 'feed' }) => {
                         />
                         <div className="flex items-center justify-between pt-4 border-t border-white/5">
                             <div className="flex items-center gap-2">
-                                <label htmlFor={mediaInputId} className="p-2 rounded-xl hover:bg-white/5 text-primary cursor-pointer transition-colors">
+                                <label htmlFor={mediaInputId} className="p-2 rounded-xl hover:bg-white/5 text-primary cursor-pointer transition-colors" title="Add photo or video">
                                     <span className="material-symbols-outlined">image</span>
-                                    <input type="file" id={mediaInputId} accept="image/*,video/*" onChange={handleFileChange} className="hidden" />
+                                    <input ref={mediaInputRef} type="file" id={mediaInputId} accept="image/*,video/*" onChange={handleFileChange} className="hidden" />
                                 </label>
-                                <button type="button" className="p-2 rounded-xl hover:bg-white/5 text-primary transition-colors">
+                                <button type="button" onClick={() => mediaInputRef.current?.click()} className="p-2 rounded-xl hover:bg-white/5 text-primary transition-colors" title="Add video">
                                     <span className="material-symbols-outlined">videocam</span>
                                 </button>
                                 <button type="button" className="p-2 rounded-xl hover:bg-white/5 text-primary transition-colors">

@@ -22,8 +22,21 @@ class StoreCommentRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'content' => ['required', 'string', 'max:1000'],
+            'content' => ['nullable', 'string', 'max:1000'],
             'parent_comment_id' => ['nullable', 'exists:comments,id'],
+            'media' => ['nullable', 'file', 'mimes:jpeg,jpg,png,gif,webp,mp4,mov,webm', 'max:51200'], // 50MB for video
         ];
+    }
+
+    /**
+     * Configure the validator instance.
+     */
+    public function withValidator($validator): void
+    {
+        $validator->after(function ($validator) {
+            if (!$this->filled('content') && !$this->hasFile('media')) {
+                $validator->errors()->add('content', 'Comment must have text or a photo/video.');
+            }
+        });
     }
 }

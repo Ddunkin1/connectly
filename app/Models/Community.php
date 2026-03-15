@@ -68,6 +68,16 @@ class Community extends Model
         return $this->hasMany(CommunityPost::class);
     }
 
+    public function invites(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(CommunityInvite::class);
+    }
+
+    public function joinRequests(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(CommunityJoinRequest::class);
+    }
+
     public function isModerator(User $user): bool
     {
         return $user->isModerator()

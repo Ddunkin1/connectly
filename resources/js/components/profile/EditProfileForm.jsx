@@ -92,14 +92,14 @@ const EditProfileForm = ({ onSuccess, onCancel }) => {
     };
 
     return (
-        <form onSubmit={handleSubmit(onSubmit)} className="overflow-hidden">
-            {/* Cover + Avatar hero */}
+        <form onSubmit={handleSubmit(onSubmit)}>
+            {/* Cover + Avatar: stretched cover so image is visible; larger profile preview, centered */}
             <div className="relative">
                 <div
-                    className="h-40 sm:h-48 w-full cursor-pointer group relative overflow-hidden"
+                    className="h-40 sm:h-48 w-full cursor-pointer group relative overflow-hidden rounded-t-xl bg-cover bg-center"
                     style={{
-                        background: coverPreview
-                            ? `url(${coverPreview}) center/cover`
+                        backgroundImage: coverPreview
+                            ? `url(${coverPreview})`
                             : 'linear-gradient(135deg, #4b5563 0%, #374151 50%, #1f2937 100%)',
                     }}
                     onClick={() => coverFileInputRef.current?.click()}
@@ -112,35 +112,40 @@ const EditProfileForm = ({ onSuccess, onCancel }) => {
                             }}
                         />
                     )}
-                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all flex items-center justify-center">
-                        <span className="material-symbols-outlined text-white/0 group-hover:text-white/90 text-3xl transition-all">photo_camera</span>
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all flex flex-col items-center justify-center gap-1">
+                        <span className="material-symbols-outlined text-white/0 group-hover:text-white/90 text-2xl transition-all">photo_camera</span>
+                        <span className="text-white/0 group-hover:text-white/90 text-xs font-medium transition-all">Change cover</span>
                     </div>
                     <input ref={coverFileInputRef} type="file" accept="image/*" onChange={handleCoverImageChange} className="hidden" />
                 </div>
                 <div
-                    className="absolute -bottom-14 left-6 w-28 h-28 rounded-full overflow-hidden cursor-pointer group border-4 border-[var(--theme-surface)] shadow-xl bg-[var(--theme-surface-hover)]"
+                    className="absolute -bottom-16 w-32 h-32 rounded-full overflow-hidden cursor-pointer group border-4 border-[var(--theme-surface)] shadow-post-card bg-[var(--theme-surface-hover)] ring-2 ring-[var(--theme-border)]/50"
+                    style={{ left: '50%', transform: 'translateX(-50%)' }}
                     onClick={() => profileFileInputRef.current?.click()}
                 >
                     {profilePreview ? (
-                        <img src={profilePreview} alt={user?.name} className="w-full h-full object-cover" />
+                        <img src={profilePreview} alt={user?.name} className="absolute inset-0 w-full h-full object-cover" />
                     ) : (
-                        <div className="w-full h-full flex items-center justify-center text-white text-3xl font-semibold" style={{ backgroundColor: 'var(--theme-accent)' }}>
+                        <div className="absolute inset-0 flex items-center justify-center text-white text-3xl font-semibold" style={{ backgroundColor: 'var(--theme-accent)' }}>
                             {(user?.name?.[0] || '?').toUpperCase()}
                         </div>
                     )}
-                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/50 transition-all flex items-center justify-center">
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/50 transition-all flex flex-col items-center justify-center gap-0.5">
                         <span className="material-symbols-outlined text-white/0 group-hover:text-white text-2xl transition-all">photo_camera</span>
+                        <span className="text-white/0 group-hover:text-white text-xs font-medium transition-all">Change photo</span>
                     </div>
                     <input ref={profileFileInputRef} type="file" accept="image/*" onChange={handleProfilePictureChange} className="hidden" />
                 </div>
             </div>
 
             {/* Form fields */}
-            <div className="pt-20 px-6 pb-6 space-y-6">
-                <p className="text-xs text-[var(--text-secondary)] leading-relaxed">Cover & avatar: 1500×500px and square, max 5MB each</p>
+            <div className="pt-24 px-5 pb-6 space-y-5">
+                <p className="text-[10px] text-[var(--text-secondary)] -mt-1">Cover 1500×500px, avatar square · max 5MB each</p>
 
-                <div>
-                    <label htmlFor="edit-name" className="block text-sm font-medium text-[var(--text-primary)] mb-1.5">Full Name</label>
+                <section className="space-y-3">
+                    <h4 className="text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)]">About you</h4>
+                    <div>
+                        <label htmlFor="edit-name" className="block text-sm font-medium text-[var(--text-primary)] mb-1.5">Full Name</label>
                     <input {...register('name', { required: 'Name is required' })} type="text" id="edit-name" className={inputBase} placeholder="Your name" />
                     {errors.name && <p className="text-xs text-red-400 mt-1">{errors.name.message}</p>}
                 </div>
@@ -163,12 +168,12 @@ const EditProfileForm = ({ onSuccess, onCancel }) => {
                     {errors.username && <p className="text-xs text-red-400 mt-1">{errors.username.message}</p>}
                 </div>
 
-                <div>
-                    <label htmlFor="edit-bio" className="block text-sm font-medium text-[var(--text-primary)] mb-1.5">Bio</label>
+                    <div>
+                        <label htmlFor="edit-bio" className="block text-sm font-medium text-[var(--text-primary)] mb-1.5">Bio</label>
                     <textarea
                         {...register('bio', { maxLength: { value: 500, message: 'Max 500 characters' } })}
                         id="edit-bio"
-                        rows={4}
+                        rows={3}
                         className={`${inputBase} resize-none leading-relaxed`}
                         placeholder="Tell people about yourself..."
                     />
@@ -181,9 +186,12 @@ const EditProfileForm = ({ onSuccess, onCancel }) => {
                             <p className="text-xs text-[var(--text-secondary)]/80 italic">Add a few more words so others can get to know you.</p>
                         )}
                     </div>
-                </div>
+                    </div>
+                </section>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <section className="space-y-3">
+                    <h4 className="text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)]">Details</h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                         <label htmlFor="edit-location" className="block text-sm font-medium text-[var(--text-primary)] mb-1.5">Location</label>
                         <div className="relative">
@@ -205,17 +213,21 @@ const EditProfileForm = ({ onSuccess, onCancel }) => {
                         </div>
                         {errors.website && <p className="text-xs text-red-400 mt-1">{errors.website.message}</p>}
                     </div>
-                </div>
+                    </div>
+                </section>
 
-                <div>
-                    <label htmlFor="edit-privacy" className="block text-sm font-medium text-[var(--text-primary)] mb-1.5">Privacy</label>
+                <section className="space-y-3">
+                    <h4 className="text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)]">Privacy</h4>
+                    <div>
+                        <label htmlFor="edit-privacy" className="block text-sm font-medium text-[var(--text-primary)] mb-1.5">Who can see your profile</label>
                     <select {...register('privacy_settings')} id="edit-privacy" className={inputBase}>
                         <option value="public">Public — Anyone can see your profile</option>
                         <option value="private">Private — Only you and approved followers</option>
                     </select>
-                </div>
+                    </div>
+                </section>
 
-                <div className="flex items-center justify-end gap-3 pt-6 border-t border-[var(--theme-border)]">
+                <div className="flex items-center justify-end gap-3 pt-4 mt-2 border-t border-[var(--theme-border)] pb-1">
                     <Button type="button" variant="ghost" onClick={onCancel} className="active:scale-[0.98]">
                         Cancel
                     </Button>

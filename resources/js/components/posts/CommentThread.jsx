@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { useQueryClient } from '@tanstack/react-query';
 import { useCreateComment } from '../../hooks/useComments';
@@ -10,6 +10,8 @@ import useAuthStore from '../../store/authStore';
 const CommentThread = ({ postId, comment, level = 0 }) => {
     const [showReplies, setShowReplies] = useState(false);
     const [isReplying, setIsReplying] = useState(false);
+    const [replyMediaFile, setReplyMediaFile] = useState(null);
+    const replyFileInputRef = useRef(null);
     const user = useAuthStore((state) => state.user);
     const queryClient = useQueryClient();
     const { register, handleSubmit, reset } = useForm();
@@ -21,16 +23,29 @@ const CommentThread = ({ postId, comment, level = 0 }) => {
         .sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
 
     const onSubmit = (data) => {
+        const hasContent = data.content?.trim();
+        const hasMedia = !!replyMediaFile;
+        if (!hasContent && !hasMedia) return;
+
+        let payload;
+        if (hasMedia) {
+            payload = new FormData();
+            payload.append('content', hasContent ? data.content.trim() : '');
+            payload.append('parent_comment_id', String(comment.id));
+            payload.append('media', replyMediaFile);
+        } else {
+            payload = { content: data.content.trim(), parent_comment_id: comment.id };
+        }
+
         createCommentMutation.mutate(
-            {
-                postId,
-                data: { ...data, parent_comment_id: comment.id },
-            },
+            { postId, data: payload },
             {
                 onSuccess: () => {
                     queryClient.invalidateQueries({ queryKey: ['comments', postId] });
                     queryClient.refetchQueries({ queryKey: ['comments', postId] });
                     reset();
+                    setReplyMediaFile(null);
+                    if (replyFileInputRef.current) replyFileInputRef.current.value = '';
                     setIsReplying(false);
                     setShowReplies(true);
                 },
@@ -52,7 +67,16 @@ const CommentThread = ({ postId, comment, level = 0 }) => {
                                 {formatDate(comment.created_at)}
                             </span>
                         </div>
-                        <p className="text-sm text-gray-700">{comment.content}</p>
+                        {comment.content ? <p className="text-sm text-gray-700">{comment.content}</p> : null}
+                        {comment.media_url && (
+                            <div className="mt-2 rounded-lg overflow-hidden bg-gray-100 max-w-full">
+                                {comment.media_type === 'video' ? (
+                                    <video src={comment.media_url} controls className="max-h-48 w-full object-contain" />
+                                ) : (
+                                    <img src={comment.media_url} alt="" className="max-h-48 max-w-full object-contain" />
+                                )}
+                            </div>
+                        )}
                     </div>
 
                     <div className="flex items-center space-x-4 mt-2 ml-2">
@@ -77,29 +101,22 @@ const CommentThread = ({ postId, comment, level = 0 }) => {
                             <div className="flex items-start space-x-2">
                                 <Avatar src={user?.profile_picture} alt={user?.name} size="sm" />
                                 <div className="flex-1">
+                                    <input ref={replyFileInputRef} type="file" accept="image/*,video/*" className="hidden" onChange={(e) => setReplyMediaFile(e.target.files?.[0] || null)} />
                                     <textarea
-                                        {...register('content', { required: true })}
+                                        {...register('content')}
                                         placeholder="Write a reply..."
                                         rows={2}
                                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#359EFF] text-sm resize-none"
                                     />
-                                    <div className="flex items-center justify-end space-x-2 mt-2">
-                                        <Button
-                                            type="button"
-                                            variant="ghost"
-                                            size="sm"
-                                            onClick={() => setIsReplying(false)}
-                                        >
-                                            Cancel
-                                        </Button>
-                                        <Button
-                                            type="submit"
-                                            size="sm"
-                                            disabled={createCommentMutation.isPending}
-                                            loading={createCommentMutation.isPending}
-                                        >
-                                            Reply
-                                        </Button>
+                                    <div className="flex items-center justify-between mt-2 flex-wrap gap-2">
+                                        <button type="button" onClick={() => replyFileInputRef.current?.click()} className="text-xs text-gray-500 hover:text-[#359EFF] flex items-center gap-1">
+                                            <span className="material-symbols-outlined text-base">videocam</span>
+                                            {replyMediaFile ? replyMediaFile.name : 'Photo/Video'}
+                                        </button>
+                                        <div className="flex items-center gap-2">
+                                            <Button type="button" variant="ghost" size="sm" onClick={() => setIsReplying(false)}>Cancel</Button>
+                                            <Button type="submit" size="sm" disabled={createCommentMutation.isPending} loading={createCommentMutation.isPending}>Reply</Button>
+                                        </div>
                                     </div>
                                 </div>
                             </div>

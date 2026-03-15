@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+# Nuclear cleanup of Sail containers/networks and run sail up.
+# Use this if you get "container name already in use" or "No such container" / attach errors.
+
+set -e
+cd "$(dirname "$0")"
+
+echo "Stopping Sail (current project)..."
+./vendor/bin/sail down --remove-orphans 2>/dev/null || true
+
+echo "Tearing down OLD project 'connectly' (removes ghost container references)..."
+docker compose -f compose.yaml --project-name connectly down -v --remove-orphans 2>/dev/null || true
+
+echo "Force-removing any container with project label connectly or connectlyapp..."
+docker ps -aq --filter "label=com.docker.compose.project=connectly" | xargs -r docker rm -f 2>/dev/null || true
+docker ps -aq --filter "label=com.docker.compose.project=connectlyapp" | xargs -r docker rm -f 2>/dev/null || true
+
+echo "Removing any leftover connectly-* / connectlyapp-* containers by name..."
+docker ps -aq --filter "name=connectly-" | xargs -r docker rm -f 2>/dev/null || true
+docker ps -aq --filter "name=connectlyapp-" | xargs -r docker rm -f 2>/dev/null || true
+
+echo "Removing project networks..."
+docker network rm connectly_sail 2>/dev/null || true
+docker network rm connectlyapp_sail 2>/dev/null || true
+
+echo "Starting Sail..."
+exec ./vendor/bin/sail up "$@"

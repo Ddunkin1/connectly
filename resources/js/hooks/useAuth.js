@@ -18,7 +18,17 @@ export const useLogin = () => {
             }
         },
         onError: (error) => {
-            toast.error(error.response?.data?.message || 'Login failed');
+            if (!error.response) {
+                toast.error("Could not reach the server. Check your connection and that the API is running.");
+                return;
+            }
+            const data = error.response.data;
+            const errors = data?.errors;
+            if (errors && typeof errors === 'object') {
+                Object.values(errors).flat().forEach((msg) => toast.error(msg));
+            } else {
+                toast.error(data?.message || 'Login failed');
+            }
         },
     });
 };

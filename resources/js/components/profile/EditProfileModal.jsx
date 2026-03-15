@@ -4,8 +4,8 @@ import EditProfileForm from './EditProfileForm';
 
 const EditProfileModal = ({ isOpen, onClose }) => {
     return (
-        <Modal isOpen={isOpen} onClose={onClose} title="Edit Profile" size="2xl">
-            <div className="theme-surface -mx-6 -mt-4 -mb-4 rounded-b-xl overflow-hidden">
+        <Modal isOpen={isOpen} onClose={onClose} title="Edit Profile" size="lg">
+            <div className="-mx-5 -mt-4 -mb-4">
                 <EditProfileForm onSuccess={onClose} onCancel={onClose} />
             </div>
         </Modal>

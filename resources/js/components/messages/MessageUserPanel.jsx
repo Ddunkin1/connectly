@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 
 const MessageUserPanel = ({
     otherUser,
@@ -29,12 +30,12 @@ const MessageUserPanel = ({
                 <p className="text-sm text-[var(--text-secondary)] mt-0.5 mb-5">@{otherUser.username}</p>
 
                 <div className="flex gap-3 w-full">
-                    <button
-                        type="button"
-                        className="flex-1 py-2.5 px-3 rounded-xl bg-white text-black text-sm font-medium hover:bg-slate-100 active:scale-[0.98] transition-all border border-[var(--theme-border)] dark:bg-[var(--theme-surface)] dark:text-[var(--text-primary)] dark:hover:bg-[var(--theme-surface-hover)]"
+                    <Link
+                        to={otherUser.username ? `/profile/${otherUser.username}` : '#'}
+                        className="flex-1 flex items-center justify-center py-2.5 px-3 rounded-xl bg-white text-black text-sm font-medium hover:bg-slate-100 active:scale-[0.98] transition-all border border-[var(--theme-border)] dark:bg-[var(--theme-surface)] dark:text-[var(--text-primary)] dark:hover:bg-[var(--theme-surface-hover)] no-underline"
                     >
                         Profile
-                    </button>
+                    </Link>
                     <button
                         type="button"
                         className="flex-1 py-2.5 px-3 rounded-xl bg-[var(--theme-surface)] text-[var(--text-primary)] text-sm font-medium hover:bg-[var(--theme-surface-hover)] active:scale-[0.98] transition-all border border-[var(--theme-border)]"

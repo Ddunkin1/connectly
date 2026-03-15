@@ -14,6 +14,7 @@ const Login = () => {
     const [showPassword, setShowPassword] = useState(false);
     const [showTwoFactor, setShowTwoFactor] = useState(false);
     const [twoFactorCode, setTwoFactorCode] = useState('');
+    const [apiError, setApiError] = useState(null);
 
     useEffect(() => {
         if (searchParams.get('verified') === '1') {
@@ -36,6 +37,7 @@ const Login = () => {
     } = useForm();
 
     const onSubmit = async (data) => {
+        setApiError(null);
         try {
             const res = await loginMutation.mutateAsync(data);
             if (res.data?.requires_two_factor) {
@@ -44,7 +46,10 @@ const Login = () => {
                 navigate('/home');
             }
         } catch (error) {
-            const msg = error?.response?.data?.message || error?.message || 'Login failed. Please try again.';
+            const res = error?.response?.data;
+            const errors = res?.errors;
+            const msg = errors?.email?.[0] ?? errors?.password?.[0] ?? res?.message ?? error?.message ?? 'Invalid email/username or password.';
+            setApiError(msg);
             toast.error(msg);
         }
     };
@@ -102,8 +107,18 @@ const Login = () => {
                         <span className="ml-2 text-xl font-bold text-gray-900">Connectly</span>
                     </div>
 
+                    {/* API error (e.g. wrong credentials, suspended) */}
+                    {apiError && (
+                        <div
+                            role="alert"
+                            className="mb-6 p-4 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm"
+                        >
+                            {apiError}
+                        </div>
+                    )}
+
                     {/* Error banner from URL (e.g. Google OAuth redirect) */}
-                    {searchParams.get('error') && (
+                    {searchParams.get('error') && !apiError && (
                         <div
                             role="alert"
                             className="mb-6 p-4 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm"

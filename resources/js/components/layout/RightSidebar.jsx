@@ -11,6 +11,7 @@ import LoadingSpinner from '../common/LoadingSpinner';
 const RightSidebar = () => {
     const location = useLocation();
     const isHomePage = location.pathname === '/home';
+    const isExplorePage = location.pathname === '/explore';
 
     const { data: suggestedUsers = [] } = useSuggestedUsers();
 
@@ -35,92 +36,60 @@ const RightSidebar = () => {
     };
     const requestsCount = receivedRequests.length;
 
-    if (isHomePage) {
+    // Home & Explore: discovery-focused sidebar (no Messages)
+    if (isHomePage || isExplorePage) {
         return (
             <aside className="w-[260px] h-full px-4 py-5 overflow-y-auto space-y-5">
                 {/* Trends card */}
-                <div className="rounded-3xl bg-[var(--theme-surface)] border border-[var(--theme-border)] p-5 space-y-4">
+                <div className="rounded-2xl bg-[var(--theme-surface)] border border-[var(--theme-border)] p-4 space-y-3 shadow-post-card">
                     <div className="flex items-center justify-between">
-                        <h2 className="text-sm font-semibold text-[var(--text-primary)]">
+                        <h2 className="text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)]">
                             Trends for you
                         </h2>
-                        <button
-                            type="button"
-                            className="text-[11px] text-[var(--text-primary)]/60 hover:text-[var(--text-primary)] transition-colors cursor-pointer"
-                        >
-                            View all
-                        </button>
+                        <Link to="/search" className="text-[11px] text-[var(--theme-accent)] hover:underline">View all</Link>
                     </div>
-                    <div className="space-y-4 text-sm">
+                    <div className="space-y-3 text-sm">
                         {[
                             { category: 'Technology · Trending', name: '#DesignSystems', posts: '54.2K posts' },
                             { category: 'Business · Trending', name: '#RemoteWork2024', posts: '18.9K posts' },
                             { category: 'Development · Trending', name: '#ShipFaster', posts: '12.4K posts' },
                         ].map((trend) => (
-                            <button
+                            <Link
                                 key={trend.name}
-                                type="button"
-                                className="w-full text-left group"
+                                to={`/search?q=%23${trend.name.replace('#', '')}&type=hashtags`}
+                                className="block w-full text-left group py-1"
                             >
-                                <p className="text-[11px] uppercase tracking-wide text-[var(--text-primary)]/50">
-                                    {trend.category}
-                                </p>
-                                <p className="text-[var(--text-primary)] font-semibold group-hover:text-primary transition-colors">
-                                    {trend.name}
-                                </p>
-                                <p className="text-[11px] text-[var(--text-primary)]/50 mt-0.5">
-                                    {trend.posts}
-                                </p>
-                            </button>
+                                <p className="text-[11px] uppercase tracking-wide text-[var(--text-secondary)]">{trend.category}</p>
+                                <p className="text-[var(--text-primary)] font-semibold group-hover:text-[var(--theme-accent)] transition-colors">{trend.name}</p>
+                                <p className="text-[11px] text-[var(--text-secondary)] mt-0.5">{trend.posts}</p>
+                            </Link>
                         ))}
                     </div>
                 </div>
 
                 {/* Who to follow */}
-                <div className="rounded-3xl bg-[var(--theme-surface)] border border-[var(--theme-border)] p-5 space-y-4">
+                <div className="rounded-2xl bg-[var(--theme-surface)] border border-[var(--theme-border)] p-4 space-y-3 shadow-post-card">
                     <div className="flex items-center justify-between">
-                        <h2 className="text-sm font-semibold text-[var(--text-primary)]">
-                            Who to follow
-                        </h2>
-                        <button
-                            type="button"
-                            className="text-[11px] text-[var(--text-primary)]/60 hover:text-[var(--text-primary)] transition-colors cursor-pointer"
-                        >
-                            Show more
-                        </button>
+                        <h2 className="text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)]">Who to follow</h2>
+                        <Link to="/connections" className="text-[11px] text-[var(--theme-accent)] hover:underline">Show more</Link>
                     </div>
-                    <div className="space-y-4">
+                    <div className="space-y-3">
                         {suggestedUsers.slice(0, 3).map((user) => (
-                            <div key={user.id} className="flex items-center justify-between gap-3">
-                                <div className="flex items-center gap-3 min-w-0">
-                                    <Avatar
-                                        src={user.profile_picture}
-                                        alt={user.name}
-                                        size="sm"
-                                    />
+                            <div key={user.id} className="flex items-center justify-between gap-2">
+                                <Link to={`/profile/${user.username}`} className="flex items-center gap-2 min-w-0 flex-1">
+                                    <Avatar src={user.profile_picture} alt={user.name} size="sm" />
                                     <div className="min-w-0">
-                                        <p className="text-sm font-medium text-[var(--text-primary)] truncate">
-                                            {user.name}
-                                        </p>
-                                        {user.username && (
-                                            <p className="text-xs text-[var(--text-primary)]/60 truncate">
-                                                @{user.username}
-                                            </p>
-                                        )}
+                                        <p className="text-sm font-medium text-[var(--text-primary)] truncate">{user.name}</p>
+                                        {user.username && <p className="text-xs text-[var(--text-secondary)] truncate">@{user.username}</p>}
                                     </div>
-                                </div>
-                                <button
-                                    type="button"
-                                    className="px-3 py-1.5 rounded-full bg-primary text-xs font-medium text-white hover:bg-primary/90 active:scale-[0.97] transition-all whitespace-nowrap cursor-pointer"
-                                >
+                                </Link>
+                                <button type="button" className="px-3 py-1.5 rounded-full bg-[var(--theme-accent)] text-xs font-medium text-white hover:opacity-90 active:scale-[0.97] transition-all whitespace-nowrap shrink-0">
                                     Follow
                                 </button>
                             </div>
                         ))}
                         {suggestedUsers.length === 0 && (
-                            <p className="text-xs text-[var(--text-primary)]/60">
-                                Follow more people to see suggestions here.
-                            </p>
+                            <p className="text-xs text-[var(--text-secondary)]">Follow more people to see suggestions.</p>
                         )}
                     </div>
                 </div>
@@ -129,7 +98,7 @@ const RightSidebar = () => {
     }
 
     return (
-        <aside className="w-full h-full border-l border-white/5 px-4 py-5 bg-[var(--theme-bg-sidebar)] rounded-3xl overflow-y-auto">
+        <aside className="w-full h-full border border-[var(--theme-border)] px-4 py-5 bg-[var(--theme-surface)] rounded-3xl overflow-y-auto">
             <div className="flex items-center justify-between mb-6">
                 <h3 className="text-lg font-bold text-white">Messages</h3>
                 <Link to="/messages" className="p-1.5 rounded-lg hover:bg-white/5 text-slate-400 transition-colors" aria-label="Compose message">
@@ -229,7 +198,7 @@ const RightSidebar = () => {
                                 const isRejecting = rejectMutation.isPending && rejectMutation.variables === request.id;
                                 const isPending = isAccepting || isRejecting;
                                 return (
-                                    <div key={request.id} className="p-4 rounded-xl theme-surface border border-white/5">
+                                    <div key={request.id} className="p-4 rounded-xl theme-surface border border-[var(--theme-border)]">
                                         <div className="flex items-center gap-3 mb-4">
                                             <Link to={`/profile/${sender?.username}`} className="shrink-0">
                                                 <Avatar src={sender?.profile_picture} alt={sender?.name} size="lg" className="w-12 h-12" />

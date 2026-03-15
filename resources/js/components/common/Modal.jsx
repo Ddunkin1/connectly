@@ -36,15 +36,16 @@ const Modal = ({ isOpen, onClose, title, children, size = 'md' }) => {
                 />
 
                 <div
-                    className={`relative z-50 inline-block align-bottom bg-[#252538] rounded-xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle border border-gray-700 ${sizes[size]} w-full`}
+                    className={`relative z-50 inline-block align-bottom bg-[var(--theme-surface)] text-left overflow-hidden rounded-2xl border border-[var(--theme-border)] shadow-post-card transform transition-all sm:my-8 sm:align-middle flex flex-col ${sizes[size]} w-full`}
+                    style={{ maxHeight: '88vh' }}
                     onClick={(e) => e.stopPropagation()}
                 >
                     {title && (
-                        <div className="px-6 py-4 border-b border-gray-700">
-                            <h3 className="text-lg font-semibold text-white">{title}</h3>
+                        <div className="px-5 py-3 border-b border-[var(--theme-border)] shrink-0">
+                            <h3 className="text-base font-semibold text-[var(--text-primary)]">{title}</h3>
                         </div>
                     )}
-                    <div className="px-6 py-4 text-gray-200">{children}</div>
+                    <div className="px-5 py-4 text-[var(--text-primary)] overflow-y-auto overflow-x-hidden min-h-0 flex-1 pb-4" style={{ maxHeight: 'calc(88vh - 4rem)' }}>{children}</div>
                 </div>
             </div>
         </div>

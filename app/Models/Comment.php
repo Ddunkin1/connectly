@@ -17,6 +17,8 @@ class Comment extends Model
         'user_id',
         'parent_comment_id',
         'content',
+        'media_url',
+        'media_type',
     ];
 
     protected function casts(): array

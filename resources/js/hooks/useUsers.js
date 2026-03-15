@@ -33,6 +33,18 @@ export const useUserPosts = (userId) => {
     });
 };
 
+export const useUserCommunities = (userId) => {
+    return useQuery({
+        queryKey: ['user-communities', userId],
+        queryFn: () => userAPI.getUserCommunities(userId),
+        enabled: !!userId,
+        select: (response) => {
+            const raw = response.data?.communities;
+            return Array.isArray(raw) ? raw : (raw?.data ?? []);
+        },
+    });
+};
+
 export const useUpdateProfile = () => {
     const queryClient = useQueryClient();
 

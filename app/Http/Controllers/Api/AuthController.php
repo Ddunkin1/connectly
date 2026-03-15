@@ -35,12 +35,17 @@ class AuthController extends Controller
             'bio' => $request->bio ?? null,
         ];
 
-        // Handle profile picture upload
+        // Handle profile picture upload (optional: registration succeeds even if Supabase fails)
         if ($request->hasFile('profile_picture')) {
-            $supabaseService = app(\App\Services\SupabaseService::class);
-            $profilePictureUrl = $supabaseService->uploadFile($request->file('profile_picture'), 'profile-pictures');
-            if ($profilePictureUrl) {
-                $data['profile_picture'] = $profilePictureUrl;
+            try {
+                $supabaseService = app(\App\Services\SupabaseService::class);
+                $profilePictureUrl = $supabaseService->uploadFile($request->file('profile_picture'), 'profile-pictures');
+                if ($profilePictureUrl) {
+                    $data['profile_picture'] = $profilePictureUrl;
+                }
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::warning('Profile picture upload failed during registration, continuing without it.', ['error' => $e->getMessage()]);
+                // Continue without profile picture so user is still created in MySQL
             }
         }
 

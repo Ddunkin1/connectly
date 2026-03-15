@@ -8,9 +8,11 @@ import { useAddBookmark, useRemoveBookmark } from '../../hooks/useBookmarks';
 import ReportModal from '../common/ReportModal';
 import useAuthStore from '../../store/authStore';
 import toast from 'react-hot-toast';
-import ShareToTimelineModal from './ShareToTimelineModal';
+import SharePostModal from '../modal/SharePostModal';
+import ShareViaMessageModal from './ShareViaMessageModal';
+import CommentModal from '../modal/CommentModal';
 
-const PostCard = ({ post, onDeleted, onCommentClick }) => {
+const PostCard = ({ post, onDeleted }) => {
     const user = useAuthStore((state) => state.user);
     const likeMutation = useLikePost();
     const unlikeMutation = useUnlikePost();
@@ -21,9 +23,10 @@ const PostCard = ({ post, onDeleted, onCommentClick }) => {
     const deleteMutation = useDeletePost();
     const updateMutation = useUpdatePost();
     const votePollMutation = useVotePoll();
-    const [shareOpen, setShareOpen] = useState(false);
-    const [shareOpenInner, setShareOpenInner] = useState(false);
-    const [shareToTimelinePost, setShareToTimelinePost] = useState(null);
+    const [shareModalPost, setShareModalPost] = useState(null);
+    const [shareViaMessagePost, setShareViaMessagePost] = useState(null);
+    const [shareViaMessageInitialReceiver, setShareViaMessageInitialReceiver] = useState(null);
+    const [commentModalPost, setCommentModalPost] = useState(null);
     const [moreOpen, setMoreOpen] = useState(false);
     const [reportModalOpen, setReportModalOpen] = useState(false);
 
@@ -110,7 +113,7 @@ const PostCard = ({ post, onDeleted, onCommentClick }) => {
     };
 
     return (
-        <article className="glass-effect overflow-hidden group mb-4 last:mb-0 p-5 rounded-2xl shadow-xl">
+        <article className="bg-[var(--theme-surface)] overflow-hidden group mb-4 last:mb-0 p-5 rounded-2xl border border-[var(--theme-border)] shadow-post-card min-w-0 w-full">
             {/* Post Header - Stitch: avatar ring-2 ring-primary/20, 1 HOUR AGO, public icon */}
             <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center space-x-3">
@@ -270,17 +273,17 @@ const PostCard = ({ post, onDeleted, onCommentClick }) => {
                             </div>
                         )}
                         {post.shared_post.media_url && (
-                            <div className="mt-2 rounded overflow-hidden bg-black/20">
+                            <div className="mt-2 w-full min-w-0 rounded-xl overflow-hidden bg-black/20">
                                 {post.shared_post.media_type === 'image' ? (
                                     <img
                                         src={post.shared_post.media_url}
                                         alt=""
-                                        className="w-full h-auto max-h-[650px] object-contain block"
+                                        className="w-full max-w-full h-auto max-h-[420px] object-contain block"
                                     />
                                 ) : (
                                     <video
                                         src={post.shared_post.media_url}
-                                        className="w-full max-h-[650px]"
+                                        className="w-full max-w-full max-h-[420px] object-contain"
                                         controls
                                         onClick={(e) => e.stopPropagation()}
                                     />
@@ -291,20 +294,20 @@ const PostCard = ({ post, onDeleted, onCommentClick }) => {
                 </div>
             )}
 
-            {/* Media first (reference order) */}
+            {/* Media first (reference order) — constrained so image fits in card, no cut-off */}
             {!post.shared_post && post.media_url && (
-                <div className="my-2 rounded-[12px] overflow-hidden bg-[var(--theme-surface)]">
+                <div className="mt-2 mb-1 w-full min-w-0 rounded-xl overflow-hidden bg-[var(--theme-surface)]">
                     {post.media_type === 'image' ? (
                         <img
                             src={post.media_url}
                             alt="Post media"
-                            className="w-full h-auto max-h-[650px] object-contain block"
+                            className="w-full max-w-full h-auto max-h-[420px] object-contain block"
                         />
                     ) : (
                         <video
                             src={post.media_url}
                             controls
-                            className="w-full h-auto max-h-[650px] object-contain block"
+                            className="w-full max-w-full h-auto max-h-[420px] object-contain block"
                         >
                             Your browser does not support the video tag.
                         </video>
@@ -387,69 +390,40 @@ const PostCard = ({ post, onDeleted, onCommentClick }) => {
                         type="button"
                         onClick={handleLike}
                         disabled={isLikePendingFor(post.id)}
-                        className={`flex items-center gap-2.5 min-w-[44px] min-h-[44px] py-2 px-3 -my-2 -mx-1 rounded-xl text-slate-400 transition-colors group/btn cursor-pointer disabled:opacity-60 ${
+                        className={`flex items-center gap-2.5 min-w-[44px] min-h-[44px] py-2 px-3 -my-2 -mx-1 rounded-xl transition-colors group/btn cursor-pointer disabled:opacity-60 ${
                             post.is_liked
                                 ? 'text-rose-500 hover:text-rose-500'
-                                : 'hover:text-rose-500'
+                                : 'text-[var(--text-secondary)] hover:text-rose-500'
                             } hover:bg-white/5`}
                         >
-                            <span className={`material-symbols-outlined text-[22px] ${post.is_liked ? 'fill-rose-500' : ''}`}>favorite</span>
+                            <span className={`material-symbols-outlined text-[22px] ${post.is_liked ? 'text-rose-500 fill-rose-500' : 'text-[var(--text-secondary)]'}`}>favorite</span>
                             <span className="text-xs font-medium">{(post.likes_count ?? 0) > 999 ? `${((post.likes_count ?? 0) / 1000).toFixed(1)}k` : post.likes_count ?? 0}</span>
                         </button>
 
-                        {onCommentClick ? (
-                            <button
-                                type="button"
-                                onClick={onCommentClick}
-                                className="flex items-center gap-2.5 min-w-[44px] min-h-[44px] py-2 px-3 -my-2 -mx-1 rounded-xl text-slate-400 hover:text-primary hover:bg-white/5 transition-colors cursor-pointer"
-                            >
-                                <span className="material-symbols-outlined text-[22px]">chat_bubble</span>
-                                <span className="text-xs font-medium">{post.comments_count ?? 0}</span>
-                            </button>
-                        ) : (
-                            <Link
-                                to={`/post/${post.id}`}
-                                className="flex items-center gap-2.5 min-w-[44px] min-h-[44px] py-2 px-3 -my-2 -mx-1 rounded-xl text-slate-400 hover:text-primary hover:bg-white/5 transition-colors cursor-pointer"
-                            >
-                                <span className="material-symbols-outlined text-[22px]">chat_bubble</span>
-                                <span className="text-xs font-medium">{post.comments_count ?? 0}</span>
-                            </Link>
-                        )}
+                        <button
+                            type="button"
+                            onClick={(e) => {
+                                e.preventDefault();
+                                setCommentModalPost(post);
+                            }}
+                            className="flex items-center gap-2.5 min-w-[44px] min-h-[44px] py-2 px-3 -my-2 -mx-1 rounded-xl text-slate-400 hover:text-primary hover:bg-white/5 transition-colors cursor-pointer"
+                        >
+                            <span className="material-symbols-outlined text-[22px]">chat_bubble</span>
+                            <span className="text-xs font-medium">{post.comments_count ?? 0}</span>
+                        </button>
 
-                        <div className="relative flex-shrink-0">
+                        <div className="flex-shrink-0">
                             <button
                                 type="button"
                                 onClick={(e) => {
                                     e.preventDefault();
-                                    setShareOpen((open) => !open);
+                                    setShareModalPost(post);
                                 }}
                                 className="flex items-center gap-2.5 min-w-[44px] min-h-[44px] py-2 px-3 -my-2 -mx-1 rounded-xl text-slate-400 hover:text-sky-500 hover:bg-white/5 transition-colors cursor-pointer"
                             >
                                 <span className="material-symbols-outlined text-[22px]">share</span>
                                 <span className="text-xs font-medium">{post.shares_count ?? 0}</span>
                             </button>
-                        {shareOpen && (
-                            <>
-                                <div
-                                    className="fixed inset-0 z-10"
-                                    aria-hidden="true"
-                                    onClick={() => setShareOpen(false)}
-                                />
-                                <div className="absolute left-0 top-full mt-1 z-20 py-1 w-52 theme-surface rounded-lg border border-[var(--theme-border)] shadow-xl">
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            setShareOpen(false);
-                                            setShareToTimelinePost(post);
-                                        }}
-                                        className="w-full px-4 py-2 text-left text-sm text-gray-300 hover:bg-white/10 flex items-center gap-2 cursor-pointer"
-                                    >
-                                        <UilMegaphone size={18} color="currentColor" />
-                                        Share to my timeline
-                                    </button>
-                                </div>
-                            </>
-                        )}
                         </div>
                     </div>
 
@@ -465,23 +439,44 @@ const PostCard = ({ post, onDeleted, onCommentClick }) => {
                     </button>
                 </div>
 
-                    {shareToTimelinePost && (
-                        <ShareToTimelineModal
-                            post={shareToTimelinePost}
-                            onClose={() => setShareToTimelinePost(null)}
-                            onSubmit={(formData) => {
+                    {commentModalPost && (
+                        <CommentModal
+                            post={commentModalPost}
+                            onClose={() => setCommentModalPost(null)}
+                        />
+                    )}
+                    {shareModalPost && (
+                        <SharePostModal
+                            post={shareModalPost}
+                            onClose={() => setShareModalPost(null)}
+                            onShareToTimelineSubmit={(formData) => {
                                 createPostMutation.mutate(
-                                    { formData, sharedPost: shareToTimelinePost },
+                                    { formData, sharedPost: shareModalPost },
                                     {
                                         onSuccess: () => {
-                                            setShareToTimelinePost(null);
+                                            setShareModalPost(null);
                                             toast.success('Shared to your timeline');
                                         },
                                         onError: () => {},
                                     }
                                 );
                             }}
-                            isSubmitting={createPostMutation.isPending}
+                            isShareSubmitting={createPostMutation.isPending}
+                            onSendToSomeone={(user) => {
+                                setShareViaMessagePost(shareModalPost);
+                                setShareViaMessageInitialReceiver(user);
+                                setShareModalPost(null);
+                            }}
+                        />
+                    )}
+                    {shareViaMessagePost && (
+                        <ShareViaMessageModal
+                            post={shareViaMessagePost}
+                            onClose={() => {
+                                setShareViaMessagePost(null);
+                                setShareViaMessageInitialReceiver(null);
+                            }}
+                            initialReceiver={shareViaMessageInitialReceiver}
                         />
                     )}
                 {(post.likes_count > 0 || post.is_liked) && (

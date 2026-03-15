@@ -30,8 +30,10 @@ class AnalyticsController extends Controller
         $likerIds = $postIds->isNotEmpty()
             ? Like::where('likeable_type', Post::class)->whereIn('likeable_id', $postIds)->pluck('user_id')
             : collect();
-        $commenterIds = $user->posts()->join('comments', 'comments.post_id', '=', 'posts.id')->pluck('comments.user_id');
-        $followerIds = $user->followers()->pluck('id');
+        $commenterIds = $postIds->isNotEmpty()
+            ? \Illuminate\Support\Facades\DB::table('comments')->whereIn('post_id', $postIds)->pluck('user_id')
+            : collect();
+        $followerIds = $user->followers()->pluck('users.id');
         $reach = $followerIds->merge($likerIds)->merge($commenterIds)->unique()->count();
 
         $posts = $user->posts()

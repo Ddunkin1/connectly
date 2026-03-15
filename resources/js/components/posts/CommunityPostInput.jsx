@@ -69,23 +69,24 @@ const CommunityPostInput = ({ communityId, requiresApproval, onPostSubmitted }) 
     const firstName = user?.name?.split(' ')[0] || 'there';
 
     return (
-        <div className="theme-surface rounded-[16px] p-4 mb-6 card-shadow">
+        <div className="rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 mb-6 shadow-[var(--shadow-card)]">
             {requiresApproval && (
-                <p className="text-sm text-amber-500 mb-3">
+                <p className="text-sm text-amber-600 dark:text-amber-400 mb-3 flex items-center gap-2">
+                    <span className="material-symbols-outlined text-lg">schedule</span>
                     Your post will be pending moderator approval.
                 </p>
             )}
             <form onSubmit={handleSubmit(onSubmit)}>
                 <div className="flex items-center gap-3 min-h-[64px]">
                     <Avatar src={user?.profile_picture} alt={user?.name} size="lg" className="w-10 h-10 shrink-0" />
-                    <div className="flex-1 min-w-0 flex items-center gap-3 h-16 px-4 rounded-[32px] bg-[#1A1A1A] border border-transparent">
+                    <div className="flex-1 min-w-0 flex items-center gap-3 h-12 px-4 rounded-full bg-[var(--theme-surface-hover)] border border-[var(--theme-border)]">
                         <input
                             {...register('content')}
                             type="text"
                             placeholder={`Post to the community, ${firstName}...`}
-                            className="flex-1 min-w-0 bg-transparent text-white placeholder-[#9CA3AF] text-sm focus:outline-none"
+                            className="flex-1 min-w-0 bg-transparent text-[var(--text-primary)] placeholder-[var(--text-secondary)]/70 text-sm focus:outline-none"
                         />
-                        <label htmlFor="community-media-upload" className="cursor-pointer text-[var(--theme-accent)] hover:opacity-80 shrink-0">
+                        <label htmlFor="community-media-upload" className="cursor-pointer text-[var(--theme-accent)] hover:opacity-80 shrink-0" aria-label="Add image or video">
                             <UilImage size={24} color="currentColor" />
                             <input type="file" id="community-media-upload" accept="image/*,video/*" onChange={handleFileChange} className="hidden" />
                         </label>
@@ -93,7 +94,7 @@ const CommunityPostInput = ({ communityId, requiresApproval, onPostSubmitted }) 
                     <button
                         type="submit"
                         disabled={!isFormValid || submitMutation.isPending}
-                        className="shrink-0 w-20 h-10 rounded-[20px] bg-[#8B5CF6] hover:bg-[#7C3AED] text-white font-medium text-sm flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        className="shrink-0 w-20 h-10 rounded-full bg-[var(--theme-accent)] hover:opacity-90 text-white font-medium text-sm flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
                     >
                         {submitMutation.isPending ? '...' : 'Post'}
                     </button>

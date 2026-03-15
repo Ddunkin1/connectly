@@ -27,7 +27,6 @@ const LeftSidebar = ({ className = '', onNavigate, positionBelowNav = false }) =
         { icon: 'groups', label: 'Communities', path: '/communities' },
         { icon: 'bookmark', label: 'Bookmarks', path: '/bookmarks' },
         { icon: 'monitoring', label: 'Analytics', path: '/analytics' },
-        { icon: 'person_add', label: 'Invites', path: '/invites' },
         ...(user?.role === 'admin' ? [{ icon: 'shield', label: 'Admin', path: '/admin/reports' }] : []),
     ];
 

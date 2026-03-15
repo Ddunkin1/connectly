@@ -26,13 +26,13 @@ import Settings from './pages/Settings';
 import Onboarding from './pages/Onboarding';
 import Connections from './pages/Connections';
 import SafetyCenter from './pages/SafetyCenter';
-import Invites from './pages/Invites';
 import AdminReports from './pages/Admin/AdminReports';
 import AdminUsers from './pages/Admin/AdminUsers';
 import useAuthStore from './store/authStore';
 import useThemeStore from './store/themeStore';
 import ThemeCustomizer from './components/layout/ThemeCustomizer';
 import RealtimeMessagesProvider from './components/realtime/RealtimeMessagesProvider';
+import RealtimePostUpdatesProvider from './components/realtime/RealtimePostUpdatesProvider';
 
 const queryClient = new QueryClient({
     defaultOptions: {
@@ -148,6 +148,7 @@ function AppContent() {
 
     return (
         <RealtimeMessagesProvider>
+        <RealtimePostUpdatesProvider>
         <MainLayout showRightPanel={!isMessagesPage} showLeftPanel={!isMessagesPage}>
                 {isMessagesPage ? (
                     <div className={`flex-1 flex min-h-0 overflow-hidden ${isMessagesPage ? 'h-[calc(100vh-60px)]' : ''}`}>
@@ -272,14 +273,6 @@ function AppContent() {
                             }
                         />
                         <Route
-                            path="/invites"
-                            element={
-                                <ProtectedRoute>
-                                    <Invites />
-                                </ProtectedRoute>
-                            }
-                        />
-                        <Route
                             path="/safety"
                             element={
                                 <ProtectedRoute>
@@ -334,6 +327,7 @@ function AppContent() {
                     },
                 }}
             />
+        </RealtimePostUpdatesProvider>
         </RealtimeMessagesProvider>
     );
 }
@@ -341,7 +335,7 @@ function AppContent() {
 function App() {
     return (
         <QueryClientProvider client={queryClient}>
-            <Router>
+            <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
                 <AppContent />
             </Router>
         </QueryClientProvider>

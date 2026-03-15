@@ -12,7 +12,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        // For MySQL/MariaDB, use ALTER TABLE directly
+        // For MySQL, use ALTER TABLE directly
         // This avoids needing doctrine/dbal package
         DB::statement('ALTER TABLE posts MODIFY content TEXT NULL');
     }

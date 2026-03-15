@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\User\UpdateProfileRequest;
 use App\Http\Requests\User\UploadProfilePictureRequest;
+use App\Http\Resources\CommunityResource;
 use App\Http\Resources\PostResource;
 use App\Http\Resources\UserResource;
 use App\Models\Like;
@@ -279,6 +280,32 @@ class UserController extends Controller
                 'error' => config('app.debug') ? $e->getMessage() : 'An error occurred',
             ], 500);
         }
+    }
+
+    /**
+     * Get communities the user is a member of (for profile tab).
+     *
+     * @param Request $request
+     * @param User $user
+     * @return JsonResponse
+     */
+    public function communities(Request $request, User $user): JsonResponse
+    {
+        $communities = $user->communities()
+            ->with(['creator'])
+            ->withCount('members')
+            ->orderByPivot('joined_at', 'desc')
+            ->get();
+
+        $currentUser = $request->user();
+        $communities->each(function ($community) use ($currentUser) {
+            $community->is_member = true;
+            $community->is_moderator = $currentUser ? $community->isModerator($currentUser) : false;
+        });
+
+        return response()->json([
+            'communities' => CommunityResource::collection($communities),
+        ]);
     }
 
     /**

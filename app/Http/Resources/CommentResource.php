@@ -17,6 +17,8 @@ class CommentResource extends JsonResource
         return [
             'id' => $this->id,
             'content' => $this->content,
+            'media_url' => $this->media_url,
+            'media_type' => $this->media_type,
             'user' => new UserResource($this->whenLoaded('user')),
             'parent_comment_id' => $this->parent_comment_id,
             'replies' => CommentResource::collection($this->whenLoaded('replies')),

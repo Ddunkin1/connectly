@@ -69,7 +69,7 @@ const AppTopBar = ({ onMenuToggle, showMenuButton = false }) => {
 
     return (
         <header className="fixed top-0 left-0 right-0 h-[60px] z-40 flex items-center px-4 lg:px-6 glass-effect border-b border-white/5">
-            <div className="flex items-center justify-between w-full max-w-6xl mx-auto">
+            <div className="flex items-center w-full max-w-6xl mx-auto gap-4">
                 {/* Left: Hamburger (mobile) or Logo */}
                 <div className="flex items-center w-[240px] shrink-0">
                     {showMenuButton ? (
@@ -91,11 +91,9 @@ const AppTopBar = ({ onMenuToggle, showMenuButton = false }) => {
                     )}
                 </div>
 
-                {/* Search bar - centered in header */}
-                <div
-                    ref={suggestionsRef}
-                    className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-xl px-4"
-                >
+                {/* Center: Search bar - takes remaining space and centers the input */}
+                <div className="flex-1 flex justify-center items-center min-w-0">
+                    <div ref={suggestionsRef} className="relative w-full max-w-xl">
                     <form onSubmit={handleSearch}>
                         <div className="relative">
                             <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-xl">search</span>
@@ -115,7 +113,7 @@ const AppTopBar = ({ onMenuToggle, showMenuButton = false }) => {
                         </div>
                     </form>
                     {showSuggestions && (suggestionUsers.length > 0 || suggestionHashtags.length > 0 || suggestionCommunities.length > 0) && (
-                        <div className="mt-2 rounded-2xl bg-[var(--theme-surface)] border border-[var(--theme-border)] shadow-xl overflow-hidden max-h-80 overflow-y-auto">
+                        <div className="absolute left-0 right-0 top-full mt-2 z-[100] rounded-2xl bg-[var(--theme-surface)] border border-[var(--theme-border)] shadow-xl overflow-hidden max-h-80 overflow-y-auto">
                             {suggestionUsers.length > 0 && (
                                 <div className="border-b border-white/5">
                                     <p className="px-4 pt-3 pb-1 text-[11px] uppercase tracking-[0.2em] text-slate-500">
@@ -185,6 +183,7 @@ const AppTopBar = ({ onMenuToggle, showMenuButton = false }) => {
                             )}
                         </div>
                     )}
+                    </div>
                 </div>
 
                 {/* Right: High-frequency actions and profile */}

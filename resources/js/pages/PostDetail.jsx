@@ -59,7 +59,6 @@ const PostDetail = () => {
             <PostCard
                 post={post}
                 onDeleted={() => navigate('/home', { replace: true })}
-                onCommentClick={() => document.getElementById('comment-section')?.scrollIntoView({ behavior: 'smooth' })}
             />
 
             {/* Comment Input */}

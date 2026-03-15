@@ -12,12 +12,22 @@ import useAuthStore from '../store/authStore';
 const Search = () => {
     const [searchParams, setSearchParams] = useSearchParams();
     const query = searchParams.get('q') || '';
-    const [activeTab, setActiveTab] = useState('all');
+    const [localQuery, setLocalQuery] = useState(query);
     const user = useAuthStore((state) => state.user);
     const followMutation = useFollow();
     const unfollowMutation = useUnfollow();
 
+    useEffect(() => {
+        setLocalQuery(query);
+    }, [query]);
+
     const { data, isLoading, isError } = useSearch(query, activeTab, !!query);
+
+    const handleSearchSubmit = (e) => {
+        e.preventDefault();
+        const q = localQuery.trim();
+        if (q) setSearchParams({ q, ...(activeTab !== 'all' ? { type: activeTab } : {}) });
+    };
 
     const handleFollow = (userId) => {
         followMutation.mutate(userId);
@@ -32,7 +42,12 @@ const Search = () => {
         { id: 'users', label: 'Users' },
         { id: 'posts', label: 'Posts' },
         { id: 'communities', label: 'Communities' },
+        { id: 'hashtags', label: 'Hashtags' },
     ];
+    const [activeTab, setActiveTab] = useState(() => {
+        const t = searchParams.get('type');
+        return t && ['users', 'posts', 'communities', 'hashtags'].includes(t) ? t : 'all';
+    });
 
     const { data: trendingData } = useQuery({
         queryKey: ['trending-hashtags'],
@@ -44,25 +59,43 @@ const Search = () => {
 
     if (!query) {
         return (
-            <div className="max-w-4xl mx-auto">
-                <div className="bg-[#252538] rounded-xl border border-gray-700/50 p-8 text-center mb-6">
-                    <span className="material-symbols-outlined text-6xl text-gray-500 mb-4">
-                        search
-                    </span>
-                    <h2 className="text-xl font-semibold text-white mb-2">Search connectly</h2>
-                    <p className="text-gray-400">Enter a search query to find users, posts, and communities</p>
+            <div className="max-w-2xl mx-auto">
+                <div className="bg-[var(--theme-surface)] rounded-xl border border-[var(--theme-border)] p-6 sm:p-8 mb-6">
+                    <form onSubmit={handleSearchSubmit} className="text-center">
+                        <label htmlFor="search-main" className="sr-only">Search</label>
+                        <div className="relative">
+                            <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-[var(--text-secondary)] text-xl pointer-events-none">search</span>
+                            <input
+                                id="search-main"
+                                type="text"
+                                value={localQuery}
+                                onChange={(e) => setLocalQuery(e.target.value)}
+                                placeholder="Search creators, communities, and topics..."
+                                className="w-full bg-[var(--theme-surface-hover)] border border-[var(--theme-border)] rounded-xl py-3 pl-12 pr-4 text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] focus:ring-2 focus:ring-[var(--theme-accent)]/40 focus:border-[var(--theme-accent)] outline-none transition-standard"
+                                autoFocus
+                            />
+                        </div>
+                        <p className="text-sm text-[var(--text-secondary)] mt-3">Find users, posts, and communities</p>
+                        <button
+                            type="submit"
+                            disabled={!localQuery.trim()}
+                            className="mt-4 px-6 py-2.5 rounded-xl font-medium bg-[var(--theme-accent)] text-white hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-standard"
+                        >
+                            Search
+                        </button>
+                    </form>
                 </div>
                 {trendingHashtags.length > 0 && (
-                    <div className="bg-[#252538] rounded-xl border border-gray-700/50 p-6">
-                        <h3 className="text-lg font-semibold text-white mb-4">Trending hashtags</h3>
+                    <div className="bg-[var(--theme-surface)] rounded-xl border border-[var(--theme-border)] p-6">
+                        <h3 className="text-sm font-semibold text-[var(--text-primary)] uppercase tracking-[0.2em] mb-4">Trending hashtags</h3>
                         <div className="flex flex-wrap gap-2">
                             {trendingHashtags.map((h) => (
                                 <Link
                                     key={h.id}
                                     to={`/search?q=%23${encodeURIComponent(h.name)}&type=hashtags`}
-                                    className="px-4 py-2 rounded-full bg-[#1A1A2E] text-[var(--theme-accent)] hover:bg-[#252538]"
+                                    className="px-4 py-2 rounded-full bg-[var(--theme-surface-hover)] text-[var(--theme-accent)] hover:opacity-90 transition-standard"
                                 >
-                                    #{h.name} <span className="text-gray-500 text-sm">({h.posts_count})</span>
+                                    #{h.name} <span className="text-[var(--text-secondary)] text-sm">({h.posts_count})</span>
                                 </Link>
                             ))}
                         </div>
@@ -83,7 +116,7 @@ const Search = () => {
     if (isError) {
         return (
             <div className="text-center py-12">
-                <p className="text-red-600">Failed to load search results. Please try again.</p>
+                <p className="text-red-500 text-[var(--text-primary)]">Failed to load search results. Please try again.</p>
             </div>
         );
     }
@@ -97,7 +130,7 @@ const Search = () => {
     const renderUsers = () => {
         if (users.length === 0) {
             return (
-                <div className="text-center py-8 text-gray-500">
+                <div className="text-center py-8 text-[var(--text-secondary)]">
                     <p>No users found</p>
                 </div>
             );
@@ -108,36 +141,36 @@ const Search = () => {
                 {users.map((userResult) => (
                     <div
                         key={userResult.id}
-                        className="bg-white rounded-lg border border-gray-200 p-4 flex items-center justify-between"
+                        className="bg-[var(--theme-surface)] rounded-xl border border-[var(--theme-border)] p-4 flex items-center justify-between gap-4"
                     >
                         <Link
                             to={`/profile/${userResult.username}`}
-                            className="flex items-center space-x-3 flex-1 hover:opacity-80"
+                            className="flex items-center space-x-3 flex-1 min-w-0 hover:opacity-90"
                         >
                             <Avatar src={userResult.profile_picture} alt={userResult.name} size="md" />
-                            <div>
-                                <p className="font-semibold text-gray-900">{userResult.name}</p>
-                                <p className="text-sm text-gray-500">@{userResult.username}</p>
+                            <div className="min-w-0">
+                                <p className="font-semibold text-[var(--text-primary)]">{userResult.name}</p>
+                                <p className="text-sm text-[var(--text-secondary)]">@{userResult.username}</p>
                                 {userResult.bio && (
-                                    <p className="text-sm text-gray-600 mt-1">{userResult.bio}</p>
+                                    <p className="text-sm text-[var(--text-secondary)] mt-1 line-clamp-2">{userResult.bio}</p>
                                 )}
-                                <div className="flex items-center space-x-4 mt-1 text-xs text-gray-500">
+                                <div className="flex items-center space-x-4 mt-1 text-xs text-[var(--text-secondary)]">
                                     <span>{userResult.followers_count || 0} followers</span>
                                     <span>{userResult.following_count || 0} following</span>
                                 </div>
                             </div>
                         </Link>
                         {userResult.id !== user?.id && (
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2 shrink-0">
                                 {userResult.is_following ? (
                                     <>
-                                        <span className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-emerald-700 bg-emerald-50 rounded-lg">
+                                        <span className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-emerald-600 bg-emerald-500/15 rounded-lg">
                                             <span className="material-symbols-outlined text-lg">check_circle</span>
                                             Connected
                                         </span>
                                         <button
                                             onClick={() => handleUnfollow(userResult.id)}
-                                            className="px-4 py-2 rounded-lg font-medium bg-gray-200 text-gray-700 hover:bg-gray-300 transition-colors"
+                                            className="px-4 py-2 rounded-lg font-medium bg-[var(--theme-surface-hover)] text-[var(--text-primary)] hover:opacity-90 transition-colors"
                                         >
                                             Unfollow
                                         </button>
@@ -145,7 +178,7 @@ const Search = () => {
                                 ) : (
                                     <button
                                         onClick={() => handleFollow(userResult.id)}
-                                        className="px-4 py-2 rounded-lg font-medium bg-[#359EFF] text-white hover:bg-[#2a8eef] transition-colors"
+                                        className="px-4 py-2 rounded-lg font-medium bg-[var(--theme-accent)] text-white hover:opacity-90 transition-colors"
                                     >
                                         Connect
                                     </button>
@@ -161,7 +194,7 @@ const Search = () => {
     const renderPosts = () => {
         if (posts.length === 0) {
             return (
-                <div className="text-center py-8 text-gray-500">
+                <div className="text-center py-8 text-[var(--text-secondary)]">
                     <p>No posts found</p>
                 </div>
             );
@@ -179,7 +212,7 @@ const Search = () => {
     const renderCommunities = () => {
         if (communities.length === 0) {
             return (
-                <div className="text-center py-8 text-gray-500">
+                <div className="text-center py-8 text-[var(--text-secondary)]">
                     <p>No communities found</p>
                 </div>
             );
@@ -191,22 +224,22 @@ const Search = () => {
                     <Link
                         key={community.id}
                         to={`/communities/${community.id}`}
-                        className="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-shadow"
+                        className="bg-[var(--theme-surface)] rounded-xl border border-[var(--theme-border)] p-4 hover:bg-[var(--theme-surface-hover)] transition-colors"
                     >
                         <div className="flex items-start space-x-3">
-                            <div className="w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center flex-shrink-0">
-                                <span className="material-symbols-outlined text-gray-600">
+                            <div className="w-12 h-12 bg-[var(--theme-surface-hover)] rounded-xl flex items-center justify-center flex-shrink-0">
+                                <span className="material-symbols-outlined text-[var(--text-secondary)]">
                                     group
                                 </span>
                             </div>
                             <div className="flex-1 min-w-0">
-                                <h3 className="font-semibold text-gray-900 mb-1">{community.name}</h3>
+                                <h3 className="font-semibold text-[var(--text-primary)] mb-1">{community.name}</h3>
                                 {community.description && (
-                                    <p className="text-sm text-gray-600 mb-2 line-clamp-2">
+                                    <p className="text-sm text-[var(--text-secondary)] mb-2 line-clamp-2">
                                         {community.description}
                                     </p>
                                 )}
-                                <div className="flex items-center space-x-4 text-xs text-gray-500">
+                                <div className="flex items-center space-x-4 text-xs text-[var(--text-secondary)]">
                                     <span>{community.members_count || 0} members</span>
                                     <span className="capitalize">{community.privacy}</span>
                                 </div>
@@ -221,7 +254,7 @@ const Search = () => {
     const renderHashtags = () => {
         if (hashtags.length === 0) {
             return (
-                <div className="text-center py-8 text-gray-500">
+                <div className="text-center py-8 text-[var(--text-secondary)]">
                     <p>No hashtags found</p>
                 </div>
             );
@@ -233,12 +266,12 @@ const Search = () => {
                     <Link
                         key={hashtag.id}
                         to={`/hashtag/${hashtag.name.replace('#', '')}`}
-                        className="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-shadow"
+                        className="bg-[var(--theme-surface)] rounded-xl border border-[var(--theme-border)] p-4 hover:bg-[var(--theme-surface-hover)] transition-colors"
                     >
-                        <p className="font-semibold text-[#359EFF] text-lg mb-1">
+                        <p className="font-semibold text-[var(--theme-accent)] text-lg mb-1">
                             {hashtag.name.startsWith('#') ? hashtag.name : `#${hashtag.name}`}
                         </p>
-                        <p className="text-sm text-gray-500">{hashtag.posts_count || 0} posts</p>
+                        <p className="text-sm text-[var(--text-secondary)]">{hashtag.posts_count || 0} posts</p>
                     </Link>
                 ))}
             </div>
@@ -247,27 +280,41 @@ const Search = () => {
 
     return (
         <div className="max-w-4xl mx-auto">
-            {/* Search Header */}
-            <div className="mb-6">
-                <h1 className="text-2xl font-bold text-gray-900 mb-2">
-                    Search results for "{query}"
+            {/* Search bar - so you can refine search without going back to header */}
+            <form onSubmit={handleSearchSubmit} className="mb-6">
+                <div className="relative">
+                    <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-[var(--text-secondary)] text-xl pointer-events-none">search</span>
+                    <input
+                        type="text"
+                        value={localQuery}
+                        onChange={(e) => setLocalQuery(e.target.value)}
+                        placeholder="Search creators, communities, and topics..."
+                        className="w-full bg-[var(--theme-surface)] border border-[var(--theme-border)] rounded-xl py-2.5 pl-12 pr-4 text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] focus:ring-2 focus:ring-[var(--theme-accent)]/40 focus:border-[var(--theme-accent)] outline-none transition-standard"
+                    />
+                </div>
+            </form>
+
+            {/* Results header */}
+            <div className="mb-4">
+                <h1 className="text-xl font-bold text-[var(--text-primary)]">
+                    Results for &ldquo;{query}&rdquo;
                 </h1>
-                <p className="text-gray-500">
-                    Found {users.length + posts.length + communities.length + hashtags.length} results
+                <p className="text-sm text-[var(--text-secondary)]">
+                    {users.length + posts.length + communities.length + hashtags.length} results
                 </p>
             </div>
 
             {/* Tabs */}
-            <div className="bg-white rounded-lg border border-gray-200 mb-6">
-                <div className="flex border-b border-gray-200">
+            <div className="bg-[var(--theme-surface)] rounded-xl border border-[var(--theme-border)] mb-6 overflow-hidden">
+                <div className="flex border-b border-[var(--theme-border)]">
                     {tabs.map((tab) => (
                         <button
                             key={tab.id}
                             onClick={() => setActiveTab(tab.id)}
                             className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${
                                 activeTab === tab.id
-                                    ? 'bg-blue-50 text-[#359EFF] border-b-2 border-[#359EFF]'
-                                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                                    ? 'bg-[var(--theme-accent)]/10 text-[var(--theme-accent)] border-b-2 border-[var(--theme-accent)]'
+                                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--theme-surface-hover)]'
                             }`}
                         >
                             {tab.label}
@@ -282,34 +329,34 @@ const Search = () => {
                     <div className="space-y-8">
                         {users.length > 0 && (
                             <div>
-                                <h2 className="text-lg font-semibold text-gray-900 mb-4">Users</h2>
+                                <h2 className="text-sm font-semibold text-[var(--text-primary)] uppercase tracking-[0.2em] mb-4">Users</h2>
                                 {renderUsers()}
                             </div>
                         )}
                         {posts.length > 0 && (
                             <div>
-                                <h2 className="text-lg font-semibold text-gray-900 mb-4">Posts</h2>
+                                <h2 className="text-sm font-semibold text-[var(--text-primary)] uppercase tracking-[0.2em] mb-4">Posts</h2>
                                 {renderPosts()}
                             </div>
                         )}
                         {communities.length > 0 && (
                             <div>
-                                <h2 className="text-lg font-semibold text-gray-900 mb-4">Communities</h2>
+                                <h2 className="text-sm font-semibold text-[var(--text-primary)] uppercase tracking-[0.2em] mb-4">Communities</h2>
                                 {renderCommunities()}
                             </div>
                         )}
                         {hashtags.length > 0 && (
                             <div>
-                                <h2 className="text-lg font-semibold text-gray-900 mb-4">Hashtags</h2>
+                                <h2 className="text-sm font-semibold text-[var(--text-primary)] uppercase tracking-[0.2em] mb-4">Hashtags</h2>
                                 {renderHashtags()}
                             </div>
                         )}
                         {users.length === 0 && posts.length === 0 && communities.length === 0 && hashtags.length === 0 && (
-                            <div className="text-center py-12 bg-white rounded-lg border border-gray-200">
-                                <span className="material-symbols-outlined text-6xl text-gray-300 mb-4">
+                            <div className="text-center py-12 bg-[var(--theme-surface)] rounded-xl border border-[var(--theme-border)]">
+                                <span className="material-symbols-outlined text-6xl text-[var(--text-secondary)]/50 mb-4 block">
                                     search_off
                                 </span>
-                                <p className="text-gray-500">No results found</p>
+                                <p className="text-[var(--text-secondary)]">No results found</p>
                             </div>
                         )}
                     </div>

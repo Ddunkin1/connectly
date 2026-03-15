@@ -8,8 +8,16 @@ use App\Http\Requests\Community\UpdateCommunityRequest;
 use App\Http\Resources\CommunityResource;
 use App\Http\Resources\PostResource;
 use App\Models\Community;
+use App\Models\CommunityInvite;
+use App\Models\CommunityJoinRequest;
 use App\Models\CommunityPost;
 use App\Models\Post;
+use App\Notifications\CommunityInviteNotification;
+use App\Notifications\CommunityInviteSuggestedNotification;
+use App\Notifications\CommunityJoinRequestApprovedNotification;
+use App\Notifications\CommunityJoinRequestNotification;
+use App\Notifications\CommunityJoinRequestRejectedNotification;
+use App\Notifications\CommunityMemberJoinedNotification;
 use App\Services\PostService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -68,16 +76,26 @@ class CommunityController extends Controller
         $community->load(['creator']);
         $community->loadCount('members');
         
-        // Check if current user is a member
         $isMember = false;
+        $hasPendingJoinRequest = false;
         if ($request->user()) {
             $isMember = $community->members()->where('user_id', $request->user()->id)->exists() 
                      || $community->creator_id === $request->user()->id;
+            if (!$isMember) {
+                $hasPendingJoinRequest = $community->joinRequests()
+                    ->where('user_id', $request->user()->id)
+                    ->where('status', CommunityJoinRequest::STATUS_PENDING)
+                    ->exists();
+            }
         }
 
+        $resource = new CommunityResource($community);
+        $resource->is_member = $isMember;
+
         return response()->json([
-            'community' => new CommunityResource($community),
+            'community' => $resource,
             'is_member' => $isMember,
+            'has_pending_join_request' => $hasPendingJoinRequest,
         ]);
     }
 
@@ -161,27 +179,260 @@ class CommunityController extends Controller
      * @param Community $community
      * @return JsonResponse
      */
+    /**
+     * Request to join a community (admin must approve).
+     */
     public function join(Request $request, Community $community): JsonResponse
     {
         $user = $request->user();
 
-        // Check if user is already a member
-        if ($community->members()->where('user_id', $user->id)->exists()) {
-            return response()->json([
-                'message' => 'You are already a member of this community',
-            ], 400);
+        if ($community->members()->where('user_id', $user->id)->exists() || $community->creator_id === $user->id) {
+            return response()->json(['message' => 'You are already a member of this community'], 400);
         }
 
-        // Add user as member
-        $community->members()->attach($user->id, [
-            'role' => 'member',
-            'joined_at' => now(),
-        ]);
+        $existing = $community->joinRequests()->where('user_id', $user->id)->first();
+        if ($existing) {
+            if ($existing->status === CommunityJoinRequest::STATUS_PENDING) {
+                return response()->json(['message' => 'You already have a pending request'], 400);
+            }
+            $existing->update(['status' => CommunityJoinRequest::STATUS_PENDING]);
+            $joinRequest = $existing;
+        } else {
+            $joinRequest = $community->joinRequests()->create([
+                'user_id' => $user->id,
+                'status' => CommunityJoinRequest::STATUS_PENDING,
+            ]);
+        }
+
+        if ($community->creator_id && $community->creator_id !== $user->id) {
+            $community->creator->notify(new CommunityJoinRequestNotification($joinRequest));
+        }
+
+        $community->load(['creator'])->loadCount('members');
+        $resource = new CommunityResource($community);
+        $resource->is_member = false;
 
         return response()->json([
-            'message' => 'Successfully joined community',
-            'community' => new CommunityResource($community->load(['creator', 'members'])->loadCount('members')),
+            'message' => 'Request to join sent. You will be notified when the admin responds.',
+            'has_pending_join_request' => true,
+            'community' => $resource,
         ]);
+    }
+
+    /**
+     * Cancel own pending join request.
+     */
+    public function cancelJoinRequest(Request $request, Community $community): JsonResponse
+    {
+        $user = $request->user();
+        $joinRequest = $community->joinRequests()
+            ->where('user_id', $user->id)
+            ->where('status', CommunityJoinRequest::STATUS_PENDING)
+            ->first();
+
+        if (!$joinRequest) {
+            return response()->json(['message' => 'No pending request found'], 404);
+        }
+
+        $joinRequest->update(['status' => CommunityJoinRequest::STATUS_REJECTED]);
+
+        return response()->json([
+            'message' => 'Join request cancelled',
+            'has_pending_join_request' => false,
+        ]);
+    }
+
+    /**
+     * List pending join requests (admin only).
+     */
+    public function joinRequests(Request $request, Community $community): JsonResponse
+    {
+        if ($community->creator_id !== $request->user()->id && !$community->isModerator($request->user())) {
+            return response()->json(['message' => 'Only the community admin can view join requests'], 403);
+        }
+
+        $requests = $community->joinRequests()
+            ->where('status', CommunityJoinRequest::STATUS_PENDING)
+            ->with('user')
+            ->latest()
+            ->get()
+            ->map(fn (CommunityJoinRequest $r) => [
+                'id' => $r->id,
+                'user_id' => $r->user_id,
+                'user' => $r->user ? [
+                    'id' => $r->user->id,
+                    'name' => $r->user->name,
+                    'username' => $r->user->username,
+                    'profile_picture' => $r->user->profile_picture,
+                ] : null,
+                'created_at' => $r->created_at?->toIso8601String(),
+            ]);
+
+        return response()->json(['join_requests' => $requests]);
+    }
+
+    /**
+     * Approve a join request (admin only).
+     */
+    public function approveJoinRequest(Request $request, Community $community, CommunityJoinRequest $joinRequest): JsonResponse
+    {
+        if ($community->creator_id !== $request->user()->id && !$community->isModerator($request->user())) {
+            return response()->json(['message' => 'Only the community admin can approve requests'], 403);
+        }
+        if ($joinRequest->community_id != $community->id || $joinRequest->status !== CommunityJoinRequest::STATUS_PENDING) {
+            return response()->json(['message' => 'Invalid request'], 422);
+        }
+
+        $joinRequest->update(['status' => CommunityJoinRequest::STATUS_APPROVED]);
+        $community->members()->syncWithoutDetaching([
+            $joinRequest->user_id => ['role' => 'member', 'joined_at' => now()],
+        ]);
+
+        $joinRequest->user->notify(new CommunityJoinRequestApprovedNotification($community));
+        if ($community->creator_id && $community->creator_id !== $joinRequest->user_id) {
+            $community->creator->notify(new CommunityMemberJoinedNotification($community, $joinRequest->user));
+        }
+
+        return response()->json([
+            'message' => 'Join request approved',
+            'join_request' => ['id' => $joinRequest->id, 'status' => $joinRequest->status],
+        ]);
+    }
+
+    /**
+     * Reject a join request (admin only).
+     */
+    public function rejectJoinRequest(Request $request, Community $community, CommunityJoinRequest $joinRequest): JsonResponse
+    {
+        if ($community->creator_id !== $request->user()->id && !$community->isModerator($request->user())) {
+            return response()->json(['message' => 'Only the community admin can reject requests'], 403);
+        }
+        if ($joinRequest->community_id != $community->id || $joinRequest->status !== CommunityJoinRequest::STATUS_PENDING) {
+            return response()->json(['message' => 'Invalid request'], 422);
+        }
+
+        $joinRequest->update(['status' => CommunityJoinRequest::STATUS_REJECTED]);
+        $joinRequest->user->notify(new CommunityJoinRequestRejectedNotification($community));
+
+        return response()->json([
+            'message' => 'Join request rejected',
+            'join_request' => ['id' => $joinRequest->id, 'status' => $joinRequest->status],
+        ]);
+    }
+
+    /**
+     * List community members. Any member of the community can view the list.
+     */
+    public function members(Request $request, Community $community): JsonResponse
+    {
+        $isMember = $community->members()->where('user_id', $request->user()->id)->exists()
+            || $community->creator_id === $request->user()->id;
+        if (!$isMember) {
+            return response()->json(['message' => 'You must be a member to view the member list'], 403);
+        }
+
+        // Ensure creator is in members table (for communities created before we added attach in store())
+        if ($community->creator_id && !$community->members()->where('user_id', $community->creator_id)->exists()) {
+            $community->members()->syncWithoutDetaching([
+                $community->creator_id => [
+                    'role' => 'admin',
+                    'joined_at' => now(),
+                ],
+            ]);
+        }
+
+        $list = $community->members()->get()->map(function ($user) use ($community) {
+            $joinedAt = $user->pivot->joined_at ?? null;
+            $joinedAtStr = $joinedAt instanceof \Carbon\Carbon
+                ? $joinedAt->toIso8601String()
+                : (is_string($joinedAt) ? $joinedAt : null);
+            $role = $user->pivot->role ?? 'member';
+            $isCreator = $user->id === $community->creator_id;
+            return [
+                'id' => $user->id,
+                'name' => $user->name,
+                'username' => $user->username,
+                'profile_picture' => $user->profile_picture,
+                'role' => $role,
+                'is_creator' => $isCreator,
+                'joined_at' => $joinedAtStr,
+            ];
+        })->values()->all();
+
+        // Creator first (super admin), then admins/moderators, then members
+        usort($list, function ($a, $b) {
+            if ($a['is_creator'] ?? false) return -1;
+            if ($b['is_creator'] ?? false) return 1;
+            $adminRoles = ['admin', 'moderator'];
+            $aIsAdmin = in_array($a['role'] ?? '', $adminRoles);
+            $bIsAdmin = in_array($b['role'] ?? '', $adminRoles);
+            if ($aIsAdmin && !$bIsAdmin) return -1;
+            if (!$aIsAdmin && $bIsAdmin) return 1;
+            return 0;
+        });
+
+        return response()->json(['members' => $list]);
+    }
+
+    /**
+     * Update a member's role. Only creator (super admin) can demote admins to member; creator and admins can promote.
+     */
+    public function updateMemberRole(Request $request, Community $community, \App\Models\User $user): JsonResponse
+    {
+        $userId = $user->id;
+        $currentUser = $request->user();
+        if ($community->creator_id !== $currentUser->id && !$community->isModerator($currentUser)) {
+            return response()->json(['message' => 'Only the community admin can change roles'], 403);
+        }
+        if ($community->creator_id === $userId) {
+            return response()->json(['message' => 'Cannot change the creator\'s role'], 422);
+        }
+
+        $request->validate(['role' => 'required|in:admin,moderator,member']);
+        $newRole = $request->input('role');
+
+        // Only the creator (super admin) can demote someone to regular member
+        if ($newRole === 'member') {
+            if ($community->creator_id !== $currentUser->id) {
+                return response()->json(['message' => 'Only the community creator can remove admin role'], 403);
+            }
+        }
+
+        $exists = $community->members()->where('user_id', $userId)->exists();
+        if (!$exists) {
+            return response()->json(['message' => 'User is not a member'], 404);
+        }
+
+        $community->members()->updateExistingPivot($userId, ['role' => $newRole]);
+
+        return response()->json([
+            'message' => 'Role updated',
+            'member' => ['user_id' => $userId, 'role' => $newRole],
+        ]);
+    }
+
+    /**
+     * Remove (kick) a member from the community. Only the creator (super admin) can kick.
+     */
+    public function removeMember(Request $request, Community $community, \App\Models\User $user): JsonResponse
+    {
+        $currentUser = $request->user();
+        if ($community->creator_id !== $currentUser->id) {
+            return response()->json(['message' => 'Only the community creator can remove members'], 403);
+        }
+
+        $userId = $user->id;
+        if ($community->creator_id === $userId) {
+            return response()->json(['message' => 'Creator cannot leave this way; use Delete community'], 422);
+        }
+
+        if (!$community->members()->where('user_id', $userId)->exists()) {
+            return response()->json(['message' => 'User is not a member'], 404);
+        }
+
+        $community->members()->detach($userId);
+
+        return response()->json(['message' => 'Member removed']);
     }
 
     /**
@@ -394,5 +645,199 @@ class CommunityController extends Controller
                 'total' => $items->total(),
             ],
         ]);
+    }
+
+    /**
+     * Invite a user to the community (admin/creator only). Direct invite — user gets notification and can accept/decline.
+     */
+    public function invite(Request $request, Community $community): JsonResponse
+    {
+        $user = $request->user();
+        if ($community->creator_id !== $user->id) {
+            return response()->json(['message' => 'Only the community admin can invite users directly'], 403);
+        }
+
+        $request->validate(['user_id' => 'required|integer|exists:users,id']);
+        $invitedUserId = (int) $request->user_id;
+        if ($invitedUserId === $user->id) {
+            return response()->json(['message' => 'You cannot invite yourself'], 422);
+        }
+        if ($community->members()->where('user_id', $invitedUserId)->exists() || $community->creator_id === $invitedUserId) {
+            return response()->json(['message' => 'User is already a member'], 422);
+        }
+
+        $existing = $community->invites()->where('invited_user_id', $invitedUserId)->first();
+        if ($existing) {
+            if (in_array($existing->status, [CommunityInvite::STATUS_PENDING, CommunityInvite::STATUS_PENDING_APPROVAL], true)) {
+                return response()->json(['message' => 'Invite already sent or pending approval'], 422);
+            }
+            // Re-invite (e.g. after they were kicked or previously declined): reuse row
+            $existing->update([
+                'inviter_id' => $user->id,
+                'status' => CommunityInvite::STATUS_PENDING,
+            ]);
+            $invite = $existing->fresh();
+        } else {
+            $invite = $community->invites()->create([
+                'invited_user_id' => $invitedUserId,
+                'inviter_id' => $user->id,
+                'status' => CommunityInvite::STATUS_PENDING,
+            ]);
+        }
+        $invite->load(['invitedUser', 'inviter', 'community']);
+        $invite->invitedUser->notify(new CommunityInviteNotification($invite));
+
+        return response()->json(['message' => 'Invite sent', 'invite' => $this->inviteToArray($invite)], 201);
+    }
+
+    /**
+     * Suggest inviting a user (member). Creates pending_approval — admin must approve or reject.
+     */
+    public function suggestInvite(Request $request, Community $community): JsonResponse
+    {
+        $user = $request->user();
+        $isMember = $community->members()->where('user_id', $user->id)->exists() || $community->creator_id === $user->id;
+        if (!$isMember) {
+            return response()->json(['message' => 'You must be a member to suggest invites'], 403);
+        }
+        if ($community->creator_id === $user->id) {
+            return response()->json(['message' => 'Use the direct Invite action as admin'], 422);
+        }
+
+        $request->validate(['user_id' => 'required|integer|exists:users,id']);
+        $invitedUserId = (int) $request->user_id;
+        if ($community->members()->where('user_id', $invitedUserId)->exists() || $community->creator_id === $invitedUserId) {
+            return response()->json(['message' => 'User is already a member'], 422);
+        }
+
+        $existing = $community->invites()->where('invited_user_id', $invitedUserId)->first();
+        if ($existing) {
+            if (in_array($existing->status, [CommunityInvite::STATUS_PENDING, CommunityInvite::STATUS_PENDING_APPROVAL], true)) {
+                return response()->json(['message' => 'Invite already sent or pending approval'], 422);
+            }
+            // Re-suggest (e.g. after they were kicked or previously rejected): reuse row
+            $existing->update([
+                'inviter_id' => $user->id,
+                'status' => CommunityInvite::STATUS_PENDING_APPROVAL,
+            ]);
+            $invite = $existing->fresh();
+        } else {
+            $invite = $community->invites()->create([
+                'invited_user_id' => $invitedUserId,
+                'inviter_id' => $user->id,
+                'status' => CommunityInvite::STATUS_PENDING_APPROVAL,
+            ]);
+        }
+        $invite->load(['invitedUser', 'inviter', 'community']);
+        $community->creator->notify(new CommunityInviteSuggestedNotification($invite));
+
+        return response()->json(['message' => 'Suggestions sent to community admin for approval', 'invite' => $this->inviteToArray($invite)], 201);
+    }
+
+    /**
+     * Admin approves a member-suggested invite — adds user to community and notifies them.
+     */
+    public function approveInvite(Request $request, Community $community, CommunityInvite $invite): JsonResponse
+    {
+        if ($community->creator_id !== $request->user()->id) {
+            return response()->json(['message' => 'Only the community admin can approve invites'], 403);
+        }
+        if ($invite->community_id != $community->id || $invite->status !== CommunityInvite::STATUS_PENDING_APPROVAL) {
+            return response()->json(['message' => 'Invalid invite'], 422);
+        }
+
+        $invite->update(['status' => CommunityInvite::STATUS_ACCEPTED]);
+        $community->members()->syncWithoutDetaching([$invite->invited_user_id => ['role' => 'member', 'joined_at' => now()]]);
+        if ($community->creator_id && $community->creator_id !== $invite->invited_user_id) {
+            $community->creator->notify(new CommunityMemberJoinedNotification($community, $invite->invitedUser));
+        }
+        return response()->json(['message' => 'Invite approved', 'invite' => $this->inviteToArray($invite->fresh())]);
+    }
+
+    /**
+     * Admin rejects a member-suggested invite.
+     */
+    public function rejectInvite(Request $request, Community $community, CommunityInvite $invite): JsonResponse
+    {
+        if ($community->creator_id !== $request->user()->id) {
+            return response()->json(['message' => 'Only the community admin can reject invites'], 403);
+        }
+        if ($invite->community_id != $community->id || $invite->status !== CommunityInvite::STATUS_PENDING_APPROVAL) {
+            return response()->json(['message' => 'Invalid invite'], 422);
+        }
+        $invite->update(['status' => CommunityInvite::STATUS_REJECTED]);
+        return response()->json(['message' => 'Invite rejected']);
+    }
+
+    /**
+     * Invited user accepts an invite (direct invite only).
+     */
+    public function acceptInvite(Request $request, Community $community, CommunityInvite $invite): JsonResponse
+    {
+        if ($invite->invited_user_id !== $request->user()->id) {
+            return response()->json(['message' => 'Forbidden'], 403);
+        }
+        if ($invite->community_id != $community->id || $invite->status !== CommunityInvite::STATUS_PENDING) {
+            return response()->json(['message' => 'Invalid or expired invite'], 422);
+        }
+
+        $invite->update(['status' => CommunityInvite::STATUS_ACCEPTED]);
+        $community->members()->syncWithoutDetaching([$request->user()->id => ['role' => 'member', 'joined_at' => now()]]);
+        if ($community->creator_id && $community->creator_id !== $request->user()->id) {
+            $community->creator->notify(new CommunityMemberJoinedNotification($community, $request->user()));
+        }
+        return response()->json([
+            'message' => 'You joined the community',
+            'community' => new CommunityResource($community->load(['creator', 'members'])->loadCount('members')),
+        ]);
+    }
+
+    /**
+     * Invited user declines an invite.
+     */
+    public function declineInvite(Request $request, Community $community, CommunityInvite $invite): JsonResponse
+    {
+        if ($invite->invited_user_id !== $request->user()->id) {
+            return response()->json(['message' => 'Forbidden'], 403);
+        }
+        if ($invite->community_id != $community->id || $invite->status !== CommunityInvite::STATUS_PENDING) {
+            return response()->json(['message' => 'Invalid or expired invite'], 422);
+        }
+        $invite->update(['status' => CommunityInvite::STATUS_REJECTED]);
+        return response()->json(['message' => 'Invite declined']);
+    }
+
+    /**
+     * List pending invites for this community (admin: pending_approval; also list sent direct invites).
+     */
+    public function pendingInvites(Request $request, Community $community): JsonResponse
+    {
+        $user = $request->user();
+        if ($community->creator_id !== $user->id) {
+            return response()->json(['message' => 'Only the community admin can view pending invites'], 403);
+        }
+
+        $invites = $community->invites()
+            ->whereIn('status', [CommunityInvite::STATUS_PENDING, CommunityInvite::STATUS_PENDING_APPROVAL])
+            ->with(['invitedUser', 'inviter'])
+            ->latest()
+            ->get();
+
+        return response()->json(['invites' => $invites->map(fn ($i) => $this->inviteToArray($i))]);
+    }
+
+    private function inviteToArray(CommunityInvite $invite): array
+    {
+        $invite->loadMissing(['invitedUser', 'inviter', 'community']);
+        return [
+            'id' => $invite->id,
+            'community_id' => $invite->community_id,
+            'invited_user_id' => $invite->invited_user_id,
+            'inviter_id' => $invite->inviter_id,
+            'status' => $invite->status,
+            'invited_user' => $invite->invitedUser ? ['id' => $invite->invitedUser->id, 'name' => $invite->invitedUser->name, 'username' => $invite->invitedUser->username, 'profile_picture' => $invite->invitedUser->profile_picture] : null,
+            'inviter' => $invite->inviter ? ['id' => $invite->inviter->id, 'name' => $invite->inviter->name, 'username' => $invite->inviter->username] : null,
+            'created_at' => $invite->created_at?->toIso8601String(),
+        ];
     }
 }

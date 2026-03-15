@@ -6,6 +6,9 @@ import Avatar from '../components/common/Avatar';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import { Link } from 'react-router-dom';
 
+const SECTION_TITLE = 'text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)]';
+const LINK_MUTED = 'text-xs text-[var(--theme-accent)] hover:underline';
+
 const Explore = () => {
     const { data: trendingPostsRes, isLoading: loadingPosts } = useQuery({
         queryKey: ['explore-trending-posts'],
@@ -39,171 +42,149 @@ const Explore = () => {
     const anyLoading = loadingPosts || loadingUsers || loadingCommunities || loadingHashtags;
 
     return (
-        <div className="max-w-5xl mx-auto py-6">
-            <div className="mb-6">
-                <h1 className="text-2xl font-bold text-white mb-1">Explore</h1>
-                <p className="text-sm text-slate-400">
-                    Discover new posts, people, communities, and topics tailored for you.
+        <div className="max-w-3xl mx-auto py-6 px-1">
+            {/* Page header */}
+            <header className="mb-8">
+                <h1 className="text-2xl font-bold text-[var(--text-primary)] mb-1">Explore</h1>
+                <p className="text-sm text-[var(--text-secondary)]">
+                    Discover posts, people, and communities tailored for you.
                 </p>
-            </div>
+            </header>
 
             {anyLoading && (
-                <div className="flex justify-center py-8">
+                <div className="flex justify-center py-12">
                     <LoadingSpinner size="lg" />
                 </div>
             )}
 
             {!anyLoading && (
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    {/* Main column: trending posts */}
-                    <div className="lg:col-span-2 space-y-4">
-                        <div className="flex items-center justify-between mb-2">
-                            <h2 className="text-sm font-semibold text-slate-200 uppercase tracking-[0.2em]">
-                                Trending posts
-                            </h2>
-                            <Link
-                                to="/search"
-                                className="text-xs text-primary hover:underline"
-                            >
-                                Open full search
+                <div className="space-y-10">
+                    {/* 1. Trending posts — primary content */}
+                    <section>
+                        <div className="flex items-center justify-between mb-4">
+                            <h2 className={SECTION_TITLE}>Trending posts</h2>
+                            <Link to="/search" className={LINK_MUTED}>
+                                Open search
                             </Link>
                         </div>
                         {trendingPosts.length === 0 ? (
-                            <p className="text-sm text-slate-500">
-                                No trending posts yet. Start creating and engaging to see what rises.
-                            </p>
+                            <div className="rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-8 text-center">
+                                <span className="material-symbols-outlined text-4xl text-[var(--text-secondary)]/60 mb-3 block">trending_up</span>
+                                <p className="text-sm text-[var(--text-secondary)] mb-2">No trending posts yet</p>
+                                <p className="text-xs text-[var(--text-secondary)]/80">Create and engage with posts to see what’s rising.</p>
+                                <Link to="/home" className="text-xs text-[var(--theme-accent)] hover:underline mt-2 inline-block">Go to Home</Link>
+                            </div>
                         ) : (
-                            <div className="space-y-3">
+                            <div className="space-y-4">
                                 {trendingPosts.map((post) => (
                                     <PostCard key={post.id} post={post} />
                                 ))}
                             </div>
                         )}
-                    </div>
+                    </section>
 
-                    {/* Right column: people, communities, hashtags */}
-                    <div className="space-y-4">
-                        <div className="theme-surface rounded-2xl border border-white/5 p-4">
-                            <div className="flex items-center justify-between mb-3">
-                                <h2 className="text-sm font-semibold text-slate-200">
-                                    Suggested people
-                                </h2>
-                                <Link
-                                    to="/connections"
-                                    className="text-[11px] text-primary hover:underline"
-                                >
-                                    View connections
-                                </Link>
-                            </div>
+                    {/* 2. Suggested people */}
+                    <section>
+                        <div className="flex items-center justify-between mb-4">
+                            <h2 className={SECTION_TITLE}>Suggested people</h2>
+                            <Link to="/connections" className={LINK_MUTED}>
+                                View connections
+                            </Link>
+                        </div>
+                        <div className="rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4">
                             {suggestedUsers.length === 0 ? (
-                                <p className="text-xs text-slate-500">
-                                    You&apos;re already connected with many people. Find more in Search.
-                                </p>
+                                <div className="py-4 text-center">
+                                    <p className="text-sm text-[var(--text-secondary)]">You’re connected with many people.</p>
+                                    <Link to="/search" className="text-xs text-[var(--theme-accent)] hover:underline mt-1 inline-block">Find more in Search</Link>
+                                </div>
                             ) : (
-                                <div className="space-y-2">
-                                    {suggestedUsers.slice(0, 5).map((u) => (
+                                <div className="flex flex-wrap gap-3">
+                                    {suggestedUsers.slice(0, 6).map((u) => (
                                         <Link
                                             key={u.id}
                                             to={`/profile/${u.username}`}
-                                            className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-white/5"
+                                            className="flex items-center gap-3 min-w-0 p-2.5 rounded-xl hover:bg-[var(--theme-surface-hover)] transition-colors w-full sm:w-auto sm:min-w-[200px]"
                                         >
-                                            <Avatar
-                                                src={u.profile_picture}
-                                                alt={u.name}
-                                                size="sm"
-                                                className="w-8 h-8 rounded-full"
-                                            />
+                                            <Avatar src={u.profile_picture} alt={u.name} size="sm" className="w-10 h-10 rounded-full shrink-0" />
                                             <div className="min-w-0">
-                                                <p className="text-xs font-medium text-slate-100 truncate">
-                                                    {u.name}
-                                                </p>
-                                                <p className="text-[11px] text-slate-500 truncate">
-                                                    @{u.username}
-                                                </p>
+                                                <p className="text-sm font-medium text-[var(--text-primary)] truncate">{u.name}</p>
+                                                <p className="text-xs text-[var(--text-secondary)] truncate">@{u.username}</p>
                                             </div>
                                         </Link>
                                     ))}
                                 </div>
                             )}
                         </div>
+                    </section>
 
-                        <div className="theme-surface rounded-2xl border border-white/5 p-4">
-                            <div className="flex items-center justify-between mb-3">
-                                <h2 className="text-sm font-semibold text-slate-200">
-                                    Communities to join
-                                </h2>
-                                <Link
-                                    to="/communities"
-                                    className="text-[11px] text-primary hover:underline"
-                                >
-                                    View all
-                                </Link>
-                            </div>
+                    {/* 3. Communities to join */}
+                    <section>
+                        <div className="flex items-center justify-between mb-4">
+                            <h2 className={SECTION_TITLE}>Communities to join</h2>
+                            <Link to="/communities" className={LINK_MUTED}>
+                                View all
+                            </Link>
+                        </div>
+                        <div className="rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4">
                             {communities.length === 0 ? (
-                                <p className="text-xs text-slate-500">
-                                    No communities available yet. Check back soon.
-                                </p>
+                                <div className="py-4 text-center">
+                                    <p className="text-sm text-[var(--text-secondary)]">No communities available yet.</p>
+                                    <Link to="/communities" className="text-xs text-[var(--theme-accent)] hover:underline mt-1 inline-block">Browse communities</Link>
+                                </div>
                             ) : (
-                                <div className="space-y-2">
+                                <div className="flex flex-wrap gap-3">
                                     {communities.slice(0, 4).map((community) => (
                                         <Link
                                             key={community.id}
                                             to={`/communities/${community.id}`}
-                                            className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-white/5"
+                                            className="flex items-center gap-3 min-w-0 p-2.5 rounded-xl hover:bg-[var(--theme-surface-hover)] transition-colors w-full sm:w-auto sm:min-w-[180px]"
                                         >
-                                            <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center shrink-0">
-                                                <span className="material-symbols-outlined text-[16px] text-slate-300">
-                                                    group
-                                                </span>
+                                            <div className="w-10 h-10 rounded-xl bg-[var(--theme-surface-hover)] flex items-center justify-center shrink-0">
+                                                <span className="material-symbols-outlined text-lg text-[var(--text-secondary)]">group</span>
                                             </div>
                                             <div className="min-w-0">
-                                                <p className="text-xs font-medium text-slate-100 truncate">
-                                                    {community.name}
-                                                </p>
-                                                <p className="text-[11px] text-slate-500 truncate">
-                                                    {community.members_count || 0} members
-                                                </p>
+                                                <p className="text-sm font-medium text-[var(--text-primary)] truncate">{community.name}</p>
+                                                <p className="text-xs text-[var(--text-secondary)]">{community.members_count ?? 0} members</p>
                                             </div>
                                         </Link>
                                     ))}
                                 </div>
                             )}
                         </div>
+                    </section>
 
-                        <div className="theme-surface rounded-2xl border border-white/5 p-4">
-                            <div className="flex items-center justify-between mb-3">
-                                <h2 className="text-sm font-semibold text-slate-200">
-                                    Trending hashtags
-                                </h2>
-                                <Link
-                                    to="/search"
-                                    className="text-[11px] text-primary hover:underline"
-                                >
-                                    Search hashtags
-                                </Link>
-                            </div>
+                    {/* 4. Trending hashtags */}
+                    <section>
+                        <div className="flex items-center justify-between mb-4">
+                            <h2 className={SECTION_TITLE}>Trending hashtags</h2>
+                            <Link to="/search" className={LINK_MUTED}>
+                                Search hashtags
+                            </Link>
+                        </div>
+                        <div className="rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4">
                             {hashtags.length === 0 ? (
-                                <p className="text-xs text-slate-500">
-                                    No trending hashtags right now.
-                                </p>
+                                <div className="py-4 text-center">
+                                    <p className="text-sm text-[var(--text-secondary)]">No trending hashtags right now.</p>
+                                    <Link to="/search" className="text-xs text-[var(--theme-accent)] hover:underline mt-1 inline-block">Search hashtags</Link>
+                                </div>
                             ) : (
                                 <div className="flex flex-wrap gap-2">
                                     {hashtags.map((h) => (
                                         <Link
                                             key={h.id}
                                             to={`/search?q=%23${encodeURIComponent(h.name)}&type=hashtags`}
-                                            className="px-3 py-1.5 rounded-full bg-white/5 text-[11px] text-slate-100 hover:bg-white/10"
+                                            className="px-3 py-1.5 rounded-full bg-[var(--theme-surface-hover)] text-xs text-[var(--text-primary)] hover:bg-[var(--theme-border)]/50 transition-colors"
                                         >
                                             #{h.name}
-                                            <span className="text-slate-500 ml-1">
-                                                ({h.posts_count})
-                                            </span>
+                                            {h.posts_count != null && (
+                                                <span className="text-[var(--text-secondary)] ml-1">({h.posts_count})</span>
+                                            )}
                                         </Link>
                                     ))}
                                 </div>
                             )}
                         </div>
-                    </div>
+                    </section>
                 </div>
             )}
         </div>
@@ -211,4 +192,3 @@ const Explore = () => {
 };
 
 export default Explore;
-

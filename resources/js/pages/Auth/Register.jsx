@@ -14,6 +14,7 @@ const Register = () => {
     const [profilePreview, setProfilePreview] = useState(null);
     const [showPassword, setShowPassword] = useState(false);
     const [isNavigating, setIsNavigating] = useState(false);
+    const [apiError, setApiError] = useState(null);
     const fileInputRef = useRef(null);
     
     const {
@@ -187,6 +188,7 @@ const Register = () => {
     };
 
     const onSubmit = async (data) => {
+        setApiError(null);
         try {
             const formData = new FormData();
             formData.append('name', data.name);
@@ -203,7 +205,10 @@ const Register = () => {
             await registerMutation.mutateAsync(formData);
             navigate('/onboarding', { replace: true });
         } catch (error) {
-            // Error handled by mutation
+            const res = error?.response?.data;
+            const errors = res?.errors;
+            const msg = errors ? Object.values(errors).flat().filter(Boolean)[0] : res?.message ?? 'Registration failed. Please try again.';
+            setApiError(typeof msg === 'string' ? msg : (msg?.message ?? 'Registration failed.'));
         }
     };
 
@@ -756,6 +761,15 @@ const Register = () => {
                         </div>
                         <button className="text-[#359EFF] font-medium hover:underline">Help</button>
                     </div>
+
+                    {apiError && (
+                        <div
+                            role="alert"
+                            className="mb-6 p-4 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm"
+                        >
+                            {apiError}
+                        </div>
+                    )}
 
                     {renderStepContent()}
 

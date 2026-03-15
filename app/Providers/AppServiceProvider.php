@@ -6,10 +6,12 @@ use App\Models\Comment;
 use App\Models\GroupMessage;
 use App\Models\Message;
 use App\Models\Post;
+use App\Models\ProfileComment;
 use App\Policies\CommentPolicy;
 use App\Policies\GroupMessagePolicy;
 use App\Policies\MessagePolicy;
 use App\Policies\PostPolicy;
+use App\Policies\ProfileCommentPolicy;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Auth\Notifications\VerifyEmail;
 use Illuminate\Support\Carbon;
@@ -48,6 +50,7 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(Comment::class, CommentPolicy::class);
         Gate::policy(Message::class, MessagePolicy::class);
         Gate::policy(GroupMessage::class, GroupMessagePolicy::class);
+        Gate::policy(ProfileComment::class, ProfileCommentPolicy::class);
 
         // Email verification link points to API, then redirects to frontend
         VerifyEmail::createUrlUsing(function ($notifiable) {

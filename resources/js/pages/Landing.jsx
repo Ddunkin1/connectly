@@ -8,6 +8,7 @@ const Landing = () => {
     const loginMutation = useLogin();
     const [activeTab, setActiveTab] = useState('login');
     const [showPassword, setShowPassword] = useState(false);
+    const [loginError, setLoginError] = useState(null);
     
     const {
         register,
@@ -16,11 +17,15 @@ const Landing = () => {
     } = useForm();
 
     const onLoginSubmit = async (data) => {
+        setLoginError(null);
         try {
             await loginMutation.mutateAsync(data);
             navigate('/home');
         } catch (error) {
-            // Error handled by mutation
+            const res = error?.response?.data;
+            const errs = res?.errors;
+            const msg = errs?.email?.[0] ?? errs?.password?.[0] ?? res?.message ?? 'Invalid email/username or password.';
+            setLoginError(msg);
         }
     };
 
@@ -92,7 +97,7 @@ const Landing = () => {
                         {/* Tabs */}
                         <div className="flex border-b border-gray-200 mb-6">
                             <button
-                                onClick={() => setActiveTab('login')}
+                                onClick={() => { setActiveTab('login'); setLoginError(null); }}
                                 className={`flex-1 py-3 font-medium text-center transition-colors ${
                                     activeTab === 'login'
                                         ? 'text-[#359EFF] border-b-2 border-[#359EFF]'
@@ -102,7 +107,7 @@ const Landing = () => {
                                 Log In
                             </button>
                             <button
-                                onClick={() => setActiveTab('signup')}
+                                onClick={() => { setActiveTab('signup'); setLoginError(null); }}
                                 className={`flex-1 py-3 font-medium text-center transition-colors ${
                                     activeTab === 'signup'
                                         ? 'text-[#359EFF] border-b-2 border-[#359EFF]'
@@ -112,6 +117,12 @@ const Landing = () => {
                                 Sign Up
                             </button>
                         </div>
+
+                        {loginError && (
+                            <div role="alert" className="mb-6 p-4 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm">
+                                {loginError}
+                            </div>
+                        )}
 
                         {/* Form */}
                         {activeTab === 'login' ? (

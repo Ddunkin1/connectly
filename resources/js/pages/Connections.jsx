@@ -4,6 +4,7 @@ import { useConnections } from '../hooks/useConnections';
 import { useFriendRequests } from '../hooks/useFriendRequests';
 import Avatar from '../components/common/Avatar';
 import LoadingSpinner from '../components/common/LoadingSpinner';
+import ProfilePreviewCard from '../components/profile/ProfilePreviewCard';
 
 const tabOptions = [
     { id: 'all', label: 'All' },
@@ -15,6 +16,7 @@ const tabOptions = [
 
 const Connections = () => {
     const [activeTab, setActiveTab] = useState('all');
+    const [previewUser, setPreviewUser] = useState(null);
     const { data: connections, isLoading: connectionsLoading } = useConnections();
     const { data: friendRequests, isLoading: friendRequestsLoading } = useFriendRequests();
 
@@ -40,25 +42,33 @@ const Connections = () => {
             key={user.id}
             className="flex items-center justify-between px-4 py-3 rounded-xl hover:bg-white/5 transition-colors"
         >
-            <Link to={`/profile/${user.username}`} className="flex items-center gap-3 min-w-0">
+            <div className="flex items-center gap-3 min-w-0 flex-1">
                 <Avatar
                     src={user.profile_picture}
                     alt={user.name}
                     size="md"
-                    className="w-10 h-10 rounded-full object-cover"
+                    className="w-10 h-10 rounded-full object-cover shrink-0"
                 />
                 <div className="min-w-0">
                     <p className="text-sm font-semibold text-white truncate">{user.name}</p>
                     <p className="text-xs text-slate-500 truncate">@{user.username}</p>
                 </div>
-            </Link>
-            <div className="flex items-center gap-3 text-xs text-slate-500 shrink-0">
+            </div>
+            <div className="flex items-center gap-2 text-xs shrink-0">
                 {typeof user.followers_count === 'number' && (
-                    <span>{user.followers_count} followers</span>
+                    <span className="text-slate-500 hidden sm:inline">{user.followers_count} followers</span>
                 )}
+                <button
+                    type="button"
+                    onClick={() => setPreviewUser(user)}
+                    className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-white/5 text-[var(--text-primary)] hover:bg-white/10 text-[11px] font-medium"
+                >
+                    <span className="material-symbols-outlined text-[16px]">person</span>
+                    View profile
+                </button>
                 <Link
                     to={`/messages/${user.username}`}
-                    className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-white/5 text-[11px] text-slate-200 hover:bg-white/10"
+                    className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-white/5 text-[11px] text-slate-200 hover:bg-white/10"
                 >
                     <span className="material-symbols-outlined text-[16px]">mail</span>
                     Message
@@ -71,27 +81,34 @@ const Connections = () => {
         const counterpart = type === 'received' ? request.sender : request.receiver;
         if (!counterpart) return null;
         return (
-            <Link
+            <div
                 key={request.id}
-                to={`/profile/${counterpart.username}`}
                 className="flex items-center justify-between px-4 py-3 rounded-xl hover:bg-white/5 transition-colors"
             >
-                <div className="flex items-center gap-3 min-w-0">
+                <div className="flex items-center gap-3 min-w-0 flex-1">
                     <Avatar
                         src={counterpart.profile_picture}
                         alt={counterpart.name}
                         size="md"
-                        className="w-10 h-10 rounded-full object-cover"
+                        className="w-10 h-10 rounded-full object-cover shrink-0"
                     />
                     <div className="min-w-0">
                         <p className="text-sm font-semibold text-white truncate">{counterpart.name}</p>
                         <p className="text-xs text-slate-500 truncate">@{counterpart.username}</p>
                     </div>
                 </div>
-                <div className="text-xs text-slate-400">
-                    {type === 'received' ? 'Received request' : 'Request sent'}
+                <div className="flex items-center gap-2 shrink-0">
+                    <span className="text-xs text-slate-400">{type === 'received' ? 'Received' : 'Sent'}</span>
+                    <button
+                        type="button"
+                        onClick={() => setPreviewUser(counterpart)}
+                        className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-white/5 text-[var(--text-primary)] hover:bg-white/10 text-[11px] font-medium"
+                    >
+                        <span className="material-symbols-outlined text-[16px]">person</span>
+                        View profile
+                    </button>
                 </div>
-            </Link>
+            </div>
         );
     };
 
@@ -198,9 +215,15 @@ const Connections = () => {
                 ))}
             </div>
 
-            <div className="theme-surface rounded-2xl border border-white/5 divide-y divide-white/5">
+            <div className="theme-surface rounded-2xl border border-white/5 divide-y divide-white/5 min-h-[320px]">
                 {content}
             </div>
+
+            <ProfilePreviewCard
+                user={previewUser}
+                isOpen={!!previewUser}
+                onClose={() => setPreviewUser(null)}
+            />
         </div>
     );
 };

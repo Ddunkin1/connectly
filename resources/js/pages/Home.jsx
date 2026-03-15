@@ -1,7 +1,6 @@
 import React, { useRef, useCallback, useEffect } from 'react';
 import { useFeed, useSuggestedPosts } from '../hooks/usePosts';
 import PostInput from '../components/posts/PostInput';
-import StoriesRow from '../components/feed/StoriesRow';
 import PostCard from '../components/posts/PostCard';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import OnboardingChecklistCard from '../components/onboarding/OnboardingChecklistCard';
@@ -70,11 +69,8 @@ const Home = () => {
             <div className="flex gap-8 xl:gap-10 items-start">
                 {/* Center column */}
                 <div className="flex-1 min-w-0 space-y-6">
-                    {/* Stories / onboarding */}
+                    {/* Onboarding */}
                     <div className="space-y-4">
-                        <div>
-                            <StoriesRow />
-                        </div>
                         <OnboardingChecklistCard />
                     </div>
 
@@ -99,10 +95,10 @@ const Home = () => {
                                     <React.Fragment key={post.id}>
                                         {isLast ? (
                                             <div ref={lastPostElementRef}>
-                                                <PostCard post={post} onCommentClick={() => {}} />
+                                                <PostCard post={post} />
                                             </div>
                                         ) : (
-                                            <PostCard post={post} onCommentClick={() => {}} />
+                                            <PostCard post={post} />
                                         )}
                                         {showSuggestedAfter && (
                                             <>
@@ -119,7 +115,7 @@ const Home = () => {
                                                     </p>
                                                     <div className="space-y-6">
                                                         {suggestedPosts.map((sp) => (
-                                                            <PostCard key={sp.id} post={sp} onCommentClick={() => {}} />
+                                                            <PostCard key={sp.id} post={sp} />
                                                         ))}
                                                     </div>
                                                 </div>

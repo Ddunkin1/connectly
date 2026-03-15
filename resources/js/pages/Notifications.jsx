@@ -1,7 +1,14 @@
 import React from 'react';
 import { useNotifications, useMarkNotificationAsRead, useMarkAllNotificationsAsRead } from '../hooks/useNotifications';
+import {
+    useAcceptCommunityInviteAny,
+    useDeclineCommunityInviteAny,
+    useApproveCommunityInviteAny,
+    useRejectCommunityInviteAny,
+    useApproveJoinRequestAny,
+    useRejectJoinRequestAny,
+} from '../hooks/useCommunities';
 import NotificationItem from '../components/notifications/NotificationItem';
-import StoriesRow from '../components/feed/StoriesRow';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import Button from '../components/common/Button';
 import { useQuery } from '@tanstack/react-query';
@@ -12,6 +19,12 @@ const Notifications = () => {
     const { data, isLoading } = useNotifications();
     const markAsReadMutation = useMarkNotificationAsRead();
     const markAllAsReadMutation = useMarkAllNotificationsAsRead();
+    const acceptInviteMutation = useAcceptCommunityInviteAny();
+    const declineInviteMutation = useDeclineCommunityInviteAny();
+    const approveSuggestedMutation = useApproveCommunityInviteAny();
+    const rejectSuggestedMutation = useRejectCommunityInviteAny();
+    const approveJoinRequestMutation = useApproveJoinRequestAny();
+    const rejectJoinRequestMutation = useRejectJoinRequestAny();
 
     const { data: highlightsData, isLoading: highlightsLoading } = useQuery({
         queryKey: ['notification-highlights'],
@@ -30,11 +43,9 @@ const Notifications = () => {
 
     return (
         <div className="w-full max-w-[800px] mx-auto">
-            <StoriesRow />
-
-            <div className="bg-[var(--bg-card)] rounded-xl border border-[var(--border-color)] overflow-hidden mb-6">
-                <div className="px-4 py-3 border-b border-[var(--border-color)] flex items-center justify-between">
-                    <h1 className="text-lg font-semibold text-white">Notifications</h1>
+            <div className="bg-[var(--theme-surface)] rounded-xl border border-[var(--theme-border)] overflow-hidden mb-6">
+                <div className="px-4 py-3 border-b border-[var(--theme-border)] flex items-center justify-between">
+                    <h1 className="text-lg font-semibold text-[var(--text-primary)]">Notifications</h1>
                     {unreadCount > 0 && (
                         <Button
                             variant="ghost"
@@ -53,41 +64,47 @@ const Notifications = () => {
                         <LoadingSpinner />
                     </div>
                 ) : notifications.length === 0 ? (
-                    <div className="p-12 text-center text-[#9CA3AF]">
-                        <p className="text-base font-medium text-white/80">No notifications yet</p>
-                        <p className="text-sm mt-1">
+                    <div className="p-12 text-center">
+                        <p className="text-base font-medium text-[var(--text-primary)]">No notifications yet</p>
+                        <p className="text-sm mt-1 text-[var(--text-secondary)]">
                             When someone likes your post, comments, mentions you, or accepts your friend request, you'll see it here.
                         </p>
                     </div>
                 ) : (
-                    <div className="divide-y divide-[var(--border-color)]">
+                    <div className="divide-y divide-[var(--theme-border)]">
                         {notifications.map((notification) => (
                             <NotificationItem
                                 key={notification.id}
                                 notification={notification}
                                 onMarkAsRead={handleMarkAsRead}
+                                onAcceptCommunityInvite={(cid, iid) => acceptInviteMutation.mutate({ communityId: cid, inviteId: iid })}
+                                onDeclineCommunityInvite={(cid, iid) => declineInviteMutation.mutate({ communityId: cid, inviteId: iid })}
+                                onApproveSuggestedInvite={(cid, iid) => approveSuggestedMutation.mutate({ communityId: cid, inviteId: iid })}
+                                onRejectSuggestedInvite={(cid, iid) => rejectSuggestedMutation.mutate({ communityId: cid, inviteId: iid })}
+                                onApproveJoinRequest={(cid, jrid) => approveJoinRequestMutation.mutate({ communityId: cid, joinRequestId: jrid })}
+                                onRejectJoinRequest={(cid, jrid) => rejectJoinRequestMutation.mutate({ communityId: cid, joinRequestId: jrid })}
                             />
                         ))}
                     </div>
                 )}
             </div>
 
-            <div className="bg-[var(--bg-card)] rounded-xl border border-[var(--border-color)] overflow-hidden">
-                <div className="px-4 py-3 border-b border-[var(--border-color)] flex items-center justify-between">
-                    <h2 className="text-sm font-semibold text-white">Highlights</h2>
+            <div className="bg-[var(--theme-surface)] rounded-xl border border-[var(--theme-border)] overflow-hidden">
+                <div className="px-4 py-3 border-b border-[var(--theme-border)] flex items-center justify-between">
+                    <h2 className="text-sm font-semibold text-[var(--text-primary)]">Highlights</h2>
                     {highlightsLoading && (
-                        <span className="text-[11px] text-gray-400 flex items-center gap-1">
+                        <span className="text-[11px] text-[var(--text-secondary)] flex items-center gap-1">
                             <LoadingSpinner size="xs" /> Loading
                         </span>
                     )}
                 </div>
                 <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                        <p className="text-xs uppercase tracking-[0.2em] text-gray-500 mb-2">
+                        <p className="text-xs uppercase tracking-[0.2em] text-[var(--text-secondary)] mb-2">
                             New followers
                         </p>
                         {newFollowers.length === 0 ? (
-                            <p className="text-xs text-gray-500">
+                            <p className="text-xs text-[var(--text-secondary)]">
                                 You don&apos;t have new followers this week yet.
                             </p>
                         ) : (
@@ -96,7 +113,7 @@ const Notifications = () => {
                                     <Link
                                         key={f.id}
                                         to={`/profile/${f.username}`}
-                                        className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-white/5"
+                                        className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-[var(--theme-surface-hover)]"
                                     >
                                         <div className="w-7 h-7 rounded-full overflow-hidden">
                                             <img
@@ -106,8 +123,8 @@ const Notifications = () => {
                                             />
                                         </div>
                                         <div className="min-w-0">
-                                            <p className="text-xs text-white truncate">{f.name}</p>
-                                            <p className="text-[11px] text-gray-400 truncate">@{f.username}</p>
+                                            <p className="text-xs text-[var(--text-primary)] truncate">{f.name}</p>
+                                            <p className="text-[11px] text-[var(--text-secondary)] truncate">@{f.username}</p>
                                         </div>
                                     </Link>
                                 ))}
@@ -115,11 +132,11 @@ const Notifications = () => {
                         )}
                     </div>
                     <div>
-                        <p className="text-xs uppercase tracking-[0.2em] text-gray-500 mb-2">
+                        <p className="text-xs uppercase tracking-[0.2em] text-[var(--text-secondary)] mb-2">
                             Top posts this week
                         </p>
                         {topPosts.length === 0 ? (
-                            <p className="text-xs text-gray-500">
+                            <p className="text-xs text-[var(--text-secondary)]">
                                 Post something to see which content performs best.
                             </p>
                         ) : (
@@ -128,12 +145,12 @@ const Notifications = () => {
                                     <Link
                                         key={p.id}
                                         to={`/post/${p.id}`}
-                                        className="block px-2 py-1.5 rounded-lg hover:bg-white/5"
+                                        className="block px-2 py-1.5 rounded-lg hover:bg-[var(--theme-surface-hover)]"
                                     >
-                                        <p className="text-xs text-white line-clamp-2">
+                                        <p className="text-xs text-[var(--text-primary)] line-clamp-2">
                                             {p.content_preview || 'View post'}
                                         </p>
-                                        <p className="text-[11px] text-gray-400 mt-0.5">
+                                        <p className="text-[11px] text-[var(--text-secondary)] mt-0.5">
                                             {p.likes_count} likes · {p.comments_count} comments
                                         </p>
                                     </Link>

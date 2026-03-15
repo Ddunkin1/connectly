@@ -15,16 +15,37 @@ class NotificationController extends Controller
     public function index(Request $request): JsonResponse
     {
         $user = $request->user();
+        $baseUrl = rtrim($request->getSchemeAndHttpHost() ?: config('app.url'), '/');
 
         $notifications = $user->notifications()
             ->orderBy('created_at', 'desc')
             ->limit(50)
             ->get()
-            ->map(function ($notification) {
+            ->map(function ($notification) use ($baseUrl) {
+                $data = $notification->data;
+                $type = $data['type'] ?? 'unknown';
+
+                // Add resolvable profile picture URLs for friend request notifications (proxy for Supabase)
+                if ($type === 'friend_request' && !empty($data['sender_username'])) {
+                    $data['sender_profile_picture'] = $this->notificationProfilePictureUrl($baseUrl, $data['sender_username'], $data['sender_profile_picture'] ?? null);
+                }
+                if ($type === 'friend_request_accepted' && !empty($data['actor_username'])) {
+                    $data['actor_profile_picture'] = $this->notificationProfilePictureUrl($baseUrl, $data['actor_username'], $data['actor_profile_picture'] ?? null);
+                }
+                if (($type === 'community_invite' || $type === 'community_invite_suggested') && !empty($data['inviter_username'])) {
+                    $data['inviter_profile_picture'] = $this->notificationProfilePictureUrl($baseUrl, $data['inviter_username'], $data['inviter_profile_picture'] ?? null);
+                }
+                if ($type === 'community_member_joined' && !empty($data['user_username'])) {
+                    $data['user_profile_picture'] = $this->notificationProfilePictureUrl($baseUrl, $data['user_username'], $data['user_profile_picture'] ?? null);
+                }
+                if ($type === 'community_join_request' && !empty($data['user_username'])) {
+                    $data['user_profile_picture'] = $this->notificationProfilePictureUrl($baseUrl, $data['user_username'], $data['user_profile_picture'] ?? null);
+                }
+
                 return [
                     'id' => $notification->id,
-                    'type' => $notification->data['type'] ?? 'unknown',
-                    'data' => $notification->data,
+                    'type' => $type,
+                    'data' => $data,
                     'read_at' => $notification->read_at,
                     'created_at' => $notification->created_at?->toIso8601String(),
                 ];
@@ -123,5 +144,19 @@ class NotificationController extends Controller
         return response()->json([
             'message' => 'All notifications marked as read',
         ]);
+    }
+
+    /**
+     * Return a resolvable profile picture URL for notification payloads (proxy for Supabase).
+     */
+    private function notificationProfilePictureUrl(string $baseUrl, string $username, ?string $stored): ?string
+    {
+        if (empty($stored)) {
+            return null;
+        }
+        if (str_contains($stored, 'supabase.co')) {
+            return $baseUrl . '/api/users/' . $username . '/profile-picture';
+        }
+        return filter_var($stored, FILTER_VALIDATE_URL) ? $stored : asset('storage/' . $stored);
     }
 }

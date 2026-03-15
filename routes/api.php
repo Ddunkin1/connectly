@@ -17,6 +17,7 @@ use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\MessageController;
 use App\Http\Controllers\Api\PollVoteController;
 use App\Http\Controllers\Api\PostController;
+use App\Http\Controllers\Api\ProfileCommentController;
 use App\Http\Controllers\Api\PushSubscriptionController;
 use App\Http\Controllers\Api\ReportController;
 use App\Http\Controllers\Api\SearchController;
@@ -78,6 +79,7 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function () {
     // User Profile
     Route::get('/users/{user}/profile', [UserController::class, 'profile']);
     Route::get('/users/{user}/posts', [UserController::class, 'posts']);
+    Route::get('/users/{user}/communities', [UserController::class, 'communities']);
     Route::get('/user/connections', [UserController::class, 'connections']);
     Route::match(['put', 'post'], '/user/profile', [UserController::class, 'updateProfile']);
     Route::post('/user/profile-picture', [UserController::class, 'uploadProfilePicture']);
@@ -124,6 +126,14 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function () {
     Route::post('/posts/{post}/comments', [CommentController::class, 'store']);
     Route::delete('/comments/{comment}', [CommentController::class, 'destroy']);
 
+    // Profile comments (comments on a user's profile)
+    Route::get('/users/{user}/profile-comments', [ProfileCommentController::class, 'index']);
+    Route::post('/users/{user}/profile-comments', [ProfileCommentController::class, 'store']);
+    Route::put('/profile-comments/{profile_comment}', [ProfileCommentController::class, 'update']);
+    Route::post('/profile-comments/{profile_comment}/hide', [ProfileCommentController::class, 'hide']);
+    Route::post('/profile-comments/{profile_comment}/unhide', [ProfileCommentController::class, 'unhide']);
+    Route::delete('/profile-comments/{profile_comment}', [ProfileCommentController::class, 'destroy']);
+
     // Follow/Unfollow (now sends friend requests)
     Route::post('/users/{id}/follow', [FollowController::class, 'follow']);
     Route::delete('/users/{id}/unfollow', [FollowController::class, 'unfollow']);
@@ -160,12 +170,26 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function () {
     Route::put('/communities/{community}', [CommunityController::class, 'update']);
     Route::delete('/communities/{community}', [CommunityController::class, 'destroy']);
     Route::post('/communities/{community}/join', [CommunityController::class, 'join']);
+    Route::delete('/communities/{community}/join-request', [CommunityController::class, 'cancelJoinRequest']);
     Route::delete('/communities/{community}/leave', [CommunityController::class, 'leave']);
+    Route::get('/communities/{community}/join-requests', [CommunityController::class, 'joinRequests']);
+    Route::post('/communities/{community}/join-requests/{joinRequest}/approve', [CommunityController::class, 'approveJoinRequest']);
+    Route::post('/communities/{community}/join-requests/{joinRequest}/reject', [CommunityController::class, 'rejectJoinRequest']);
+    Route::get('/communities/{community}/members', [CommunityController::class, 'members']);
+    Route::put('/communities/{community}/members/{user}', [CommunityController::class, 'updateMemberRole']);
+    Route::delete('/communities/{community}/members/{user}', [CommunityController::class, 'removeMember']);
     Route::get('/communities/{community}/posts', [CommunityController::class, 'posts']);
     Route::get('/communities/{community}/posts/pending', [CommunityController::class, 'pendingPosts']);
     Route::post('/communities/{community}/posts', [CommunityController::class, 'submitPost']);
     Route::post('/communities/{community}/posts/{post}/approve', [CommunityController::class, 'approvePost']);
     Route::post('/communities/{community}/posts/{post}/reject', [CommunityController::class, 'rejectPost']);
+    Route::get('/communities/{community}/invites', [CommunityController::class, 'pendingInvites']);
+    Route::post('/communities/{community}/invites', [CommunityController::class, 'invite']);
+    Route::post('/communities/{community}/invites/suggest', [CommunityController::class, 'suggestInvite']);
+    Route::post('/communities/{community}/invites/{invite}/approve', [CommunityController::class, 'approveInvite']);
+    Route::post('/communities/{community}/invites/{invite}/reject', [CommunityController::class, 'rejectInvite']);
+    Route::post('/communities/{community}/invites/{invite}/accept', [CommunityController::class, 'acceptInvite']);
+    Route::post('/communities/{community}/invites/{invite}/decline', [CommunityController::class, 'declineInvite']);
 
     // Conversations
     Route::get('/conversations', [ConversationController::class, 'index']);

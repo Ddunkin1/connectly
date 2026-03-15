@@ -200,7 +200,9 @@ export const useCreatePost = () => {
             if (context?.previousUserPostsById && user?.id) {
                 queryClient.setQueryData(['user-posts', user.id], context.previousUserPostsById);
             }
-            toast.error(error.response?.data?.message || 'Failed to create post');
+            const data = error.response?.data;
+            const msg = data?.errors?.media?.[0] ?? data?.message ?? 'Failed to create post';
+            toast.error(msg);
         },
     });
 };

@@ -9,6 +9,7 @@ use App\Services\SupabaseService;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class PostService
 {
@@ -118,30 +119,31 @@ class PostService
         $mediaUrl = null;
         $mediaType = null;
 
-            // Handle file upload if media is provided
+        // Handle file upload if media is provided (Supabase); post still created without media if upload fails
         if (isset($data['media']) && $data['media']) {
-            $mediaUrl = $this->supabaseService->uploadFile($data['media'], 'posts');
-            if (!$mediaUrl) {
-                // Upload failed - throw exception if this was the only content
-                $content = trim($data['content'] ?? '');
-                if (empty($content)) {
-                    // Get more details from SupabaseService logs
-                    \Log::error('Media upload failed - no content provided', [
+            try {
+                $mediaUrl = $this->supabaseService->uploadFile($data['media'], 'posts');
+                if ($mediaUrl) {
+                    $mimeType = $data['media']->getMimeType();
+                    $mediaType = str_starts_with($mimeType, 'image/') ? 'image' : 'video';
+                } else {
+                    \Log::warning('Post media upload returned no URL; creating post without media.', [
                         'user_id' => $user->id,
                         'file_name' => $data['media']->getClientOriginalName(),
-                        'file_size' => $data['media']->getSize(),
-                        'mime_type' => $data['media']->getMimeType(),
                     ]);
-                    throw new \Exception('Failed to upload media file. Check Laravel logs for details. Ensure SUPABASE_SERVICE_ROLE_KEY is set and bucket "publicConnectly" exists in Supabase.');
                 }
-                // If content exists, continue without media (media upload failed but we have content)
-                \Log::warning('Media upload failed but post will be created with content only', [
+            } catch (\Throwable $e) {
+                $content = trim($data['content'] ?? '');
+                \Log::warning('Post media upload failed; creating post without media.', [
                     'user_id' => $user->id,
                     'file_name' => $data['media']->getClientOriginalName(),
+                    'error' => $e->getMessage(),
                 ]);
-            } else {
-                $mimeType = $data['media']->getMimeType();
-                $mediaType = str_starts_with($mimeType, 'image/') ? 'image' : 'video';
+                if (empty($content)) {
+                    throw ValidationException::withMessages([
+                        'media' => ['Image upload failed (connection timeout to Supabase). Add a caption and try again, or post text only.'],
+                    ]);
+                }
             }
         }
 

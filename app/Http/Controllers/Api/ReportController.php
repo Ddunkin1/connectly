@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Post;
+use App\Models\ProfileComment;
 use App\Models\Report;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
@@ -12,34 +13,42 @@ use Illuminate\Validation\Rule;
 
 class ReportController extends Controller
 {
+    private const REPORTABLE_MAP = [
+        'user' => User::class,
+        'post' => Post::class,
+        'profile_comment' => ProfileComment::class,
+    ];
+
     /**
-     * Report a user or post.
+     * Report a user, post, or profile comment.
      */
     public function store(Request $request): JsonResponse
     {
         $request->validate([
-            'reportable_type' => ['required', Rule::in(['user', 'post'])],
+            'reportable_type' => ['required', Rule::in(array_keys(self::REPORTABLE_MAP))],
             'reportable_id' => ['required', 'integer'],
             'reason' => ['required', Rule::in(Report::REASONS)],
             'description' => ['nullable', 'string', 'max:1000'],
         ]);
 
         $reporter = $request->user();
-        $reportableType = $request->reportable_type === 'user' ? User::class : Post::class;
-
+        $reportableType = self::REPORTABLE_MAP[$request->reportable_type];
         $reportable = $reportableType::find($request->reportable_id);
+
         if (!$reportable) {
             return response()->json(['message' => 'Resource not found'], 404);
         }
 
-        // Cannot report yourself
         if ($reportable instanceof User && $reportable->id === $reporter->id) {
             return response()->json(['message' => 'You cannot report yourself'], 400);
         }
 
-        // Cannot report own post
         if ($reportable instanceof Post && $reportable->user_id === $reporter->id) {
             return response()->json(['message' => 'You cannot report your own post'], 400);
+        }
+
+        if ($reportable instanceof ProfileComment && $reportable->author_id === $reporter->id) {
+            return response()->json(['message' => 'You cannot report your own comment'], 400);
         }
 
         $existing = Report::where('reporter_id', $reporter->id)
@@ -77,11 +86,11 @@ class ReportController extends Controller
     public function status(Request $request): JsonResponse
     {
         $request->validate([
-            'reportable_type' => ['required', Rule::in(['user', 'post'])],
+            'reportable_type' => ['required', Rule::in(array_keys(self::REPORTABLE_MAP))],
             'reportable_id' => ['required', 'integer'],
         ]);
 
-        $reportableType = $request->reportable_type === 'user' ? User::class : Post::class;
+        $reportableType = self::REPORTABLE_MAP[$request->reportable_type];
         $report = Report::where('reporter_id', $request->user()->id)
             ->where('reportable_type', $reportableType)
             ->where('reportable_id', $request->reportable_id)

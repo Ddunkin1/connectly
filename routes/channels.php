@@ -21,3 +21,7 @@ Broadcast::channel('group-conversation.{groupId}', function ($user, $groupId) {
     $group = GroupConversation::find($groupId);
     return $group && $group->isMember($user);
 });
+
+Broadcast::channel('post-updates', function ($user) {
+    return $user !== null;
+});

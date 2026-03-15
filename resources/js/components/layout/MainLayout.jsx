@@ -29,7 +29,7 @@ const MainLayout = ({ children, showRightPanel = true, showLeftPanel = true }) =
     }, [isMobile]);
 
     return (
-        <div className="h-screen bg-[var(--bg-primary)] text-slate-100 font-display overflow-hidden" id="app-root">
+        <div className="h-screen bg-[var(--bg-primary)] text-[var(--text-primary)] font-display overflow-hidden" id="app-root">
             <AppTopBar
                 onMenuToggle={() => setMobileMenuOpen((o) => !o)}
                 showMenuButton={isMobile && showLeftPanel}
@@ -53,8 +53,8 @@ const MainLayout = ({ children, showRightPanel = true, showLeftPanel = true }) =
                         />
                     )}
 
-                    <main className="flex-1 flex flex-col min-h-0 min-w-0 h-full">
-                        <div className="flex-1 bg-[var(--bg-secondary)] min-h-0 flex flex-col">
+                    <main className="flex-1 flex flex-col min-h-0 min-w-0 h-full overflow-x-hidden">
+                        <div className="flex-1 bg-[var(--bg-secondary)] min-h-0 flex flex-col overflow-x-hidden min-w-0">
                             {children}
                         </div>
                     </main>

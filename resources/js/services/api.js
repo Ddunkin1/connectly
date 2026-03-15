@@ -80,6 +80,7 @@ export const authAPI = {
 export const userAPI = {
     getProfile: (userId) => api.get(`/users/${userId}/profile`),
     getUserPosts: (userId, page = 1) => api.get(`/users/${userId}/posts`, { params: { page } }),
+    getUserCommunities: (userId) => api.get(`/users/${userId}/communities`),
     getConnections: () => api.get('/user/connections'),
     updateProfile: (data) => {
         // Handle FormData - POST with _method=PUT because PHP doesn't parse multipart on PUT
@@ -137,8 +138,23 @@ export const postsAPI = {
 // Comments API
 export const commentsAPI = {
     getComments: (postId, page = 1) => api.get(`/posts/${postId}/comments`, { params: { page } }),
-    createComment: (postId, data) => api.post(`/posts/${postId}/comments`, data),
+    createComment: (postId, data) => {
+        if (data instanceof FormData) {
+            return api.post(`/posts/${postId}/comments`, data, { headers: { 'Content-Type': undefined } });
+        }
+        return api.post(`/posts/${postId}/comments`, data);
+    },
     deleteComment: (commentId) => api.delete(`/comments/${commentId}`),
+};
+
+// Profile comments API (comments on a user's profile)
+export const profileCommentsAPI = {
+    getComments: (userId, page = 1) => api.get(`/users/${userId}/profile-comments`, { params: { page } }),
+    createComment: (userId, data) => api.post(`/users/${userId}/profile-comments`, data),
+    updateComment: (commentId, data) => api.put(`/profile-comments/${commentId}`, data),
+    hideComment: (commentId) => api.post(`/profile-comments/${commentId}/hide`),
+    unhideComment: (commentId) => api.post(`/profile-comments/${commentId}/unhide`),
+    deleteComment: (commentId) => api.delete(`/profile-comments/${commentId}`),
 };
 
 // Follow API (now sends friend requests)
@@ -185,7 +201,14 @@ export const communityAPI = {
     update: (id, data) => api.put(`/communities/${id}`, data),
     delete: (id) => api.delete(`/communities/${id}`),
     join: (id) => api.post(`/communities/${id}/join`),
+    cancelJoinRequest: (id) => api.delete(`/communities/${id}/join-request`),
     leave: (id) => api.delete(`/communities/${id}/leave`),
+    getJoinRequests: (communityId) => api.get(`/communities/${communityId}/join-requests`),
+    approveJoinRequest: (communityId, joinRequestId) => api.post(`/communities/${communityId}/join-requests/${joinRequestId}/approve`),
+    rejectJoinRequest: (communityId, joinRequestId) => api.post(`/communities/${communityId}/join-requests/${joinRequestId}/reject`),
+    getMembers: (communityId) => api.get(`/communities/${communityId}/members`),
+    updateMemberRole: (communityId, userId, role) => api.put(`/communities/${communityId}/members/${userId}`, { role }),
+    removeMember: (communityId, userId) => api.delete(`/communities/${communityId}/members/${userId}`),
     getPosts: (id, params = {}) => api.get(`/communities/${id}/posts`, { params }),
     submitPost: (communityId, data) => {
         const config = data instanceof FormData ? { headers: { 'Content-Type': undefined } } : {};
@@ -194,6 +217,13 @@ export const communityAPI = {
     getPendingPosts: (communityId) => api.get(`/communities/${communityId}/posts/pending`),
     approvePost: (communityId, postId) => api.post(`/communities/${communityId}/posts/${postId}/approve`),
     rejectPost: (communityId, postId) => api.post(`/communities/${communityId}/posts/${postId}/reject`),
+    getPendingInvites: (communityId) => api.get(`/communities/${communityId}/invites`),
+    invite: (communityId, userId) => api.post(`/communities/${communityId}/invites`, { user_id: userId }),
+    suggestInvite: (communityId, userId) => api.post(`/communities/${communityId}/invites/suggest`, { user_id: userId }),
+    approveInvite: (communityId, inviteId) => api.post(`/communities/${communityId}/invites/${inviteId}/approve`),
+    rejectInvite: (communityId, inviteId) => api.post(`/communities/${communityId}/invites/${inviteId}/reject`),
+    acceptInvite: (communityId, inviteId) => api.post(`/communities/${communityId}/invites/${inviteId}/accept`),
+    declineInvite: (communityId, inviteId) => api.post(`/communities/${communityId}/invites/${inviteId}/decline`),
 };
 
 // Conversations API

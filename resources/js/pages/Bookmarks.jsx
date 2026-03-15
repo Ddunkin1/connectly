@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { useBookmarks } from '../hooks/useBookmarks';
 import PostCard from '../components/posts/PostCard';
 import LoadingSpinner from '../components/common/LoadingSpinner';
@@ -10,10 +11,13 @@ const Bookmarks = () => {
 
     if (isLoading) {
         return (
-            <div className="max-w-2xl mx-auto py-8">
-                <h1 className="text-2xl font-bold text-white mb-4">Bookmarks</h1>
+            <div className="max-w-3xl mx-auto py-8">
+                <header className="mb-8">
+                    <h1 className="text-2xl font-bold text-[var(--text-primary)]">Bookmarks</h1>
+                    <p className="text-sm text-[var(--text-secondary)] mt-1">Posts you saved for later</p>
+                </header>
                 <div className="flex justify-center py-12">
-                    <LoadingSpinner />
+                    <LoadingSpinner size="lg" />
                 </div>
             </div>
         );
@@ -21,22 +25,40 @@ const Bookmarks = () => {
 
     if (isError) {
         return (
-            <div className="max-w-2xl mx-auto py-8">
-                <h1 className="text-2xl font-bold text-white mb-4">Bookmarks</h1>
-                <div className="bg-[#252538] rounded-xl p-8 text-center text-gray-400">
-                    <p>Failed to load bookmarks.</p>
+            <div className="max-w-3xl mx-auto py-8">
+                <header className="mb-8">
+                    <h1 className="text-2xl font-bold text-[var(--text-primary)]">Bookmarks</h1>
+                    <p className="text-sm text-[var(--text-secondary)] mt-1">Posts you saved for later</p>
+                </header>
+                <div className="rounded-2xl border border-red-200 bg-red-500/10 p-6 text-center">
+                    <p className="text-red-400 font-medium">Failed to load bookmarks.</p>
+                    <p className="text-sm text-[var(--text-secondary)] mt-1">Please try again later.</p>
                 </div>
             </div>
         );
     }
 
     return (
-        <div className="max-w-2xl mx-auto py-8">
-            <h1 className="text-2xl font-bold text-white mb-4">Bookmarks</h1>
+        <div className="max-w-3xl mx-auto py-6 px-1">
+            <header className="mb-8">
+                <h1 className="text-2xl font-bold text-[var(--text-primary)]">Bookmarks</h1>
+                <p className="text-sm text-[var(--text-secondary)] mt-1">Posts you saved for later</p>
+            </header>
+
             {posts.length === 0 ? (
-                <div className="bg-[#252538] rounded-xl p-8 text-center text-gray-400">
-                    <p>No saved posts yet.</p>
-                    <p className="text-sm mt-2">Save posts by clicking the bookmark icon on any post.</p>
+                <div className="rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-10 text-center shadow-post-card">
+                    <span className="material-symbols-outlined text-5xl text-[var(--text-secondary)]/50 mb-4 block">bookmark</span>
+                    <p className="text-[var(--text-primary)] font-medium">No saved posts yet</p>
+                    <p className="text-sm text-[var(--text-secondary)] mt-1 max-w-sm mx-auto">
+                        Save posts by clicking the bookmark icon on any post. They’ll show up here.
+                    </p>
+                    <Link
+                        to="/explore"
+                        className="inline-flex items-center gap-2 mt-6 text-sm font-medium text-[var(--theme-accent)] hover:underline"
+                    >
+                        <span>Explore posts</span>
+                        <span className="material-symbols-outlined text-lg">arrow_forward</span>
+                    </Link>
                 </div>
             ) : (
                 <>
@@ -46,7 +68,6 @@ const Bookmarks = () => {
                                 key={post.id}
                                 post={post}
                                 onDeleted={() => {}}
-                                onCommentClick={null}
                             />
                         ))}
                     </div>
@@ -56,9 +77,9 @@ const Bookmarks = () => {
                                 type="button"
                                 onClick={() => fetchNextPage()}
                                 disabled={isFetchingNextPage}
-                                className="px-4 py-2 rounded-lg bg-[#252538] text-white hover:bg-[#2d2d42] disabled:opacity-60"
+                                className="px-5 py-2.5 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] text-[var(--text-primary)] hover:bg-[var(--theme-surface-hover)] disabled:opacity-60 transition-colors font-medium"
                             >
-                                {isFetchingNextPage ? 'Loading...' : 'Load more'}
+                                {isFetchingNextPage ? 'Loading…' : 'Load more'}
                             </button>
                         </div>
                     )}

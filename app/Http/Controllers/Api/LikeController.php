@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Events\PostLiked;
 use App\Http\Controllers\Controller;
 use App\Models\Post;
 use App\Notifications\LikeNotification;
@@ -36,9 +37,12 @@ class LikeController extends Controller
             $post->user->notify(new LikeNotification($post->load('user'), $user));
         }
 
+        $likesCount = $post->likes()->count();
+        broadcast(new PostLiked($post->id, $likesCount))->toOthers();
+
         return response()->json([
             'message' => 'Post liked successfully',
-            'likes_count' => $post->likes()->count(),
+            'likes_count' => $likesCount,
         ]);
     }
 
@@ -63,9 +67,12 @@ class LikeController extends Controller
 
         $like->delete();
 
+        $likesCount = $post->likes()->count();
+        broadcast(new PostLiked($post->id, $likesCount))->toOthers();
+
         return response()->json([
             'message' => 'Post unliked successfully',
-            'likes_count' => $post->likes()->count(),
+            'likes_count' => $likesCount,
         ]);
     }
 }

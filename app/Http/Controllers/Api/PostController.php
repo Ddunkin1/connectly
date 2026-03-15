@@ -12,6 +12,7 @@ use App\Notifications\ShareNotification;
 use App\Services\PostService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 
 class PostController extends Controller
 {
@@ -118,6 +119,8 @@ class PostController extends Controller
                 'message' => 'Post created successfully',
                 'post' => new PostResource($post),
             ], 201);
+        } catch (ValidationException $e) {
+            throw $e;
         } catch (\Exception $e) {
             \Log::error('Post creation failed: ' . $e->getMessage(), [
                 'trace' => $e->getTraceAsString(),
@@ -126,14 +129,14 @@ class PostController extends Controller
 
             $errorMsg = $e->getMessage();
             $userMessage = $errorMsg;
-            if (str_contains($errorMsg, 'upload media')) {
-                $userMessage = 'Failed to upload media. Check that SUPABASE_SERVICE_ROLE_KEY is set in .env and the Supabase bucket exists.';
+            if (str_contains($errorMsg, 'upload media') || str_contains($errorMsg, 'upload image')) {
+                $userMessage = 'Image upload failed. Add a caption and try again, or post text only.';
             }
 
             return response()->json([
                 'message' => $userMessage,
-                'error' => $userMessage,
-            ], 500);
+                'errors' => ['media' => [$userMessage]],
+            ], 422);
         }
     }
 
