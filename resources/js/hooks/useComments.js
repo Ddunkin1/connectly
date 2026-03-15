@@ -65,3 +65,61 @@ export const useDeleteComment = () => {
         },
     });
 };
+
+export const usePinComment = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: ({ commentId, postId }) =>
+            commentsAPI.pinComment(commentId).then((res) => ({ ...res, postId })),
+        onSuccess: (_, { postId }) => {
+            if (postId) queryClient.invalidateQueries({ queryKey: ['comments', postId] });
+            queryClient.invalidateQueries({ queryKey: ['comments'] });
+            toast.success('Comment pinned');
+        },
+        onError: (error) => {
+            toast.error(error.response?.data?.message || 'Failed to pin comment');
+        },
+    });
+};
+
+export const useUnpinComment = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: ({ commentId, postId }) =>
+            commentsAPI.unpinComment(commentId).then((res) => ({ ...res, postId })),
+        onSuccess: (_, { postId }) => {
+            if (postId) queryClient.invalidateQueries({ queryKey: ['comments', postId] });
+            queryClient.invalidateQueries({ queryKey: ['comments'] });
+            toast.success('Comment unpinned');
+        },
+        onError: (error) => {
+            toast.error(error.response?.data?.message || 'Failed to unpin comment');
+        },
+    });
+};
+
+export const useLikeComment = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: ({ commentId, postId }) =>
+            commentsAPI.likeComment(commentId).then((res) => ({ ...res, commentId, postId })),
+        onSuccess: (_, { postId }) => {
+            if (postId) queryClient.invalidateQueries({ queryKey: ['comments', postId] });
+        },
+    });
+};
+
+export const useUnlikeComment = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: ({ commentId, postId }) =>
+            commentsAPI.unlikeComment(commentId).then((res) => ({ ...res, commentId, postId })),
+        onSuccess: (_, { postId }) => {
+            if (postId) queryClient.invalidateQueries({ queryKey: ['comments', postId] });
+        },
+    });
+};

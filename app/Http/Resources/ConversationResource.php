@@ -15,20 +15,20 @@ class ConversationResource extends JsonResource
     public function toArray(Request $request): array
     {
         $currentUser = $request->user();
-        $otherUser = $this->getOtherUser($currentUser);
+        $otherUser = $currentUser ? $this->resource->getOtherUser($currentUser) : null;
 
         return [
             'id' => $this->id,
             'user_one' => new UserResource($this->whenLoaded('userOne')),
             'user_two' => new UserResource($this->whenLoaded('userTwo')),
-            'other_user' => new UserResource($otherUser),
+            'other_user' => $otherUser ? new UserResource($otherUser) : null,
             'last_message' => $this->when(
-                isset($this->last_message) && $this->last_message,
-                fn() => new MessageResource($this->last_message)
+                isset($this->resource->last_message) && $this->resource->last_message,
+                fn () => new MessageResource($this->resource->last_message)
             ),
             'unread_count' => $this->when(
-                isset($this->unread_count),
-                fn() => $this->unread_count ?? $this->getUnreadCountFor($currentUser)
+                isset($this->resource->unread_count),
+                fn () => $this->resource->unread_count ?? ($currentUser ? $this->resource->getUnreadCountFor($currentUser) : 0)
             ),
             'last_message_at' => $this->last_message_at,
             'created_at' => $this->created_at,

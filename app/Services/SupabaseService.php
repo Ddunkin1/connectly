@@ -209,6 +209,76 @@ class SupabaseService
     }
 
     /**
+     * Build the public URL for an object path (path relative to bucket, no leading slash).
+     */
+    public function getPublicUrl(string $path): string
+    {
+        $path = ltrim($path, '/');
+        return "{$this->supabaseUrl}/storage/v1/object/public/{$this->bucket}/{$path}";
+    }
+
+    /**
+     * List object names under a prefix in the bucket.
+     * Prefix should not have leading slash (e.g. "profile-pictures/profile-pictures-storage/123").
+     *
+     * @param string $prefix Folder prefix (no leading slash)
+     * @param int $limit Max number of objects to return
+     * @return array<int, string> Array of full object paths (prefix/name) for each file
+     */
+    public function listObjects(string $prefix, int $limit = 500): array
+    {
+        $prefix = ltrim($prefix, '/');
+        if ($prefix !== '' && !str_ends_with($prefix, '/')) {
+            $prefix .= '/';
+        }
+
+        try {
+            $response = Http::connectTimeout(30)
+                ->timeout(60)
+                ->withHeaders([
+                    'apikey' => $this->activeKey,
+                    'Authorization' => 'Bearer ' . $this->activeKey,
+                    'Content-Type' => 'application/json',
+                ])
+                ->post("{$this->supabaseUrl}/storage/v1/object/list/{$this->bucket}", [
+                    'prefix' => $prefix,
+                    'limit' => $limit,
+                ]);
+
+            if (!$response->successful()) {
+                Log::warning('Supabase listObjects non-2xx', [
+                    'prefix' => $prefix,
+                    'status' => $response->status(),
+                    'body' => substr($response->body(), 0, 300),
+                ]);
+                return [];
+            }
+
+            $data = $response->json();
+            if (!is_array($data)) {
+                return [];
+            }
+
+            $paths = [];
+            foreach ($data as $item) {
+                $name = $item['name'] ?? null;
+                if ($name === null || $name === '') {
+                    continue;
+                }
+                // Exclude folder placeholders (Supabase may return empty names or metadata)
+                if (str_contains($name, '/')) {
+                    continue; // subfolder, skip or could recurse later
+                }
+                $paths[] = $prefix . $name;
+            }
+            return $paths;
+        } catch (\Exception $e) {
+            Log::error('Supabase listObjects error: ' . $e->getMessage(), ['prefix' => $prefix]);
+            return [];
+        }
+    }
+
+    /**
      * Delete a file from Supabase Storage.
      *
      * @param string $filePath

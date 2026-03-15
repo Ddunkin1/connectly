@@ -27,6 +27,9 @@ const NotificationItem = ({
             case 'comment':
             case 'mention':
             case 'share':
+            case 'comment_like':
+            case 'comment_pinned':
+            case 'comment_reply':
                 return `/post/${data.post_id}`;
             case 'community_invite':
             case 'community_invite_suggested':
@@ -42,7 +45,7 @@ const NotificationItem = ({
 
     const showPostButton = () => {
         if (['friend_request_accepted'].includes(type)) return true;
-        return ['like', 'comment', 'mention', 'share'].includes(type) && data.post_id;
+        return ['like', 'comment', 'mention', 'share', 'comment_like', 'comment_pinned', 'comment_reply'].includes(type) && data.post_id;
     };
 
     const actorName = data.actor_name || data.sender_name || data.inviter_name || data.user_name;
@@ -52,7 +55,7 @@ const NotificationItem = ({
 
     const likesCount = data.likes_count ?? 0;
     const commentsCount = data.comments_count ?? 0;
-    const hasPostPreview = data.media_url || (likesCount > 0 && (type === 'like' || type === 'share')) || ((type === 'like' || type === 'share') && data.post_preview);
+    const hasPostPreview = data.media_url || (likesCount > 0 && (type === 'like' || type === 'share')) || ((type === 'like' || type === 'share') && data.post_preview) || ((type === 'comment_like' || type === 'comment_pinned' || type === 'comment_reply') && (data.comment_preview || data.post_preview));
 
     const handleClick = () => {
         if (isUnread && onMarkAsRead) {
@@ -94,6 +97,9 @@ const NotificationItem = ({
                                     {type === 'friend_request_accepted' && 'accepted your friend request'}
                                     {type === 'like' && likesCount <= 1 && 'liked your post'}
                                     {type === 'comment' && 'commented on your post'}
+                                    {type === 'comment_like' && 'liked your comment'}
+                                    {type === 'comment_pinned' && 'pinned your comment'}
+                                    {type === 'comment_reply' && 'replied to your comment'}
                                     {type === 'share' && 'shared your post'}
                                     {type === 'mention' && (data.context === 'comment' ? 'mentioned you in a comment' : 'mentioned you in a post')}
                                     {type === 'community_invite' && `invited you to join ${data.community_name || 'a community'}`}
@@ -145,7 +151,7 @@ const NotificationItem = ({
             </div>
 
             {/* Full post preview - for like/comment notifications with media or engagement */}
-            {hasPostPreview && data.post_id && (data.media_url || data.post_preview) && (
+            {hasPostPreview && data.post_id && (data.media_url || data.post_preview || data.comment_preview) && (
                 <div className="block rounded-xl border border-[var(--theme-border)] overflow-hidden bg-[var(--theme-surface)] mt-1">
                     {data.media_url && (
                         <div className="aspect-video w-full bg-[var(--theme-surface-hover)]">
@@ -188,8 +194,8 @@ const NotificationItem = ({
                                 {likesCount > 1 && ` and ${likesCount - 1} others`}
                             </p>
                         )}
-                        {data.post_preview && (
-                            <p className="text-sm text-[var(--text-primary)] line-clamp-2">{data.post_preview}</p>
+                        {(data.post_preview || data.comment_preview) && (
+                            <p className="text-sm text-[var(--text-primary)] line-clamp-2">{data.comment_preview || data.post_preview}</p>
                         )}
                         {commentsCount > 0 && (
                             <p className="text-xs text-[var(--text-secondary)] mt-1">

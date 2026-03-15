@@ -100,6 +100,8 @@ export const userAPI = {
             : {};
         return api.post('/user/profile-picture', data, config);
     },
+    getProfilePictureHistory: () => api.get('/user/profile-picture-history'),
+    getCoverImageHistory: () => api.get('/user/cover-image-history'),
     getSuggested: () => api.get('/users/suggested'),
     getNotificationPreferences: () => api.get('/user/notification-preferences'),
     updateNotificationPreferences: (data) => api.put('/user/notification-preferences', data),
@@ -145,6 +147,10 @@ export const commentsAPI = {
         return api.post(`/posts/${postId}/comments`, data);
     },
     deleteComment: (commentId) => api.delete(`/comments/${commentId}`),
+    pinComment: (commentId) => api.post(`/comments/${commentId}/pin`),
+    unpinComment: (commentId) => api.post(`/comments/${commentId}/unpin`),
+    likeComment: (commentId) => api.post(`/comments/${commentId}/like`),
+    unlikeComment: (commentId) => api.delete(`/comments/${commentId}/unlike`),
 };
 
 // Profile comments API (comments on a user's profile)

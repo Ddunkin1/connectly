@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Auth\Passwords\CanResetPassword;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
@@ -39,7 +40,13 @@ class User extends Authenticatable implements MustVerifyEmail
         'provider_id',
         'bio',
         'profile_picture',
+        'profile_picture_caption',
+        'profile_picture_visibility',
         'cover_image',
+        'cover_image_caption',
+        'cover_image_visibility',
+        'latest_profile_picture_post_id',
+        'latest_cover_image_post_id',
         'location',
         'website',
         'privacy_settings',
@@ -105,6 +112,22 @@ class User extends Authenticatable implements MustVerifyEmail
     public function posts(): HasMany
     {
         return $this->hasMany(Post::class);
+    }
+
+    /**
+     * Latest post created when the user updated their profile picture.
+     */
+    public function latestProfilePicturePost(): BelongsTo
+    {
+        return $this->belongsTo(Post::class, 'latest_profile_picture_post_id');
+    }
+
+    /**
+     * Latest post created when the user updated their cover image.
+     */
+    public function latestCoverImagePost(): BelongsTo
+    {
+        return $this->belongsTo(Post::class, 'latest_cover_image_post_id');
     }
 
     /**
@@ -288,6 +311,22 @@ class User extends Authenticatable implements MustVerifyEmail
                   ->where('receiver_id', $this->id)
                   ->where('status', 'pending');
         })->exists();
+    }
+
+    /**
+     * Check if this user and the given user are friends (accepted friend request).
+     */
+    public function isFriendWith(User $user): bool
+    {
+        if ($this->id === $user->id) {
+            return false;
+        }
+        return FriendRequest::where('status', 'accepted')
+            ->where(function ($query) use ($user) {
+                $query->where('sender_id', $this->id)->where('receiver_id', $user->id)
+                    ->orWhere('sender_id', $user->id)->where('receiver_id', $this->id);
+            })
+            ->exists();
     }
 
     /**

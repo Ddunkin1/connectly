@@ -45,28 +45,30 @@ class LikeNotification extends Notification
             ->latest()
             ->limit(3)
             ->get()
-            ->map(fn ($like) => [
+            ->map(fn ($like) => $like->user ? [
                 'id' => $like->user->id,
-                'name' => $like->user->name,
-                'username' => $like->user->username,
-                'profile_picture' => $like->user->profile_picture,
-            ])
+                'name' => $like->user->name ?? 'Unknown',
+                'username' => $like->user->username ?? null,
+                'profile_picture' => $like->user->profile_picture ?? null,
+            ] : null)
+            ->filter()
             ->values()
             ->toArray();
 
+        $actorName = $this->liker->name ?? 'Someone';
         return [
             'type' => 'like',
             'post_id' => $this->post->id,
             'actor_id' => $this->liker->id,
-            'actor_name' => $this->liker->name,
-            'actor_username' => $this->liker->username,
-            'actor_profile_picture' => $this->liker->profile_picture,
-            'message' => $this->liker->name . ' liked your post',
+            'actor_name' => $actorName,
+            'actor_username' => $this->liker->username ?? null,
+            'actor_profile_picture' => $this->liker->profile_picture ?? null,
+            'message' => $actorName . ' liked your post',
             'post_preview' => $preview,
             'likes_count' => $likesCount,
             'recent_likers' => $recentLikers,
-            'media_url' => $this->post->media_url,
-            'media_type' => $this->post->media_type,
+            'media_url' => $this->post->media_url ?? null,
+            'media_type' => $this->post->media_type ?? null,
             'comments_count' => $this->post->allComments()->count(),
         ];
     }

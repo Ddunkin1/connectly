@@ -23,6 +23,7 @@ class Post extends Model
         'is_archived',
         'shares_count',
         'shared_post_id',
+        'post_type',
     ];
 
     protected function casts(): array

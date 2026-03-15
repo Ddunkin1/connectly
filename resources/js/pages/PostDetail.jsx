@@ -103,7 +103,7 @@ const PostDetail = () => {
                     </div>
                 ) : (
                     topLevelComments.map((comment) => (
-                        <CommentThread key={comment.id} postId={id} comment={comment} />
+                        <CommentThread key={comment.id} postId={id} comment={comment} postAuthorId={post.user?.id} />
                     ))
                 )}
             </div>

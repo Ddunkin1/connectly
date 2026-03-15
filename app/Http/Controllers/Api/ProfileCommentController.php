@@ -48,18 +48,14 @@ class ProfileCommentController extends Controller
     }
 
     /**
-     * Add a comment or reply to a user's profile. Replies (parent_comment_id set) are allowed from anyone including profile owner.
+     * Add a comment or reply to a user's profile. Both top-level comments and replies are allowed from anyone, including the profile owner.
      */
     public function store(StoreProfileCommentRequest $request, User $user): JsonResponse
     {
         $authUser = $request->user();
         $parentCommentId = $request->validated('parent_comment_id');
 
-        if (!$parentCommentId) {
-            if ($authUser->id === $user->id) {
-                return response()->json(['message' => 'You cannot comment on your own profile.'], 422);
-            }
-        } else {
+        if ($parentCommentId) {
             $parent = ProfileComment::find($parentCommentId);
             if (!$parent || $parent->user_id != $user->id) {
                 return response()->json(['message' => 'Invalid parent comment.'], 422);

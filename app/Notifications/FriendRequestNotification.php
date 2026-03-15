@@ -49,14 +49,16 @@ class FriendRequestNotification extends Notification
      */
     public function toArray(object $notifiable): array
     {
+        $sender = $this->friendRequest->sender;
+        $senderName = $sender->name ?? 'Someone';
         return [
             'type' => 'friend_request',
             'friend_request_id' => $this->friendRequest->id,
             'sender_id' => $this->friendRequest->sender_id,
-            'sender_name' => $this->friendRequest->sender->name,
-            'sender_username' => $this->friendRequest->sender->username,
-            'sender_profile_picture' => $this->friendRequest->sender->profile_picture,
-            'message' => $this->friendRequest->sender->name . ' sent you a friend request',
+            'sender_name' => $senderName,
+            'sender_username' => $sender->username ?? null,
+            'sender_profile_picture' => $sender->profile_picture ?? null,
+            'message' => $senderName . ' sent you a friend request',
         ];
     }
 }

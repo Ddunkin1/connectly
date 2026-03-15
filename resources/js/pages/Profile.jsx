@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { useUserProfile, useUserPosts, useUserCommunities, useFollow, useUnfollow, useUpdateProfile } from '../hooks/useUsers';
+import { useUserProfile, useUserPosts, useUserCommunities, useFollow, useUnfollow, useUpdateProfile, useProfilePictureHistory, useCoverImageHistory } from '../hooks/useUsers';
 import { useFriendRequests, useAcceptFriendRequest, useRejectFriendRequest, useCancelFriendRequest } from '../hooks/useFriendRequests';
 import { useBlockUser } from '../hooks/useBlocks';
 import ReportModal from '../components/common/ReportModal';
@@ -8,12 +8,16 @@ import EditProfileModal from '../components/profile/EditProfileModal';
 import MediaView from '../components/modal/MediaView';
 import useAuthStore from '../store/authStore';
 import Avatar from '../components/common/Avatar';
+import AuthImage from '../components/common/AuthImage';
 import PostCard from '../components/posts/PostCard';
 import PostInput from '../components/posts/PostInput';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import { formatDate } from '../utils/formatDate';
 import { useStories } from '../hooks/useStories';
 import { useProfileComments, useCreateProfileComment, useUpdateProfileComment, useHideProfileComment, useUnhideProfileComment, useDeleteProfileComment } from '../hooks/useProfileComments';
+import { useComments, useCreateComment } from '../hooks/useComments';
+import { useLikePost, useUnlikePost } from '../hooks/usePosts';
+import CommentThread from '../components/posts/CommentThread';
 import toast from 'react-hot-toast';
 import { useForm } from 'react-hook-form';
 
@@ -28,10 +32,53 @@ function resolveCoverUrl(url) {
     return base ? `${base}${url}` : url;
 }
 
+/** Like + Share row for profile picture lightbox when a linked post exists */
+function ProfilePictureLightboxLikeShare({ post, onCopyLink }) {
+    const [optimisticLike, setOptimisticLike] = useState(null);
+    const likeMutation = useLikePost();
+    const unlikeMutation = useUnlikePost();
+    const isLiked = optimisticLike !== null ? optimisticLike.is_liked : (post?.is_liked ?? false);
+    const likesCount = optimisticLike !== null ? optimisticLike.likes_count : (post?.likes_count ?? 0);
+
+    const handleLike = () => {
+        if (isLiked) {
+            setOptimisticLike({ is_liked: false, likes_count: Math.max(0, likesCount - 1) });
+            unlikeMutation.mutate(post.id);
+        } else {
+            setOptimisticLike({ is_liked: true, likes_count: likesCount + 1 });
+            likeMutation.mutate(post.id);
+        }
+    };
+
+    return (
+        <>
+            <button
+                type="button"
+                onClick={handleLike}
+                disabled={likeMutation.isPending || unlikeMutation.isPending}
+                className={`flex items-center gap-2 px-4 py-2 rounded-full transition disabled:opacity-60 ${
+                    isLiked ? 'text-rose-500 bg-rose-500/10' : 'bg-[var(--theme-surface-hover)] hover:opacity-90 text-[var(--text-primary)]'
+                } font-medium`}
+            >
+                <span className={`material-symbols-outlined text-xl ${isLiked ? 'fill-rose-500' : ''}`}>favorite</span>
+                <span>{likesCount > 999 ? `${(likesCount / 1000).toFixed(1)}k` : likesCount}</span>
+            </button>
+            <button
+                type="button"
+                onClick={onCopyLink}
+                className="flex items-center gap-2 px-4 py-2 rounded-full bg-[var(--theme-surface-hover)] hover:opacity-90 text-[var(--text-primary)] font-medium transition"
+            >
+                <span className="material-symbols-outlined text-xl">share</span>
+                <span>Share</span>
+            </button>
+        </>
+    );
+}
+
 /**
  * Facebook-style lightbox: left half = full profile picture, right half = panel with:
- * - User card, Share, Message
- * - Profile comments: input + list (users can type a comment on the profile)
+ * - User card, Like (when post exists), Share, Message
+ * - Profile comments: input + list (owner and others can comment)
  */
 function ProfilePictureLightbox({ profile, isOwnProfile, onClose }) {
     const currentUser = useAuthStore((state) => state.user);
@@ -45,6 +92,10 @@ function ProfilePictureLightbox({ profile, isOwnProfile, onClose }) {
     const profileUrl = typeof window !== 'undefined' && profile?.username
         ? `${window.location.origin}/profile/${profile.username}`
         : '';
+
+    const profilePicturePostId = profile?.latest_profile_picture_post?.id ?? null;
+    const { data: postCommentsData = [], isLoading: postCommentsLoading } = useComments(profilePicturePostId);
+    const createPostCommentMutation = useCreateComment();
 
     const { data: comments = [], isLoading: commentsLoading } = useProfileComments(profile?.id);
     const createCommentMutation = useCreateProfileComment();
@@ -180,16 +231,24 @@ function ProfilePictureLightbox({ profile, isOwnProfile, onClose }) {
                     </button>
                 </div>
 
-                {/* Actions: Share, Message */}
-                <div className="flex items-center gap-2 p-4 border-b border-[var(--theme-border)] shrink-0">
-                    <button
-                        type="button"
-                        onClick={handleCopyLink}
-                        className="flex items-center gap-2 px-4 py-2 rounded-full bg-[var(--theme-surface-hover)] hover:opacity-90 text-[var(--text-primary)] font-medium transition"
-                    >
-                        <span className="material-symbols-outlined text-xl">share</span>
-                        <span>Share</span>
-                    </button>
+                {/* Actions: Like (when post exists), Share, Message */}
+                <div className="flex items-center gap-2 p-4 border-b border-[var(--theme-border)] shrink-0 flex-wrap">
+                    {profile?.latest_profile_picture_post && (
+                        <ProfilePictureLightboxLikeShare
+                            post={profile.latest_profile_picture_post}
+                            onCopyLink={handleCopyLink}
+                        />
+                    )}
+                    {!profile?.latest_profile_picture_post && (
+                        <button
+                            type="button"
+                            onClick={handleCopyLink}
+                            className="flex items-center gap-2 px-4 py-2 rounded-full bg-[var(--theme-surface-hover)] hover:opacity-90 text-[var(--text-primary)] font-medium transition"
+                        >
+                            <span className="material-symbols-outlined text-xl">share</span>
+                            <span>Share</span>
+                        </button>
+                    )}
                     {!isOwnProfile && profile?.username && (
                         <Link
                             to={`/messages/${profile.username}`}
@@ -202,43 +261,98 @@ function ProfilePictureLightbox({ profile, isOwnProfile, onClose }) {
                     )}
                 </div>
 
-                {/* Comments: input + list */}
+                {/* Comments: when profile picture is a post, show post comments (with Pin/Author); else profile comments */}
                 <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
-                    <h3 className="text-sm font-semibold text-[var(--text-secondary)] uppercase tracking-wide px-4 pt-4 pb-2 shrink-0">
-                        Comments {comments.length > 0 && `(${comments.length})`}
-                    </h3>
-
-                    {/* Comment input — only if not own profile and user is logged in */}
-                    {!isOwnProfile && currentUser && (
-                        <form onSubmit={handleSubmit(onSubmitComment)} className="p-4 pt-0 shrink-0">
-                            <div className="flex gap-3">
-                                <Avatar src={currentUser.profile_picture} alt={currentUser.name} size="md" />
-                                <div className="flex-1 min-w-0">
-                                    <textarea
-                                        {...register('content', { required: true, maxLength: 1000 })}
-                                        placeholder="Write a comment on this profile..."
-                                        rows={2}
-                                        className="w-full px-3 py-2 rounded-xl bg-[var(--theme-surface-hover)] border border-[var(--theme-border)] text-[var(--text-primary)] placeholder-[var(--text-secondary)] focus:outline-none focus:ring-2 focus:ring-[var(--theme-accent)] resize-none text-sm"
-                                    />
-                                    <div className="flex justify-end mt-2">
-                                        <button
-                                            type="submit"
-                                            disabled={createCommentMutation.isPending}
-                                            className="px-3 py-1.5 rounded-full bg-[var(--theme-accent)] text-white text-sm font-medium hover:opacity-90 disabled:opacity-50"
-                                        >
-                                            {createCommentMutation.isPending ? 'Posting...' : 'Comment'}
-                                        </button>
+                    {profile?.latest_profile_picture_post ? (
+                        <>
+                            <h3 className="text-sm font-semibold text-[var(--text-secondary)] uppercase tracking-wide px-4 pt-4 pb-2 shrink-0">
+                                Comments {Array.isArray(postCommentsData) && postCommentsData.filter((c) => !c.parent_comment_id).length > 0 && `(${postCommentsData.filter((c) => !c.parent_comment_id).length})`}
+                            </h3>
+                            {currentUser && (
+                                <form
+                                    onSubmit={(e) => {
+                                        e.preventDefault();
+                                        const content = e.currentTarget.content?.value?.trim();
+                                        if (!content || !profilePicturePostId) return;
+                                        createPostCommentMutation.mutate(
+                                            { postId: profilePicturePostId, data: { content } },
+                                            { onSuccess: () => e.currentTarget.reset() }
+                                        );
+                                    }}
+                                    className="p-4 pt-0 shrink-0"
+                                >
+                                    <div className="flex gap-3">
+                                        <Avatar src={currentUser.profile_picture} alt={currentUser.name} size="md" />
+                                        <div className="flex-1 min-w-0">
+                                            <textarea
+                                                name="content"
+                                                placeholder="Write a comment..."
+                                                rows={2}
+                                                className="w-full px-3 py-2 rounded-xl bg-[var(--theme-surface-hover)] border border-[var(--theme-border)] text-[var(--text-primary)] placeholder-[var(--text-secondary)] focus:outline-none focus:ring-2 focus:ring-[var(--theme-accent)] resize-none text-sm"
+                                            />
+                                            <div className="flex justify-end mt-2">
+                                                <button
+                                                    type="submit"
+                                                    disabled={createPostCommentMutation.isPending}
+                                                    className="px-3 py-1.5 rounded-full bg-[var(--theme-accent)] text-white text-sm font-medium hover:opacity-90 disabled:opacity-50"
+                                                >
+                                                    {createPostCommentMutation.isPending ? 'Posting...' : 'Comment'}
+                                                </button>
+                                            </div>
+                                        </div>
                                     </div>
-                                </div>
+                                </form>
+                            )}
+                            <div className="flex-1 overflow-y-auto px-4 pb-4 space-y-4">
+                                {postCommentsLoading ? (
+                                    <p className="text-sm text-[var(--text-secondary)]">Loading comments...</p>
+                                ) : (Array.isArray(postCommentsData) ? postCommentsData.filter((c) => !c.parent_comment_id) : []).length === 0 ? (
+                                    <p className="text-sm text-[var(--text-secondary)]">No comments yet. Be the first!</p>
+                                ) : (
+                                    (Array.isArray(postCommentsData) ? postCommentsData.filter((c) => !c.parent_comment_id) : []).map((comment) => (
+                                        <CommentThread
+                                            key={comment.id}
+                                            postId={profilePicturePostId}
+                                            comment={comment}
+                                            postAuthorId={profile.id}
+                                        />
+                                    ))
+                                )}
                             </div>
-                        </form>
-                    )}
-
-                    {/* Comment list */}
-                    <div className="flex-1 overflow-y-auto px-4 pb-4 space-y-3">
-                        {commentsLoading ? (
-                            <p className="text-sm text-[var(--text-secondary)]">Loading comments...</p>
-                        ) : comments.length === 0 ? (
+                        </>
+                    ) : (
+                        <>
+                            <h3 className="text-sm font-semibold text-[var(--text-secondary)] uppercase tracking-wide px-4 pt-4 pb-2 shrink-0">
+                                Comments {comments.length > 0 && `(${comments.length})`}
+                            </h3>
+                            {currentUser && (
+                                <form onSubmit={handleSubmit(onSubmitComment)} className="p-4 pt-0 shrink-0">
+                                    <div className="flex gap-3">
+                                        <Avatar src={currentUser.profile_picture} alt={currentUser.name} size="md" />
+                                        <div className="flex-1 min-w-0">
+                                            <textarea
+                                                {...register('content', { required: true, maxLength: 1000 })}
+                                                placeholder="Write a comment on this profile..."
+                                                rows={2}
+                                                className="w-full px-3 py-2 rounded-xl bg-[var(--theme-surface-hover)] border border-[var(--theme-border)] text-[var(--text-primary)] placeholder-[var(--text-secondary)] focus:outline-none focus:ring-2 focus:ring-[var(--theme-accent)] resize-none text-sm"
+                                            />
+                                            <div className="flex justify-end mt-2">
+                                                <button
+                                                    type="submit"
+                                                    disabled={createCommentMutation.isPending}
+                                                    className="px-3 py-1.5 rounded-full bg-[var(--theme-accent)] text-white text-sm font-medium hover:opacity-90 disabled:opacity-50"
+                                                >
+                                                    {createCommentMutation.isPending ? 'Posting...' : 'Comment'}
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </form>
+                            )}
+                            <div className="flex-1 overflow-y-auto px-4 pb-4 space-y-3">
+                                {commentsLoading ? (
+                                    <p className="text-sm text-[var(--text-secondary)]">Loading comments...</p>
+                                ) : comments.length === 0 ? (
                             <p className="text-sm text-[var(--text-secondary)]">
                                 {isOwnProfile ? 'No comments yet on your profile.' : 'No comments yet. Be the first!'}
                             </p>
@@ -276,7 +390,7 @@ function ProfilePictureLightbox({ profile, isOwnProfile, onClose }) {
                                                             className="absolute right-0 top-full mt-1 py-1 min-w-[140px] rounded-lg bg-[var(--theme-surface)] border border-[var(--theme-border)] shadow-lg z-50"
                                                             onClick={(e) => e.stopPropagation()}
                                                         >
-                                                            {isAuthor(comment) && (
+                                                            {isAuthor(comment) && !isProfileOwner() && (
                                                                 <>
                                                                     <button
                                                                         type="button"
@@ -542,7 +656,9 @@ function ProfilePictureLightbox({ profile, isOwnProfile, onClose }) {
                             </div>
                             ))
                         )}
-                    </div>
+                            </div>
+                        </>
+                    )}
                 </div>
             </div>
 
@@ -570,6 +686,13 @@ const Profile = () => {
     const [searchParams, setSearchParams] = useSearchParams();
     const [coverImageFailed, setCoverImageFailed] = useState(false);
     const [selectedMediaPost, setSelectedMediaPost] = useState(null);
+    const [selectedHistoryImage, setSelectedHistoryImage] = useState(null); // { url, type: 'profile-pictures' | 'cover-images' }
+    const [isUpdatingProfilePicture, setIsUpdatingProfilePicture] = useState(false);
+    const [isUpdatingCoverImage, setIsUpdatingCoverImage] = useState(false);
+    const [mediaSubTab, setMediaSubTab] = useState('posts');
+    const [imageCaptionModal, setImageCaptionModal] = useState(null); // { type: 'profile-picture'|'cover-image', file, previewUrl }
+    const [imageCaptionText, setImageCaptionText] = useState('');
+    const [imageVisibility, setImageVisibility] = useState('public'); // 'public' | 'friends'
     const profilePicInputRef = useRef(null);
     const coverInputRef = useRef(null);
 
@@ -587,6 +710,10 @@ const Profile = () => {
     const cancelFriendRequestMutation = useCancelFriendRequest();
 
     const isOwnProfile = currentUser?.username === username;
+    const fetchMediaHistory = isOwnProfile && activeTab === 'media';
+    const { data: profilePictureHistoryItems = [], isLoading: profilePictureHistoryLoading } = useProfilePictureHistory(fetchMediaHistory);
+    const { data: coverImageHistoryItems = [], isLoading: coverImageHistoryLoading } = useCoverImageHistory(fetchMediaHistory);
+
     const hasActiveStory = profile
         ? storiesGrouped.some(
               (group) => group.user?.id === profile.id && (group.stories?.length > 0 || group.has_unviewed)
@@ -622,19 +749,52 @@ const Profile = () => {
     const handleProfilePictureChange = (e) => {
         const file = e.target.files?.[0];
         if (!file || !isOwnProfile) return;
-        const formData = new FormData();
-        formData.append('profile_picture', file);
-        updateProfileMutation.mutate(formData);
+        setImageCaptionModal({ type: 'profile-picture', file, previewUrl: URL.createObjectURL(file) });
+        setImageCaptionText('');
+        setImageVisibility(profile?.profile_picture_visibility ?? 'public');
         e.target.value = '';
     };
 
     const handleCoverImageChange = (e) => {
         const file = e.target.files?.[0];
         if (!file || !isOwnProfile) return;
-        const formData = new FormData();
-        formData.append('cover_image', file);
-        updateProfileMutation.mutate(formData);
+        setImageCaptionModal({ type: 'cover-image', file, previewUrl: URL.createObjectURL(file) });
+        setImageCaptionText('');
+        setImageVisibility(profile?.cover_image_visibility ?? 'public');
         e.target.value = '';
+    };
+
+    const submitImageWithCaption = () => {
+        if (!imageCaptionModal) return;
+        const formData = new FormData();
+        const isProfile = imageCaptionModal.type === 'profile-picture';
+        if (isProfile) {
+            formData.append('profile_picture', imageCaptionModal.file);
+            if (imageCaptionText.trim()) formData.append('profile_picture_caption', imageCaptionText.trim());
+            formData.append('profile_picture_visibility', imageVisibility);
+            setIsUpdatingProfilePicture(true);
+        } else {
+            formData.append('cover_image', imageCaptionModal.file);
+            if (imageCaptionText.trim()) formData.append('cover_image_caption', imageCaptionText.trim());
+            formData.append('cover_image_visibility', imageVisibility);
+            setIsUpdatingCoverImage(true);
+        }
+        updateProfileMutation.mutate(formData, {
+            onSettled: () => {
+                setIsUpdatingProfilePicture(false);
+                setIsUpdatingCoverImage(false);
+            },
+        });
+        if (imageCaptionModal.previewUrl) URL.revokeObjectURL(imageCaptionModal.previewUrl);
+        setImageCaptionModal(null);
+        setImageCaptionText('');
+    };
+
+    const closeImageCaptionModal = () => {
+        if (imageCaptionModal?.previewUrl) URL.revokeObjectURL(imageCaptionModal.previewUrl);
+        setImageCaptionModal(null);
+        setImageCaptionText('');
+        setImageVisibility('public');
     };
 
     // Lightbox: lock scroll and Escape to close
@@ -648,6 +808,25 @@ const Profile = () => {
             window.removeEventListener('keydown', onKeyDown);
         };
     }, [profilePictureModalOpen]);
+
+    // Image caption modal: lock scroll and Escape to close
+    useEffect(() => {
+        if (!imageCaptionModal) return;
+        document.body.style.overflow = 'hidden';
+        const modal = imageCaptionModal;
+        const onKeyDown = (e) => {
+            if (e.key === 'Escape') {
+                if (modal.previewUrl) URL.revokeObjectURL(modal.previewUrl);
+                setImageCaptionModal(null);
+                setImageCaptionText('');
+            }
+        };
+        window.addEventListener('keydown', onKeyDown);
+        return () => {
+            document.body.style.overflow = '';
+            window.removeEventListener('keydown', onKeyDown);
+        };
+    }, [imageCaptionModal]);
 
     if (profileLoading) {
         return (
@@ -704,6 +883,14 @@ const Profile = () => {
                             className="absolute inset-0 w-full h-full object-cover"
                             onError={() => setCoverImageFailed(true)}
                         />
+                    )}
+                    {isUpdatingCoverImage && (
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/40 z-10">
+                            <div className="flex items-center gap-2 text-white text-sm font-medium px-3 py-1 rounded-full bg-black/60">
+                                <span className="material-symbols-outlined text-base animate-spin">progress_activity</span>
+                                <span>Updating cover photo...</span>
+                            </div>
+                        </div>
                     )}
                     {/* Subtle noise overlay when using default gradient */}
                     {(!profile.cover_image || coverImageFailed) && (
@@ -763,6 +950,11 @@ const Profile = () => {
                                     size="2xl"
                                     className="w-full h-full rounded-full object-cover"
                                 />
+                            </div>
+                        )}
+                        {isUpdatingProfilePicture && (
+                            <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/40 z-10">
+                                <span className="material-symbols-outlined text-3xl text-white animate-spin">progress_activity</span>
                             </div>
                         )}
                         <span
@@ -938,10 +1130,135 @@ const Profile = () => {
                 )}
 
                 <MediaView
-                    isOpen={!!selectedMediaPost}
-                    onClose={() => setSelectedMediaPost(null)}
+                    isOpen={!!selectedMediaPost || !!selectedHistoryImage}
+                    onClose={() => {
+                        setSelectedMediaPost(null);
+                        setSelectedHistoryImage(null);
+                    }}
                     post={selectedMediaPost}
+                    imageUrl={selectedHistoryImage?.url}
+                    title={selectedHistoryImage?.type === 'profile-pictures' ? 'Profile picture' : selectedHistoryImage?.type === 'cover-images' ? 'Cover image' : null}
+                    subtitle={selectedHistoryImage ? 'From your media' : null}
+                    caption={selectedHistoryImage?.type === 'profile-pictures' ? profile?.profile_picture_caption : selectedHistoryImage?.type === 'cover-images' ? profile?.cover_image_caption : undefined}
+                    user={selectedHistoryImage ? profile : undefined}
+                    linkedPost={
+                        selectedHistoryImage && isOwnProfile
+                            ? selectedHistoryImage?.type === 'profile-pictures'
+                                ? profile?.latest_profile_picture_post
+                                : selectedHistoryImage?.type === 'cover-images'
+                                    ? profile?.latest_cover_image_post
+                                    : undefined
+                            : undefined
+                    }
                 />
+
+                {/* Caption modal when changing profile picture or cover image */}
+                {imageCaptionModal && (
+                    <div
+                        className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 p-4"
+                        role="dialog"
+                        aria-modal="true"
+                        aria-label="Add caption"
+                        onClick={closeImageCaptionModal}
+                    >
+                        <div
+                            className="theme-surface rounded-2xl border border-[var(--theme-border)] shadow-2xl max-w-md w-full overflow-hidden"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <div className="p-4 border-b border-[var(--theme-border)] flex items-center justify-between">
+                                <h3 className="text-lg font-semibold text-[var(--text-primary)]">
+                                    {imageCaptionModal.type === 'profile-picture' ? 'New profile picture' : 'New cover image'}
+                                </h3>
+                                <button
+                                    type="button"
+                                    onClick={closeImageCaptionModal}
+                                    className="p-2 rounded-full hover:bg-[var(--theme-surface-hover)] text-[var(--text-secondary)]"
+                                    aria-label="Close"
+                                >
+                                    <span className="material-symbols-outlined">close</span>
+                                </button>
+                            </div>
+                            <div className="p-4 space-y-4">
+                                <div className="rounded-xl overflow-hidden border border-[var(--theme-border)] bg-[var(--theme-surface-hover)]">
+                                    {imageCaptionModal.type === 'profile-picture' ? (
+                                        <img
+                                            src={imageCaptionModal.previewUrl}
+                                            alt="Preview"
+                                            className="w-full aspect-square object-cover"
+                                        />
+                                    ) : (
+                                        <img
+                                            src={imageCaptionModal.previewUrl}
+                                            alt="Preview"
+                                            className="w-full aspect-video object-cover"
+                                        />
+                                    )}
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-[var(--text-primary)] mb-2">
+                                        Who can see this?
+                                    </label>
+                                    <div className="flex gap-4">
+                                        <label className="flex items-center gap-2 cursor-pointer">
+                                            <input
+                                                type="radio"
+                                                name="image-visibility"
+                                                value="public"
+                                                checked={imageVisibility === 'public'}
+                                                onChange={() => setImageVisibility('public')}
+                                                className="w-4 h-4 text-[var(--theme-accent)] border-[var(--theme-border)] focus:ring-[var(--theme-accent)]"
+                                            />
+                                            <span className="text-sm text-[var(--text-primary)]">Public</span>
+                                        </label>
+                                        <label className="flex items-center gap-2 cursor-pointer">
+                                            <input
+                                                type="radio"
+                                                name="image-visibility"
+                                                value="friends"
+                                                checked={imageVisibility === 'friends'}
+                                                onChange={() => setImageVisibility('friends')}
+                                                className="w-4 h-4 text-[var(--theme-accent)] border-[var(--theme-border)] focus:ring-[var(--theme-accent)]"
+                                            />
+                                            <span className="text-sm text-[var(--text-primary)]">Just for friends</span>
+                                        </label>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label htmlFor="image-caption" className="block text-sm font-medium text-[var(--text-primary)] mb-1">
+                                        Caption (optional)
+                                    </label>
+                                    <textarea
+                                        id="image-caption"
+                                        value={imageCaptionText}
+                                        onChange={(e) => setImageCaptionText(e.target.value)}
+                                        placeholder="Add a caption..."
+                                        rows={3}
+                                        maxLength={500}
+                                        className="w-full px-3 py-2 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface-hover)] text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] focus:ring-2 focus:ring-[var(--theme-accent)]/40 focus:border-[var(--theme-accent)] outline-none resize-none text-sm"
+                                    />
+                                    <p className="text-xs text-[var(--text-secondary)] mt-1">{imageCaptionText.length}/500</p>
+                                </div>
+                            </div>
+                            <div className="p-4 border-t border-[var(--theme-border)] flex gap-3 justify-end">
+                                <button
+                                    type="button"
+                                    onClick={closeImageCaptionModal}
+                                    className="px-4 py-2 rounded-xl border border-[var(--theme-border)] text-[var(--text-primary)] hover:bg-[var(--theme-surface-hover)]"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={submitImageWithCaption}
+                                    disabled={updateProfileMutation.isPending}
+                                    className="px-4 py-2 rounded-xl bg-[var(--theme-accent)] text-white font-medium hover:opacity-90 disabled:opacity-60"
+                                >
+                                    {updateProfileMutation.isPending ? 'Saving...' : 'Save'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
 
                 {/* Profile Navigation Tabs */}
                 <div className="border-t border-[var(--theme-border)] px-6 md:px-8 pr-8 md:pr-12 pt-0 pb-4 min-w-0">
@@ -1061,40 +1378,159 @@ const Profile = () => {
                         </>
                     )}
 
-                    {/* Media tab - photos posted by user */}
+                    {/* Media tab - posts, profile pictures, cover images */}
                     {activeTab === 'media' && (
-                        <>
-                            {postsLoading ? (
-                                <div className="flex justify-center py-12">
-                                    <LoadingSpinner />
-                                </div>
-                            ) : mediaPosts.length > 0 ? (
-                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                                    {mediaPosts.map((post) => (
+                        <div className="theme-surface rounded-2xl border border-[var(--theme-border)] card-shadow overflow-hidden">
+                            {/* Sticky sub-tabs (own profile only) */}
+                            {isOwnProfile && (
+                                <div className="sticky top-0 z-10 bg-[var(--theme-surface)] border-b border-[var(--theme-border)] px-4 py-2 flex gap-1">
+                                    {[
+                                        { id: 'posts', label: 'Posts' },
+                                        { id: 'profile-pictures', label: 'Profile pictures' },
+                                        { id: 'cover-images', label: 'Cover images' },
+                                    ].map(({ id, label }) => (
                                         <button
-                                            key={post.id}
+                                            key={id}
                                             type="button"
-                                            onClick={() => setSelectedMediaPost(post)}
-                                            className="aspect-square rounded-xl overflow-hidden bg-[var(--theme-surface-hover)] border border-[var(--theme-border)] hover:opacity-90 transition-opacity cursor-pointer p-0 text-left"
+                                            onClick={() => setMediaSubTab(id)}
+                                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                                                mediaSubTab === id
+                                                    ? 'bg-[var(--theme-accent)] text-white'
+                                                    : 'text-[var(--text-secondary)] hover:bg-[var(--theme-surface-hover)] hover:text-[var(--text-primary)]'
+                                            }`}
                                         >
-                                            {post.media_type === 'image' ? (
-                                                <img src={post.media_url} alt="" className="w-full h-full object-cover" />
-                                            ) : (
-                                                <div className="w-full h-full flex items-center justify-center text-[var(--text-secondary)]">
-                                                    <span className="material-symbols-outlined text-4xl">videocam</span>
-                                                </div>
-                                            )}
+                                            {label}
                                         </button>
                                     ))}
                                 </div>
-                            ) : (
-                                <div className="theme-surface rounded-2xl border border-[var(--theme-border)] p-12 text-center card-shadow">
-                                    <span className="material-symbols-outlined text-4xl text-[var(--text-secondary)]/60 mb-3 block">photo_library</span>
-                                    <p className="text-[var(--text-primary)] font-medium">No photos yet</p>
-                                    <p className="text-[var(--text-secondary)] text-sm mt-1">Photos from posts will appear here</p>
-                                </div>
                             )}
-                        </>
+                            <div className="p-4 min-h-[200px]">
+                                {(mediaSubTab === 'posts' || !isOwnProfile) && (
+                                    <>
+                                        {postsLoading ? (
+                                            <div className="flex justify-center py-12">
+                                                <LoadingSpinner />
+                                            </div>
+                                        ) : mediaPosts.length > 0 ? (
+                                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                                                {mediaPosts.map((post) => (
+                                                    <button
+                                                        key={post.id}
+                                                        type="button"
+                                                        onClick={() => setSelectedMediaPost(post)}
+                                                        className="aspect-square rounded-xl overflow-hidden bg-[var(--theme-surface-hover)] border border-[var(--theme-border)] hover:opacity-90 transition-opacity cursor-pointer p-0 text-left"
+                                                    >
+                                                        {post.media_type === 'image' ? (
+                                                            <img src={post.media_url} alt="" className="w-full h-full object-cover" />
+                                                        ) : (
+                                                            <div className="w-full h-full flex items-center justify-center text-[var(--text-secondary)]">
+                                                                <span className="material-symbols-outlined text-4xl">videocam</span>
+                                                            </div>
+                                                        )}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        ) : (
+                                            <div className="py-12 text-center">
+                                                <span className="material-symbols-outlined text-4xl text-[var(--text-secondary)]/60 mb-3 block">photo_library</span>
+                                                <p className="text-[var(--text-primary)] font-medium">No photos yet</p>
+                                                <p className="text-[var(--text-secondary)] text-sm mt-1">Photos from posts will appear here</p>
+                                            </div>
+                                        )}
+                                    </>
+                                )}
+                                {isOwnProfile && mediaSubTab === 'profile-pictures' && (
+                                    <>
+                                        {profilePictureHistoryLoading ? (
+                                            <div className="flex justify-center py-12">
+                                                <LoadingSpinner />
+                                            </div>
+                                        ) : profile?.latest_profile_picture_post || profilePictureHistoryItems.length > 0 ? (
+                                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                                                {profile?.latest_profile_picture_post && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => {
+                                                            setSelectedMediaPost(profile.latest_profile_picture_post);
+                                                            setSelectedHistoryImage(null);
+                                                        }}
+                                                        className="aspect-square rounded-xl overflow-hidden bg-[var(--theme-surface-hover)] border-2 border-[var(--theme-accent)] border-opacity-50 hover:opacity-90 transition-opacity cursor-pointer p-0 text-left relative"
+                                                        title="Current profile picture (view & comment)"
+                                                    >
+                                                        <AuthImage src={profile.latest_profile_picture_post.media_url} alt="" className="w-full h-full object-cover" />
+                                                        <span className="absolute bottom-1 left-1 right-1 text-[10px] font-medium text-white bg-black/60 rounded px-1 py-0.5 truncate">Current</span>
+                                                    </button>
+                                                )}
+                                                {profilePictureHistoryItems.map((item, i) => (
+                                                    <button
+                                                        key={item.url || i}
+                                                        type="button"
+                                                        onClick={() => {
+                                                            setSelectedHistoryImage({ url: item.url, type: 'profile-pictures' });
+                                                            setSelectedMediaPost(null);
+                                                        }}
+                                                        className="aspect-square rounded-xl overflow-hidden bg-[var(--theme-surface-hover)] border border-[var(--theme-border)] hover:opacity-90 transition-opacity cursor-pointer p-0 text-left"
+                                                    >
+                                                        <AuthImage src={item.url} alt="" className="w-full h-full object-cover" />
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        ) : (
+                                            <div className="py-12 text-center">
+                                                <span className="material-symbols-outlined text-4xl text-[var(--text-secondary)]/60 mb-3 block">portrait</span>
+                                                <p className="text-[var(--text-primary)] font-medium">No profile pictures yet</p>
+                                                <p className="text-[var(--text-secondary)] text-sm mt-1">Your profile picture history will appear here</p>
+                                            </div>
+                                        )}
+                                    </>
+                                )}
+                                {isOwnProfile && mediaSubTab === 'cover-images' && (
+                                    <>
+                                        {coverImageHistoryLoading ? (
+                                            <div className="flex justify-center py-12">
+                                                <LoadingSpinner />
+                                            </div>
+                                        ) : profile?.latest_cover_image_post || coverImageHistoryItems.length > 0 ? (
+                                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                                                {profile?.latest_cover_image_post && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => {
+                                                            setSelectedMediaPost(profile.latest_cover_image_post);
+                                                            setSelectedHistoryImage(null);
+                                                        }}
+                                                        className="aspect-video rounded-xl overflow-hidden bg-[var(--theme-surface-hover)] border-2 border-[var(--theme-accent)] border-opacity-50 hover:opacity-90 transition-opacity cursor-pointer p-0 text-left relative"
+                                                        title="Current cover image (view & comment)"
+                                                    >
+                                                        <AuthImage src={profile.latest_cover_image_post.media_url} alt="" className="w-full h-full object-cover" />
+                                                        <span className="absolute bottom-1 left-1 right-1 text-[10px] font-medium text-white bg-black/60 rounded px-1 py-0.5 truncate">Current</span>
+                                                    </button>
+                                                )}
+                                                {coverImageHistoryItems.map((item, i) => (
+                                                    <button
+                                                        key={item.url || i}
+                                                        type="button"
+                                                        onClick={() => {
+                                                            setSelectedHistoryImage({ url: item.url, type: 'cover-images' });
+                                                            setSelectedMediaPost(null);
+                                                        }}
+                                                        className="aspect-video rounded-xl overflow-hidden bg-[var(--theme-surface-hover)] border border-[var(--theme-border)] hover:opacity-90 transition-opacity cursor-pointer p-0 text-left"
+                                                    >
+                                                        <AuthImage src={item.url} alt="" className="w-full h-full object-cover" />
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        ) : (
+                                            <div className="py-12 text-center">
+                                                <span className="material-symbols-outlined text-4xl text-[var(--text-secondary)]/60 mb-3 block">image</span>
+                                                <p className="text-[var(--text-primary)] font-medium">No cover images yet</p>
+                                                <p className="text-[var(--text-secondary)] text-sm mt-1">Your cover image history will appear here</p>
+                                            </div>
+                                        )}
+                                    </>
+                                )}
+                            </div>
+                        </div>
                     )}
 
                     {/* Communities tab */}

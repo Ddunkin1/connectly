@@ -22,33 +22,46 @@ class NotificationController extends Controller
             ->limit(50)
             ->get()
             ->map(function ($notification) use ($baseUrl) {
-                $data = $notification->data;
-                $type = $data['type'] ?? 'unknown';
+                try {
+                    $data = is_array($notification->data ?? null) ? $notification->data : [];
+                    $type = $data['type'] ?? 'unknown';
 
-                // Add resolvable profile picture URLs for friend request notifications (proxy for Supabase)
-                if ($type === 'friend_request' && !empty($data['sender_username'])) {
-                    $data['sender_profile_picture'] = $this->notificationProfilePictureUrl($baseUrl, $data['sender_username'], $data['sender_profile_picture'] ?? null);
-                }
-                if ($type === 'friend_request_accepted' && !empty($data['actor_username'])) {
-                    $data['actor_profile_picture'] = $this->notificationProfilePictureUrl($baseUrl, $data['actor_username'], $data['actor_profile_picture'] ?? null);
-                }
-                if (($type === 'community_invite' || $type === 'community_invite_suggested') && !empty($data['inviter_username'])) {
-                    $data['inviter_profile_picture'] = $this->notificationProfilePictureUrl($baseUrl, $data['inviter_username'], $data['inviter_profile_picture'] ?? null);
-                }
-                if ($type === 'community_member_joined' && !empty($data['user_username'])) {
-                    $data['user_profile_picture'] = $this->notificationProfilePictureUrl($baseUrl, $data['user_username'], $data['user_profile_picture'] ?? null);
-                }
-                if ($type === 'community_join_request' && !empty($data['user_username'])) {
-                    $data['user_profile_picture'] = $this->notificationProfilePictureUrl($baseUrl, $data['user_username'], $data['user_profile_picture'] ?? null);
-                }
+                    // Add resolvable profile picture URLs (proxy for Supabase) so avatars load
+                    if ($type === 'friend_request' && !empty($data['sender_username'])) {
+                        $data['sender_profile_picture'] = $this->notificationProfilePictureUrl($baseUrl, $data['sender_username'], $data['sender_profile_picture'] ?? null);
+                    }
+                    if ($type === 'friend_request_accepted' && !empty($data['actor_username'])) {
+                        $data['actor_profile_picture'] = $this->notificationProfilePictureUrl($baseUrl, $data['actor_username'], $data['actor_profile_picture'] ?? null);
+                    }
+                    if (in_array($type, ['like', 'comment', 'mention', 'share', 'comment_like', 'comment_pinned', 'comment_reply']) && !empty($data['actor_username'])) {
+                        $data['actor_profile_picture'] = $this->notificationProfilePictureUrl($baseUrl, $data['actor_username'], $data['actor_profile_picture'] ?? null);
+                    }
+                    if (($type === 'community_invite' || $type === 'community_invite_suggested') && !empty($data['inviter_username'])) {
+                        $data['inviter_profile_picture'] = $this->notificationProfilePictureUrl($baseUrl, $data['inviter_username'], $data['inviter_profile_picture'] ?? null);
+                    }
+                    if ($type === 'community_member_joined' && !empty($data['user_username'])) {
+                        $data['user_profile_picture'] = $this->notificationProfilePictureUrl($baseUrl, $data['user_username'], $data['user_profile_picture'] ?? null);
+                    }
+                    if ($type === 'community_join_request' && !empty($data['user_username'])) {
+                        $data['user_profile_picture'] = $this->notificationProfilePictureUrl($baseUrl, $data['user_username'], $data['user_profile_picture'] ?? null);
+                    }
 
-                return [
-                    'id' => $notification->id,
-                    'type' => $type,
-                    'data' => $data,
-                    'read_at' => $notification->read_at,
-                    'created_at' => $notification->created_at?->toIso8601String(),
-                ];
+                    return [
+                        'id' => $notification->id,
+                        'type' => $type,
+                        'data' => $data,
+                        'read_at' => $notification->read_at,
+                        'created_at' => $notification->created_at?->toIso8601String(),
+                    ];
+                } catch (\Throwable $e) {
+                    return [
+                        'id' => $notification->id,
+                        'type' => 'unknown',
+                        'data' => ['message' => 'Notification could not be loaded'],
+                        'read_at' => $notification->read_at,
+                        'created_at' => $notification->created_at?->toIso8601String(),
+                    ];
+                }
             });
 
         $unreadCount = $user->unreadNotifications()->count();
@@ -139,7 +152,7 @@ class NotificationController extends Controller
      */
     public function markAllAsRead(Request $request): JsonResponse
     {
-        $request->user()->unreadNotifications->markAsRead();
+        $request->user()->unreadNotifications()->update(['read_at' => now()]);
 
         return response()->json([
             'message' => 'All notifications marked as read',

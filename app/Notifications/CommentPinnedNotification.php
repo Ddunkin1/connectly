@@ -10,14 +10,14 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-class CommentNotification extends Notification
+class CommentPinnedNotification extends Notification implements ShouldQueue
 {
     use Queueable;
 
     public function __construct(
         public Post $post,
         public Comment $comment,
-        public User $commenter
+        public User $pinnedBy
     ) {
     }
 
@@ -28,17 +28,18 @@ class CommentNotification extends Notification
 
     public function toMail(object $notifiable): MailMessage
     {
+        $actorName = $this->pinnedBy->name ?? 'Someone';
         return (new MailMessage)
-            ->subject('New Comment')
-            ->line($this->commenter->name . ' commented on your post.')
-            ->action('View Post', url('/posts/' . $this->post->id))
+            ->subject('Your comment was pinned')
+            ->line($actorName . ' pinned your comment on their post.')
+            ->action('View Post', url('/post/' . $this->post->id))
             ->line('Thank you for using our application!');
     }
 
     public function toArray(object $notifiable): array
     {
-        $actorName = $this->commenter->name ?? 'Someone';
-        $contentPreview = $this->comment->content
+        $actorName = $this->pinnedBy->name ?? 'Someone';
+        $commentPreview = $this->comment->content
             ? \Str::limit(strip_tags($this->comment->content), 80)
             : '';
         $postPreview = $this->post->content
@@ -46,20 +47,18 @@ class CommentNotification extends Notification
             : null;
 
         return [
-            'type' => 'comment',
+            'type' => 'comment_pinned',
             'post_id' => $this->post->id,
             'comment_id' => $this->comment->id,
-            'actor_id' => $this->commenter->id,
+            'actor_id' => $this->pinnedBy->id,
             'actor_name' => $actorName,
-            'actor_username' => $this->commenter->username ?? null,
-            'actor_profile_picture' => $this->commenter->profile_picture ?? null,
-            'message' => $actorName . ' commented on your post',
-            'comment_preview' => $contentPreview,
+            'actor_username' => $this->pinnedBy->username ?? null,
+            'actor_profile_picture' => $this->pinnedBy->profile_picture ?? null,
+            'message' => $actorName . ' pinned your comment',
+            'comment_preview' => $commentPreview,
             'post_preview' => $postPreview,
             'media_url' => $this->post->media_url ?? null,
             'media_type' => $this->post->media_type ?? null,
-            'likes_count' => $this->post->likes()->count(),
-            'comments_count' => $this->post->allComments()->count(),
         ];
     }
 }

@@ -77,8 +77,14 @@ class PostController extends Controller
             ->whereIn('posts.id', $posts->pluck('id'))
             ->pluck('posts.id')
             ->toArray();
-        $posts->getCollection()->each(function ($post) use ($bookmarkedIds) {
+        $likedIds = Like::where('likeable_type', Post::class)
+            ->where('user_id', $request->user()->id)
+            ->whereIn('likeable_id', $posts->pluck('id'))
+            ->pluck('likeable_id')
+            ->toArray();
+        $posts->getCollection()->each(function ($post) use ($bookmarkedIds, $likedIds) {
             $post->is_bookmarked = in_array($post->id, $bookmarkedIds);
+            $post->is_liked = in_array($post->id, $likedIds);
         });
 
         return response()->json([

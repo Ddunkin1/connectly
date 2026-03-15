@@ -42,7 +42,11 @@ class UpdateProfileRequest extends FormRequest
             'website' => ['nullable', 'url', 'max:255'],
             'privacy_settings' => ['sometimes', 'in:public,private'],
             'profile_picture' => ['nullable', 'file', 'mimes:jpeg,jpg,png,webp', 'max:5120'], // 5MB max
+            'profile_picture_caption' => ['nullable', 'string', 'max:500'],
+            'profile_picture_visibility' => ['nullable', 'string', 'in:public,friends'],
             'cover_image' => ['nullable', 'file', 'mimes:jpeg,jpg,png,webp', 'max:5120'], // 5MB max
+            'cover_image_caption' => ['nullable', 'string', 'max:500'],
+            'cover_image_visibility' => ['nullable', 'string', 'in:public,friends'],
         ];
     }
 

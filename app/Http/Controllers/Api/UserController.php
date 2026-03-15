@@ -35,6 +35,10 @@ class UserController extends Controller
             if ($currentUser->hasBlocked($user) || $user->hasBlocked($currentUser)) {
                 return response()->json(['message' => 'User not found'], 404);
             }
+            $visibility = $user->cover_image_visibility ?? 'public';
+            if ($visibility === 'friends' && !$user->isFriendWith($currentUser)) {
+                return response()->json(['message' => 'User not found'], 404);
+            }
         }
 
         $coverUrl = $user->cover_image;
@@ -76,6 +80,10 @@ class UserController extends Controller
         $currentUser = $request->user();
         if ($currentUser && $currentUser->id !== $user->id) {
             if ($currentUser->hasBlocked($user) || $user->hasBlocked($currentUser)) {
+                return response()->json(['message' => 'User not found'], 404);
+            }
+            $visibility = $user->profile_picture_visibility ?? 'public';
+            if ($visibility === 'friends' && !$user->isFriendWith($currentUser)) {
                 return response()->json(['message' => 'User not found'], 404);
             }
         }
@@ -131,6 +139,15 @@ class UserController extends Controller
 
         try {
             $user->loadCount(['followers', 'following', 'posts']);
+            $user->load(['latestProfilePicturePost.user', 'latestCoverImagePost.user']);
+            // Attach recent likers and is_liked for latest profile/cover posts (for MediaView)
+            foreach (['latestProfilePicturePost', 'latestCoverImagePost'] as $rel) {
+                $post = $user->$rel;
+                if ($post) {
+                    $post->recent_likers = $post->likes()->with('user')->orderBy('created_at', 'desc')->take(3)->get()->pluck('user')->filter()->values();
+                    $post->is_liked = $currentUser ? $post->isLikedBy($currentUser) : false;
+                }
+            }
             $imageBase = config('services.supabase.cover_proxy_base')
                 ?: $request->getSchemeAndHttpHost()
                 ?: rtrim(config('app.url'), '/');
@@ -321,15 +338,27 @@ class UserController extends Controller
         $supabaseService = app(\App\Services\SupabaseService::class);
         $imageUploadFailed = false;
 
-        // Handle profile picture upload (upload first, then delete old — so we keep old if upload fails)
+        // Handle profile picture upload (archive in profile-pictures-storage + current in profile-picture)
         if ($request->hasFile('profile_picture')) {
             try {
-                $profilePictureUrl = $supabaseService->uploadFile($request->file('profile_picture'), 'profile-pictures');
-                if ($profilePictureUrl) {
+                $file = $request->file('profile_picture');
+
+                // Archive copy – best-effort, per-user folder for media tab history
+                try {
+                    $supabaseService->uploadFile($file, 'profile-pictures/profile-pictures-storage/' . $user->id);
+                } catch (\Throwable $e) {
+                    Log::warning('Profile picture archive upload failed', ['error' => $e->getMessage(), 'user_id' => $user->id]);
+                }
+
+                // Current profile picture (single latest) – stored under profile-pictures/profile-picture
+                $currentProfileUrl = $supabaseService->uploadFile($file, 'profile-pictures/profile-picture');
+                if ($currentProfileUrl) {
                     if ($user->profile_picture) {
                         $supabaseService->deleteFile($user->profile_picture);
                     }
-                    $data['profile_picture'] = $profilePictureUrl;
+                    $data['profile_picture'] = $currentProfileUrl;
+                } else {
+                    $imageUploadFailed = true;
                 }
             } catch (\Throwable $e) {
                 Log::warning('Profile picture upload failed', ['error' => $e->getMessage()]);
@@ -337,15 +366,25 @@ class UserController extends Controller
             }
         }
 
-        // Handle cover image upload
+        // Handle cover image upload (archive in cover-images-storage + current in cover-image)
         if ($request->hasFile('cover_image')) {
             try {
-                $coverImageUrl = $supabaseService->uploadFile($request->file('cover_image'), 'cover-images');
-                if ($coverImageUrl) {
+                $file = $request->file('cover_image');
+
+                // Archive copy – best-effort, per-user folder for media tab history
+                try {
+                    $supabaseService->uploadFile($file, 'cover-images/cover-images-storage/' . $user->id);
+                } catch (\Throwable $e) {
+                    Log::warning('Cover image archive upload failed', ['error' => $e->getMessage(), 'user_id' => $user->id]);
+                }
+
+                // Current cover image (single latest) – stored under cover-images/cover-image
+                $currentCoverUrl = $supabaseService->uploadFile($file, 'cover-images/cover-image');
+                if ($currentCoverUrl) {
                     if ($user->cover_image) {
                         $supabaseService->deleteFile($user->cover_image);
                     }
-                    $data['cover_image'] = $coverImageUrl;
+                    $data['cover_image'] = $currentCoverUrl;
                 } else {
                     Log::warning('Cover image upload returned null', ['user_id' => $user->id]);
                     $imageUploadFailed = true;
@@ -356,7 +395,35 @@ class UserController extends Controller
             }
         }
 
+        // Remove file objects from $data so only URLs and captions are saved
+        foreach (['profile_picture', 'cover_image'] as $key) {
+            if (isset($data[$key]) && $data[$key] instanceof \Illuminate\Http\UploadedFile) {
+                unset($data[$key]);
+            }
+        }
         $user->update($data);
+
+        // Create a feed post when profile picture or cover image is updated (so it appears in home feed with like/comment)
+        if (!empty($data['profile_picture'])) {
+            $post = $user->posts()->create([
+                'content' => $data['profile_picture_caption'] ?? '',
+                'media_url' => $data['profile_picture'],
+                'media_type' => 'image',
+                'visibility' => $user->profile_picture_visibility === 'friends' ? 'followers' : 'public',
+                'post_type' => 'profile_picture_update',
+            ]);
+            $user->update(['latest_profile_picture_post_id' => $post->id]);
+        }
+        if (!empty($data['cover_image'])) {
+            $post = $user->posts()->create([
+                'content' => $data['cover_image_caption'] ?? '',
+                'media_url' => $data['cover_image'],
+                'media_type' => 'image',
+                'visibility' => $user->cover_image_visibility === 'friends' ? 'followers' : 'public',
+                'post_type' => 'cover_image_update',
+            ]);
+            $user->update(['latest_cover_image_post_id' => $post->id]);
+        }
 
         if (config('app.debug')) {
             Log::debug('Profile update result', [
@@ -390,25 +457,104 @@ class UserController extends Controller
         $user = $request->user();
         $supabaseService = app(\App\Services\SupabaseService::class);
 
-        // Delete old profile picture if exists
-        if ($user->profile_picture) {
-            $supabaseService->deleteFile($user->profile_picture);
+        $file = $request->file('profile_picture');
+
+        // Archive copy – best-effort, per-user folder for media tab history
+        try {
+            $supabaseService->uploadFile($file, 'profile-pictures/profile-pictures-storage/' . $user->id);
+        } catch (\Throwable $e) {
+            Log::warning('Profile picture archive upload failed (uploadProfilePicture)', ['error' => $e->getMessage(), 'user_id' => $user->id]);
         }
 
-        // Upload new profile picture
-        $profilePictureUrl = $supabaseService->uploadFile($request->file('profile_picture'), 'profile-pictures');
+        // Upload new current profile picture
+        $currentProfileUrl = $supabaseService->uploadFile($file, 'profile-pictures/profile-picture');
         
-        if (!$profilePictureUrl) {
+        if (!$currentProfileUrl) {
             return response()->json([
                 'message' => 'Failed to upload profile picture',
             ], 500);
         }
 
-        $user->update(['profile_picture' => $profilePictureUrl]);
+        // Delete old current profile picture if exists (archives remain untouched)
+        if ($user->profile_picture) {
+            $supabaseService->deleteFile($user->profile_picture);
+        }
+
+        $user->update(['profile_picture' => $currentProfileUrl]);
 
         return response()->json([
             'message' => 'Profile picture uploaded successfully',
             'user' => new UserResource($user->fresh()),
+        ]);
+    }
+
+    /**
+     * List current user's profile picture history (from profile-pictures-storage).
+     *
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function profilePictureHistory(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        $supabase = app(SupabaseService::class);
+        $prefix = 'profile-pictures/profile-pictures-storage/' . $user->id;
+        $paths = $supabase->listObjects($prefix);
+        $base = rtrim(config('services.supabase.cover_proxy_base') ?: $request->getSchemeAndHttpHost() ?: config('app.url'), '/');
+        $items = array_map(function ($path) use ($base) {
+            return ['url' => $base . '/api/user/storage-image?path=' . rawurlencode($path)];
+        }, $paths);
+        return response()->json(['items' => array_values($items)]);
+    }
+
+    /**
+     * List current user's cover image history (from cover-images-storage).
+     *
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function coverImageHistory(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        $supabase = app(SupabaseService::class);
+        $prefix = 'cover-images/cover-images-storage/' . $user->id;
+        $paths = $supabase->listObjects($prefix);
+        $base = rtrim(config('services.supabase.cover_proxy_base') ?: $request->getSchemeAndHttpHost() ?: config('app.url'), '/');
+        $items = array_map(function ($path) use ($base) {
+            return ['url' => $base . '/api/user/storage-image?path=' . rawurlencode($path)];
+        }, $paths);
+        return response()->json(['items' => array_values($items)]);
+    }
+
+    /**
+     * Serve a storage image (profile-pictures-storage or cover-images-storage) for the current user only.
+     *
+     * @param Request $request
+     * @return Response|JsonResponse
+     */
+    public function storageImage(Request $request): Response|JsonResponse
+    {
+        $path = $request->query('path');
+        if (!is_string($path) || $path === '') {
+            return response()->json(['message' => 'Missing path'], 400);
+        }
+        $path = trim($path, '/');
+        $user = $request->user();
+        $allowedPrefix1 = 'profile-pictures/profile-pictures-storage/' . $user->id . '/';
+        $allowedPrefix2 = 'cover-images/cover-images-storage/' . $user->id . '/';
+        if (!str_starts_with($path, $allowedPrefix1) && !str_starts_with($path, $allowedPrefix2)) {
+            return response()->json(['message' => 'Forbidden'], 403);
+        }
+        $supabase = app(SupabaseService::class);
+        $publicUrl = $supabase->getPublicUrl($path);
+        $response = $supabase->fetchFile($publicUrl);
+        if (!$response) {
+            return response()->json(['message' => 'Failed to load image'], 502);
+        }
+        $contentType = $response->header('Content-Type') ?: 'image/jpeg';
+        return response($response->body(), 200, [
+            'Content-Type' => $contentType,
+            'Cache-Control' => 'public, max-age=86400',
         ]);
     }
 

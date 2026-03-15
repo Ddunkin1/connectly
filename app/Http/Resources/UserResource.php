@@ -63,7 +63,11 @@ class UserResource extends JsonResource
             'email' => $this->when($request->user()?->id === $this->id, $this->email),
             'bio' => $this->bio,
             'profile_picture' => $this->formatProfilePictureUrl($request),
+            'profile_picture_caption' => $this->profile_picture_caption,
+            'profile_picture_visibility' => $this->profile_picture_visibility ?? 'public',
             'cover_image' => $this->formatCoverImageUrl($request),
+            'cover_image_caption' => $this->cover_image_caption,
+            'cover_image_visibility' => $this->cover_image_visibility ?? 'public',
             'location' => $this->location,
             'website' => $this->website,
             'privacy_settings' => $this->privacy_settings,
@@ -73,11 +77,14 @@ class UserResource extends JsonResource
             'friend_request_status' => $friendRequestStatus,
             'email_verified_at' => $this->when($request->user()?->id === $this->id, $this->email_verified_at),
             'created_at' => $this->created_at,
+            'latest_profile_picture_post' => new PostResource($this->whenLoaded('latestProfilePicturePost')),
+            'latest_cover_image_post' => new PostResource($this->whenLoaded('latestCoverImagePost')),
         ];
     }
 
     /**
      * Format profile_picture URL: use proxy for Supabase URLs (avoids 403), otherwise asset URL.
+     * Appends ?v= hash so the URL changes when the image changes (avoids browser showing cached old image).
      */
     private function formatProfilePictureUrl(Request $request): ?string
     {
@@ -85,9 +92,18 @@ class UserResource extends JsonResource
         if (empty($picture)) {
             return null;
         }
+        $visibility = $this->profile_picture_visibility ?? 'public';
+        if ($visibility === 'friends') {
+            $currentUser = $request->user();
+            if (!$currentUser || $currentUser->id === $this->id) {
+                // Owner always sees their own
+            } elseif (!$this->resource->isFriendWith($currentUser)) {
+                return null;
+            }
+        }
         $isSupabase = str_contains($picture, 'supabase.co');
         if ($isSupabase) {
-            return $this->buildProxyUrl($request, 'profile-picture');
+            return $this->buildProxyUrl($request, 'profile-picture', md5($picture));
         }
         return filter_var($picture, FILTER_VALIDATE_URL) ? $picture : asset('storage/' . $picture);
     }
@@ -101,11 +117,20 @@ class UserResource extends JsonResource
         if (empty($cover)) {
             return null;
         }
+        $visibility = $this->cover_image_visibility ?? 'public';
+        if ($visibility === 'friends') {
+            $currentUser = $request->user();
+            if (!$currentUser || $currentUser->id === $this->id) {
+                // Owner always sees their own
+            } elseif (!$this->resource->isFriendWith($currentUser)) {
+                return null;
+            }
+        }
 
         // Any Supabase storage URL (including signed URLs with tokens) should use our proxy
         $isSupabase = str_contains($cover, 'supabase.co');
         if ($isSupabase) {
-            $proxyUrl = $this->buildProxyUrl($request, 'cover-image');
+            $proxyUrl = $this->buildProxyUrl($request, 'cover-image', md5($cover));
             if (config('app.debug')) {
                 Log::debug('formatCoverImageUrl', [
                     'stored_cover' => substr($cover, 0, 80) . '...',
@@ -120,12 +145,17 @@ class UserResource extends JsonResource
 
     /**
      * Build proxy URL for user images (cover or profile picture).
+     * Optional $version (e.g. hash of stored URL) is appended as ?v= to bust cache when image changes.
      */
-    private function buildProxyUrl(Request $request, string $type): string
+    private function buildProxyUrl(Request $request, string $type, ?string $version = null): string
     {
         $base = config('services.supabase.cover_proxy_base')
             ?: $request->getSchemeAndHttpHost()
             ?: rtrim(config('app.url'), '/');
-        return rtrim($base, '/') . '/api/users/' . $this->username . '/' . $type;
+        $url = rtrim($base, '/') . '/api/users/' . $this->username . '/' . $type;
+        if ($version !== null && $version !== '') {
+            $url .= '?v=' . $version;
+        }
+        return $url;
     }
 }

@@ -26,8 +26,10 @@ class CommentResource extends JsonResource
             'likes_count' => $this->whenCounted('likes', fn() => $this->likes()->count()),
             'is_liked' => $this->when(
                 $request->user(),
-                fn() => $this->isLikedBy($request->user())
+                fn () => isset($this->resource->is_liked) ? (bool) $this->resource->is_liked : $this->isLikedBy($request->user())
             ),
+            'pinned_at' => $this->pinned_at,
+            'is_pinned' => !empty($this->pinned_at),
             'created_at' => $this->created_at,
         ];
     }

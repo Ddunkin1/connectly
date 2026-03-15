@@ -19,6 +19,7 @@ class PostResource extends JsonResource
             'content' => $this->content ?? '', // Handle NULL content (for media-only posts)
             'media_url' => $this->media_url, // Supabase URLs are already full URLs
             'media_type' => $this->media_type,
+            'post_type' => $this->post_type,
             'visibility' => $this->visibility,
             'is_archived' => (bool) ($this->is_archived ?? false),
             'user' => new UserResource($this->whenLoaded('user')),

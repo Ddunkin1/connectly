@@ -90,7 +90,7 @@ const CommentModal = ({ post, onClose }) => {
                         </p>
                     ) : (
                         topLevelComments.map((comment) => (
-                            <CommentThread key={comment.id} postId={post.id} comment={comment} />
+                            <CommentThread key={comment.id} postId={post.id} comment={comment} postAuthorId={post.user?.id} />
                         ))
                     )}
                 </div>

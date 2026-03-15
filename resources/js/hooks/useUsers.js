@@ -59,6 +59,8 @@ export const useUpdateProfile = () => {
             }
             queryClient.invalidateQueries({ queryKey: ['user'] });
             queryClient.invalidateQueries({ queryKey: ['profile'] });
+            queryClient.invalidateQueries({ queryKey: ['profile-picture-history'] });
+            queryClient.invalidateQueries({ queryKey: ['cover-image-history'] });
             await Promise.all([
                 queryClient.refetchQueries({ queryKey: ['user'] }),
                 queryClient.refetchQueries({ queryKey: ['profile'] }),
@@ -193,5 +195,23 @@ export const useSuggestedUsers = () => {
         queryKey: ['suggested-users'],
         queryFn: () => userAPI.getSuggested(),
         select: (data) => data.data.users,
+    });
+};
+
+export const useProfilePictureHistory = (enabled) => {
+    return useQuery({
+        queryKey: ['profile-picture-history'],
+        queryFn: () => userAPI.getProfilePictureHistory(),
+        enabled: !!enabled,
+        select: (data) => data.data?.items ?? [],
+    });
+};
+
+export const useCoverImageHistory = (enabled) => {
+    return useQuery({
+        queryKey: ['cover-image-history'],
+        queryFn: () => userAPI.getCoverImageHistory(),
+        enabled: !!enabled,
+        select: (data) => data.data?.items ?? [],
     });
 };

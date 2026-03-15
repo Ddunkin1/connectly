@@ -4,7 +4,9 @@ namespace App\Http\Controllers\Api;
 
 use App\Events\PostLiked;
 use App\Http\Controllers\Controller;
+use App\Models\Comment;
 use App\Models\Post;
+use App\Notifications\CommentLikeNotification;
 use App\Notifications\LikeNotification;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -33,7 +35,7 @@ class LikeController extends Controller
         ]);
 
         // Notify post owner (don't notify if liking own post)
-        if ($post->user_id !== $user->id) {
+        if ($post->user_id !== $user->id && $post->user) {
             $post->user->notify(new LikeNotification($post->load('user'), $user));
         }
 
@@ -73,6 +75,53 @@ class LikeController extends Controller
         return response()->json([
             'message' => 'Post unliked successfully',
             'likes_count' => $likesCount,
+        ]);
+    }
+
+    /**
+     * Like a comment (including your own).
+     */
+    public function likeComment(Request $request, Comment $comment): JsonResponse
+    {
+        $user = $request->user();
+
+        if ($comment->isLikedBy($user)) {
+            return response()->json(['message' => 'Comment already liked'], 422);
+        }
+
+        $comment->likes()->create(['user_id' => $user->id]);
+
+        // Notify comment author (don't notify if liking own comment)
+        if ($comment->user_id !== $user->id && $comment->user) {
+            $comment->load('post');
+            if ($comment->post) {
+                $comment->user->notify(new CommentLikeNotification($comment->post, $comment, $user));
+            }
+        }
+
+        return response()->json([
+            'message' => 'Comment liked',
+            'likes_count' => $comment->likes()->count(),
+        ]);
+    }
+
+    /**
+     * Unlike a comment.
+     */
+    public function unlikeComment(Request $request, Comment $comment): JsonResponse
+    {
+        $user = $request->user();
+
+        $like = $comment->likes()->where('user_id', $user->id)->first();
+        if (!$like) {
+            return response()->json(['message' => 'Comment not liked'], 422);
+        }
+
+        $like->delete();
+
+        return response()->json([
+            'message' => 'Comment unliked',
+            'likes_count' => $comment->likes()->count(),
         ]);
     }
 }

@@ -127,6 +127,12 @@ const PostCard = ({ post, onDeleted }) => {
                         >
                             {post.shared_post ? post.user?.username : post.user?.name}
                         </Link>
+                        {post.post_type === 'profile_picture_update' && (
+                            <p className="text-xs text-[var(--text-secondary)]">Updated their profile picture</p>
+                        )}
+                        {post.post_type === 'cover_image_update' && (
+                            <p className="text-xs text-[var(--text-secondary)]">Updated their cover image</p>
+                        )}
                         <div className="flex items-center gap-1.5 text-xs text-slate-500">
                             <span>{formatDateUppercase(post.created_at)}</span>
                             <span>•</span>

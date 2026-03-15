@@ -19,6 +19,7 @@ class Comment extends Model
         'content',
         'media_url',
         'media_type',
+        'pinned_at',
     ];
 
     protected function casts(): array
@@ -26,6 +27,7 @@ class Comment extends Model
         return [
             'created_at' => 'datetime',
             'updated_at' => 'datetime',
+            'pinned_at' => 'datetime',
         ];
     }
 

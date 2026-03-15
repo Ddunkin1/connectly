@@ -35,21 +35,30 @@ class AuthController extends Controller
             'bio' => $request->bio ?? null,
         ];
 
-        // Handle profile picture upload (optional: registration succeeds even if Supabase fails)
+        $user = User::create($data);
+
+        // Handle profile picture upload after user exists (optional: registration succeeds even if Supabase fails)
         if ($request->hasFile('profile_picture')) {
             try {
                 $supabaseService = app(\App\Services\SupabaseService::class);
-                $profilePictureUrl = $supabaseService->uploadFile($request->file('profile_picture'), 'profile-pictures');
-                if ($profilePictureUrl) {
-                    $data['profile_picture'] = $profilePictureUrl;
+                $file = $request->file('profile_picture');
+
+                // Archive copy – best-effort, per-user folder for media tab history
+                try {
+                    $supabaseService->uploadFile($file, 'profile-pictures/profile-pictures-storage/' . $user->id);
+                } catch (\Throwable $e) {
+                    \Illuminate\Support\Facades\Log::warning('Profile picture archive upload failed during registration, continuing without it.', ['error' => $e->getMessage()]);
+                }
+
+                // Current profile picture
+                $currentProfileUrl = $supabaseService->uploadFile($file, 'profile-pictures/profile-picture');
+                if ($currentProfileUrl) {
+                    $user->update(['profile_picture' => $currentProfileUrl]);
                 }
             } catch (\Throwable $e) {
                 \Illuminate\Support\Facades\Log::warning('Profile picture upload failed during registration, continuing without it.', ['error' => $e->getMessage()]);
-                // Continue without profile picture so user is still created in MySQL
             }
         }
-
-        $user = User::create($data);
 
         $user->sendEmailVerificationNotification();
 

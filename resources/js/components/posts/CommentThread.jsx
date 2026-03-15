@@ -1,21 +1,36 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { useQueryClient } from '@tanstack/react-query';
-import { useCreateComment } from '../../hooks/useComments';
+import { useCreateComment, usePinComment, useUnpinComment, useLikeComment, useUnlikeComment } from '../../hooks/useComments';
 import Avatar from '../common/Avatar';
 import Button from '../common/Button';
 import { formatDate } from '../../utils/formatDate';
 import useAuthStore from '../../store/authStore';
 
-const CommentThread = ({ postId, comment, level = 0 }) => {
+const CommentThread = ({ postId, comment, level = 0, postAuthorId }) => {
     const [showReplies, setShowReplies] = useState(false);
     const [isReplying, setIsReplying] = useState(false);
     const [replyMediaFile, setReplyMediaFile] = useState(null);
+    const [optimisticLike, setOptimisticLike] = useState(null);
     const replyFileInputRef = useRef(null);
     const user = useAuthStore((state) => state.user);
     const queryClient = useQueryClient();
     const { register, handleSubmit, reset } = useForm();
     const createCommentMutation = useCreateComment();
+    const pinMutation = usePinComment();
+    const unpinMutation = useUnpinComment();
+    const likeCommentMutation = useLikeComment();
+    const unlikeCommentMutation = useUnlikeComment();
+    const isPostAuthor = user && postAuthorId && user.id === postAuthorId;
+    const isCommentAuthor = comment.user?.id === postAuthorId;
+    const isTopLevel = level === 0;
+    const isPinned = !!(comment.is_pinned || comment.pinned_at);
+    const isLiked = optimisticLike !== null ? optimisticLike.is_liked : (comment.is_liked ?? false);
+    const likesCount = optimisticLike !== null ? optimisticLike.likes_count : (comment.likes_count ?? 0);
+
+    useEffect(() => {
+        setOptimisticLike(null);
+    }, [comment.id, comment.is_liked, comment.likes_count]);
 
     // Use embedded replies from API (backend returns top-level comments with nested replies)
     const replies = (comment.replies && Array.isArray(comment.replies) ? comment.replies : [])
@@ -59,10 +74,21 @@ const CommentThread = ({ postId, comment, level = 0 }) => {
                 <Avatar src={comment.user?.profile_picture} alt={comment.user?.name} size="sm" />
                 <div className="flex-1">
                     <div className="bg-gray-50 rounded-lg p-3">
-                        <div className="flex items-center space-x-2 mb-1">
+                        <div className="flex items-center flex-wrap gap-x-2 gap-y-0.5 mb-1">
                             <span className="font-semibold text-sm text-gray-900">
                                 {comment.user?.name}
                             </span>
+                            {isCommentAuthor && (
+                                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-[var(--theme-accent)]/15 text-[var(--theme-accent)]">
+                                    Author
+                                </span>
+                            )}
+                            {isTopLevel && isPinned && (
+                                <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-500/15 text-amber-600 dark:text-amber-400">
+                                    <span className="material-symbols-outlined text-xs">push_pin</span>
+                                    Pinned
+                                </span>
+                            )}
                             <span className="text-xs text-gray-500">
                                 {formatDate(comment.created_at)}
                             </span>
@@ -79,13 +105,61 @@ const CommentThread = ({ postId, comment, level = 0 }) => {
                         )}
                     </div>
 
-                    <div className="flex items-center space-x-4 mt-2 ml-2">
+                    <div className="flex items-center flex-wrap gap-x-4 gap-y-1 mt-2 ml-2">
+                        {user && (
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    if (isLiked) {
+                                        setOptimisticLike({ is_liked: false, likes_count: Math.max(0, likesCount - 1) });
+                                        unlikeCommentMutation.mutate(
+                                            { commentId: comment.id, postId },
+                                            { onSettled: () => queryClient.invalidateQueries({ queryKey: ['comments', postId] }) }
+                                        );
+                                    } else {
+                                        setOptimisticLike({ is_liked: true, likes_count: likesCount + 1 });
+                                        likeCommentMutation.mutate(
+                                            { commentId: comment.id, postId },
+                                            { onSettled: () => queryClient.invalidateQueries({ queryKey: ['comments', postId] }) }
+                                        );
+                                    }
+                                }}
+                                disabled={likeCommentMutation.isPending || unlikeCommentMutation.isPending}
+                                className={`text-xs font-medium inline-flex items-center gap-1 ${isLiked ? 'text-rose-500' : 'text-gray-500 hover:text-rose-500'}`}
+                                title={isLiked ? 'Unlike' : 'Like'}
+                            >
+                                <span className={`material-symbols-outlined text-sm ${isLiked ? 'fill-rose-500' : ''}`}>favorite</span>
+                                {likesCount > 0 && <span>{likesCount}</span>}
+                            </button>
+                        )}
                         <button
                             onClick={() => setIsReplying(!isReplying)}
                             className="text-xs text-gray-500 hover:text-[#359EFF]"
                         >
                             Reply
                         </button>
+                        {isTopLevel && isPostAuthor && (
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    if (isPinned) {
+                                        unpinMutation.mutate({ commentId: comment.id, postId });
+                                    } else {
+                                        pinMutation.mutate({ commentId: comment.id, postId });
+                                    }
+                                }}
+                                disabled={pinMutation.isPending || unpinMutation.isPending}
+                                className={`text-xs font-medium inline-flex items-center gap-1 px-2 py-0.5 rounded-md transition-colors disabled:opacity-60 ${
+                                    isPinned
+                                        ? 'text-amber-600 dark:text-amber-400 bg-amber-500/10 hover:bg-amber-500/20'
+                                        : 'text-[var(--text-secondary)] hover:text-[var(--theme-accent)] hover:bg-[var(--theme-accent)]/10'
+                                }`}
+                                title={isPinned ? 'Unpin this comment' : 'Pin this comment to the top'}
+                            >
+                                <span className={`material-symbols-outlined text-sm ${isPinned ? 'fill-amber-600 dark:fill-amber-400' : ''}`}>push_pin</span>
+                                {isPinned ? 'Unpin' : 'Pin'}
+                            </button>
+                        )}
                         {(comment.replies_count > 0 || replies.length > 0) && (
                             <button
                                 onClick={() => setShowReplies(!showReplies)}
@@ -131,6 +205,7 @@ const CommentThread = ({ postId, comment, level = 0 }) => {
                                     postId={postId}
                                     comment={reply}
                                     level={level + 1}
+                                    postAuthorId={postAuthorId}
                                 />
                             ))}
                         </div>

@@ -83,6 +83,9 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function () {
     Route::get('/user/connections', [UserController::class, 'connections']);
     Route::match(['put', 'post'], '/user/profile', [UserController::class, 'updateProfile']);
     Route::post('/user/profile-picture', [UserController::class, 'uploadProfilePicture']);
+    Route::get('/user/profile-picture-history', [UserController::class, 'profilePictureHistory']);
+    Route::get('/user/cover-image-history', [UserController::class, 'coverImageHistory']);
+    Route::get('/user/storage-image', [UserController::class, 'storageImage']);
     Route::get('/users/suggested', [UserController::class, 'suggested']);
     Route::get('/user/notification-preferences', [UserController::class, 'notificationPreferences']);
     Route::put('/user/notification-preferences', [UserController::class, 'updateNotificationPreferences']);
@@ -103,6 +106,8 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function () {
     // Post Likes
     Route::post('/posts/{post}/like', [LikeController::class, 'like']);
     Route::delete('/posts/{post}/unlike', [LikeController::class, 'unlike']);
+    Route::post('/comments/{comment}/like', [LikeController::class, 'likeComment']);
+    Route::delete('/comments/{comment}/unlike', [LikeController::class, 'unlikeComment']);
 
     // Post Share (increment share count)
     Route::post('/posts/{post}/share', [PostController::class, 'share']);
@@ -124,6 +129,8 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function () {
     // Comments
     Route::get('/posts/{post}/comments', [CommentController::class, 'index']);
     Route::post('/posts/{post}/comments', [CommentController::class, 'store']);
+    Route::post('/comments/{comment}/pin', [CommentController::class, 'pin']);
+    Route::post('/comments/{comment}/unpin', [CommentController::class, 'unpin']);
     Route::delete('/comments/{comment}', [CommentController::class, 'destroy']);
 
     // Profile comments (comments on a user's profile)
