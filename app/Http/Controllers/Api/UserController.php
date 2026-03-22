@@ -14,6 +14,7 @@ use App\Models\User;
 use App\Services\MediaService;
 use App\Services\SupabaseService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Log;
@@ -28,7 +29,7 @@ class UserController extends Controller
     /**
      * Stream user cover image (proxies Supabase URLs to avoid 403 when bucket is not public).
      */
-    public function coverImage(Request $request, User $user): Response|JsonResponse
+    public function coverImage(Request $request, User $user): Response|JsonResponse|RedirectResponse
     {
         $currentUser = $request->user();
         if ($currentUser && $currentUser->id !== $user->id) {
@@ -49,21 +50,28 @@ class UserController extends Controller
         $isSupabaseUrl = str_contains($coverUrl, 'supabase.co');
 
         if ($isSupabaseUrl) {
-            $supabase = app(SupabaseService::class);
-            $response = $supabase->fetchFile($coverUrl);
-            if (!$response) {
-                Log::warning('Cover image proxy fetch failed', [
-                    'user_id' => $user->id,
-                    'stored_url' => $coverUrl,
-                    'check' => 'SupabaseService::fetchFile returned null - verify SUPABASE_SERVICE_ROLE_KEY and bucket access',
-                ]);
-                return response()->json(['message' => 'Failed to load cover image'], 502);
+            if (config('services.supabase.image_redirect_only')) {
+                return redirect()->away($coverUrl, 302);
             }
-            $contentType = $response->header('Content-Type') ?: 'image/jpeg';
-            return response($response->body(), 200, [
-                'Content-Type' => $contentType,
-                'Cache-Control' => 'public, max-age=86400',
+            $supabase = app(SupabaseService::class);
+            $response = $supabase->fetchFileWithFallback($coverUrl);
+            if ($response) {
+                $contentType = $response->header('Content-Type') ?: 'image/jpeg';
+                return response($response->body(), 200, [
+                    'Content-Type' => $contentType,
+                    'Cache-Control' => 'public, max-age=86400',
+                ]);
+            }
+            // Server-side fetch failed (common in Docker if PHP cannot reach Supabase). Browsers often can load the public URL.
+            if (filter_var($coverUrl, FILTER_VALIDATE_URL)) {
+                Log::warning('Cover image: proxy failed, redirecting browser to Supabase URL', ['user_id' => $user->id]);
+                return redirect()->away($coverUrl, 302);
+            }
+            Log::warning('Cover image proxy fetch failed', [
+                'user_id' => $user->id,
+                'stored_url' => $coverUrl,
             ]);
+            return response()->json(['message' => 'Failed to load cover image'], 502);
         }
 
         // Local storage: redirect to the asset URL
@@ -75,7 +83,7 @@ class UserController extends Controller
     /**
      * Stream user profile picture (proxies Supabase URLs to avoid 403).
      */
-    public function profilePicture(Request $request, User $user): Response|JsonResponse
+    public function profilePicture(Request $request, User $user): Response|JsonResponse|RedirectResponse
     {
         $currentUser = $request->user();
         if ($currentUser && $currentUser->id !== $user->id) {
@@ -96,20 +104,27 @@ class UserController extends Controller
         $isSupabaseUrl = str_contains($pictureUrl, 'supabase.co');
 
         if ($isSupabaseUrl) {
-            $supabase = app(SupabaseService::class);
-            $response = $supabase->fetchFile($pictureUrl);
-            if (!$response) {
-                Log::warning('Profile picture proxy fetch failed', [
-                    'user_id' => $user->id,
-                    'stored_url' => $pictureUrl,
-                ]);
-                return response()->json(['message' => 'Failed to load profile picture'], 502);
+            if (config('services.supabase.image_redirect_only')) {
+                return redirect()->away($pictureUrl, 302);
             }
-            $contentType = $response->header('Content-Type') ?: 'image/jpeg';
-            return response($response->body(), 200, [
-                'Content-Type' => $contentType,
-                'Cache-Control' => 'public, max-age=86400',
+            $supabase = app(SupabaseService::class);
+            $response = $supabase->fetchFileWithFallback($pictureUrl);
+            if ($response) {
+                $contentType = $response->header('Content-Type') ?: 'image/jpeg';
+                return response($response->body(), 200, [
+                    'Content-Type' => $contentType,
+                    'Cache-Control' => 'public, max-age=86400',
+                ]);
+            }
+            if (filter_var($pictureUrl, FILTER_VALIDATE_URL)) {
+                Log::warning('Profile picture: proxy failed, redirecting browser to Supabase URL', ['user_id' => $user->id]);
+                return redirect()->away($pictureUrl, 302);
+            }
+            Log::warning('Profile picture proxy fetch failed', [
+                'user_id' => $user->id,
+                'stored_url' => $pictureUrl,
             ]);
+            return response()->json(['message' => 'Failed to load profile picture'], 502);
         }
 
         return redirect()->away(

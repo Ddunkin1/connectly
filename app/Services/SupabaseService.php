@@ -209,6 +209,44 @@ class SupabaseService
     }
 
     /**
+     * Fetch storage file: try authenticated API first, then direct GET on the public URL.
+     * Use this for image proxies so public buckets still work if keys are missing or auth fails.
+     */
+    public function fetchFileWithFallback(string $publicUrl): ?\Illuminate\Http\Client\Response
+    {
+        if (!str_contains($publicUrl, 'supabase.co') || !str_contains($publicUrl, '/object/')) {
+            return null;
+        }
+
+        $authenticated = $this->fetchFile($publicUrl);
+        if ($authenticated && $authenticated->successful()) {
+            return $authenticated;
+        }
+
+        try {
+            $publicResponse = Http::connectTimeout(20)
+                ->timeout(60)
+                ->get($publicUrl);
+
+            if ($publicResponse->successful()) {
+                return $publicResponse;
+            }
+
+            Log::warning('Supabase public URL fallback non-2xx', [
+                'url' => substr($publicUrl, 0, 160),
+                'status' => $publicResponse->status(),
+            ]);
+        } catch (\Exception $e) {
+            Log::warning('Supabase public URL fallback failed', [
+                'message' => $e->getMessage(),
+                'url' => substr($publicUrl, 0, 160),
+            ]);
+        }
+
+        return null;
+    }
+
+    /**
      * Build the public URL for an object path (path relative to bucket, no leading slash).
      */
     public function getPublicUrl(string $path): string

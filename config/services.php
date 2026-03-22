@@ -41,6 +41,8 @@ return [
         'service_role_key' => env('SUPABASE_SERVICE_ROLE_KEY'), // Optional: for bucket creation
         'bucket' => env('SUPABASE_BUCKET', 'publicConnectly'),
         'cover_proxy_base' => env('COVER_PROXY_BASE'), // e.g. http://localhost for Sail
+        // If true, skip server-side image proxy and 302 to Supabase URL (fixes local/Docker when PHP cannot reach Supabase)
+        'image_redirect_only' => env('SUPABASE_IMAGE_REDIRECT_ONLY', false),
     ],
 
     // FFmpeg for video transcoding (VideoTranscodeService). Use if ffmpeg is not in system PATH.
