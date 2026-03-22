@@ -38,6 +38,8 @@ class Report extends Model
         'reason',
         'description',
         'status',
+        'dismissal_reason',
+        'dismissal_message',
     ];
 
     public function reporter(): BelongsTo

@@ -48,7 +48,18 @@ const Login = () => {
                 navigate(u?.role === 'admin' ? '/admin' : '/home');
             }
         } catch (error) {
+            const status = error?.response?.status;
             const res = error?.response?.data;
+            if (status === 403 && res?.code === 'account_banned') {
+                navigate('/account-banned', {
+                    replace: true,
+                    state: {
+                        reasonCode: res.reason_code ?? null,
+                        banMessage: res.ban_message ?? null,
+                    },
+                });
+                return;
+            }
             const errors = res?.errors;
             const msg = errors?.email?.[0] ?? errors?.password?.[0] ?? res?.message ?? error?.message ?? 'Invalid email/username or password.';
             setApiError(msg);

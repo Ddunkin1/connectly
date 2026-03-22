@@ -1,23 +1,26 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { adminAPI } from '../../services/adminApi';
-import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import AdminPageHeader from '../../components/admin/AdminPageHeader';
 import AdminStatCard from '../../components/admin/AdminStatCard';
 import AdminEmptyState from '../../components/admin/AdminEmptyState';
 import AdminErrorState from '../../components/admin/AdminErrorState';
-import { AdminSkeletonBlock } from '../../components/admin/AdminSkeleton';
+import { AdminTableSkeleton } from '../../components/admin/AdminSkeleton';
+import AdminDataTable, { AdminTableHead, AdminTh } from '../../components/admin/AdminDataTable';
 import AdminPostPreviewModal from '../../components/admin/AdminPostPreviewModal';
-import { SUSPEND_DURATION_OPTIONS } from '../../constants/adminModeration';
+import AdminProfileCommentPreviewModal from '../../components/admin/AdminProfileCommentPreviewModal';
+import AdminReportUserModal from '../../components/admin/AdminReportUserModal';
+import AdminDismissReportModal from '../../components/admin/AdminDismissReportModal';
 import useAuthStore from '../../store/authStore';
 import { REPORT_REASONS } from '../../hooks/useReports';
 
+// action_taken = moderation action (warn / suspend / ban / remove post); displayed as "Moderated"
 const STATUS_LABELS = {
     pending: 'Pending',
     reviewed: 'Reviewed',
-    dismissed: 'Dismissed',
-    action_taken: 'Resolved',
+    dismissed: 'Cancelled',
+    action_taken: 'Moderated',
 };
 
 const TYPE_OPTIONS = [
@@ -28,10 +31,10 @@ const TYPE_OPTIONS = [
 ];
 
 const STATUS_OPTIONS = [
+    { value: 'all', label: 'All status' },
     { value: 'pending', label: 'Pending' },
-    { value: 'reviewed', label: 'Reviewed' },
-    { value: 'dismissed', label: 'Dismissed' },
-    { value: 'action_taken', label: 'Resolved' },
+    { value: 'dismissed', label: 'Cancelled' },
+    { value: 'action_taken', label: 'Moderated' },
 ];
 
 const PRIORITY_OPTIONS = [
@@ -39,6 +42,12 @@ const PRIORITY_OPTIONS = [
     { value: 'urgent', label: 'Priority queue' },
     { value: 'standard', label: 'Standard only' },
 ];
+
+/** Compact actions — w-fit + text-sm so labels aren’t tiny in oversized pills */
+const ACTIONS_BTN_PRIMARY =
+    'inline-flex items-center justify-center w-fit max-w-full py-1.5 px-3.5 rounded-lg text-sm font-medium text-white shadow-sm border border-black/10 bg-[var(--theme-accent)] hover:brightness-[1.05] active:brightness-[0.97] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--theme-accent)]/40 transition';
+const ACTIONS_BTN_SECONDARY =
+    'inline-flex items-center justify-center w-fit max-w-full py-1.5 px-3.5 rounded-lg text-sm font-medium border border-[var(--theme-border)] bg-[var(--theme-surface)] text-[var(--text-primary)] hover:border-[var(--theme-accent)]/45 hover:bg-[var(--theme-accent)]/10 hover:text-[var(--theme-accent)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--theme-accent)]/25 transition';
 
 /** Shared styling for filter dropdowns (native select). */
 /** `appearance-none` hides the native arrow so it doesn’t stack with our chevron icon. */
@@ -61,6 +70,45 @@ function getReportTarget(r) {
         return { id: r.reportable.author.id, username: r.reportable.author.username };
     }
     return null;
+}
+
+function getTargetLabel(r) {
+    const t = r.reportable?.type;
+    if (t === 'user' && r.reportable?.username) return `@${r.reportable.username}`;
+    if (t === 'post' && r.reportable?.user?.username) return `@${r.reportable.user.username}`;
+    if (t === 'profile_comment' && r.reportable?.author?.username) return `@${r.reportable.author.username}`;
+    if (t === 'deleted') return '—';
+    return '—';
+}
+
+function getTypeLabel(r) {
+    const t = r.reportable?.type;
+    if (t === 'post') return 'Post';
+    if (t === 'user') return 'Profile';
+    if (t === 'profile_comment') return 'Comment';
+    if (t === 'deleted') return 'Removed';
+    return '—';
+}
+
+function truncateText(str, max = 72) {
+    if (!str) return '';
+    const s = String(str).trim();
+    return s.length > max ? `${s.slice(0, max)}…` : s;
+}
+
+function statusBadgeClass(status) {
+    switch (status) {
+        case 'pending':
+            return 'bg-amber-500/15 text-amber-950 border-amber-500/40 dark:bg-amber-400/15 dark:text-amber-100 dark:border-amber-400/40';
+        case 'action_taken':
+            return 'bg-emerald-500/15 text-emerald-950 border-emerald-500/40 dark:bg-emerald-400/18 dark:text-emerald-50 dark:border-emerald-400/45';
+        case 'dismissed':
+            return 'bg-slate-500/12 text-slate-800 border-slate-400/35 dark:bg-slate-400/14 dark:text-slate-100 dark:border-slate-400/35';
+        case 'reviewed':
+            return 'bg-[var(--theme-accent)]/12 text-[var(--theme-accent)] border-[var(--theme-accent)]/35 dark:bg-[var(--theme-accent)]/22';
+        default:
+            return 'bg-[var(--theme-surface-hover)] text-[var(--text-primary)] border-[var(--theme-border)]';
+    }
 }
 
 function FilterSelect({ id, label, value, onChange, children, disabled }) {
@@ -93,13 +141,17 @@ function FilterSelect({ id, label, value, onChange, children, disabled }) {
 const AdminReports = () => {
     const queryClient = useQueryClient();
     const adminUser = useAuthStore((s) => s.user);
-    const [status, setStatus] = useState('pending');
+    const [status, setStatus] = useState('all');
     const [reportableType, setReportableType] = useState('all');
     const [reason, setReason] = useState('all');
     const [priority, setPriority] = useState('all');
     const [page, setPage] = useState(1);
-    const [previewPostId, setPreviewPostId] = useState(null);
-    const [suspendDuration, setSuspendDuration] = useState('7d');
+    /** @type {null | { postId: number, authorUserId: number | null, reportId: number, status: string, reportReason?: string }} */
+    const [postPreview, setPostPreview] = useState(null);
+    /** Full report row for profile-comment preview (same flow as post preview). */
+    const [commentPreview, setCommentPreview] = useState(null);
+    const [moderateUserId, setModerateUserId] = useState(null);
+    const [dismissModalReportId, setDismissModalReportId] = useState(null);
 
     const statsQuery = useQuery({
         queryKey: ['admin-reports-stats'],
@@ -122,11 +174,15 @@ const AdminReports = () => {
     });
 
     const dismissMutation = useMutation({
-        mutationFn: (id) => adminAPI.dismissReport(id),
+        mutationFn: ({ reportId, reason, message }) =>
+            adminAPI.dismissReport(reportId, { reason, message }),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['admin-reports'] });
             queryClient.invalidateQueries({ queryKey: ['admin-reports-stats'] });
-            toast.success('Report dismissed');
+            toast.success('Report cancelled — reporter notified');
+            setDismissModalReportId(null);
+            setPostPreview(null);
+            setCommentPreview(null);
         },
         onError: (err) => toast.error(errMsg(err)),
     });
@@ -136,7 +192,9 @@ const AdminReports = () => {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['admin-reports'] });
             queryClient.invalidateQueries({ queryKey: ['admin-reports-stats'] });
-            toast.success('Marked as resolved');
+            toast.success('Marked as moderated');
+            setPostPreview(null);
+            setCommentPreview(null);
         },
         onError: (err) => toast.error(errMsg(err)),
     });
@@ -147,16 +205,18 @@ const AdminReports = () => {
             queryClient.invalidateQueries({ queryKey: ['admin-reports'] });
             queryClient.invalidateQueries({ queryKey: ['admin-reports-stats'] });
             toast.success('Post removed');
+            setPostPreview(null);
         },
         onError: (err) => toast.error(errMsg(err)),
     });
 
-    const suspendUserMutation = useMutation({
-        mutationFn: ({ userId, duration }) => adminAPI.suspendUser(userId, { duration }),
-        onSuccess: (res) => {
-            queryClient.invalidateQueries({ queryKey: ['admin-users'] });
-            queryClient.invalidateQueries({ queryKey: ['admin-users-stats'] });
-            toast.success(res?.data?.message || 'User suspended');
+    const removeProfileCommentMutation = useMutation({
+        mutationFn: (id) => adminAPI.removeProfileComment(id),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['admin-reports'] });
+            queryClient.invalidateQueries({ queryKey: ['admin-reports-stats'] });
+            toast.success('Comment removed');
+            setCommentPreview(null);
         },
         onError: (err) => toast.error(errMsg(err)),
     });
@@ -166,32 +226,12 @@ const AdminReports = () => {
     const stats = statsQuery.data;
     const pendingTotal = stats?.by_status?.pending ?? 0;
 
-    const durationLabel = useMemo(() => {
-        return SUSPEND_DURATION_OPTIONS.find((o) => o.value === suspendDuration)?.label ?? suspendDuration;
-    }, [suspendDuration]);
-
     const clearFilters = () => {
         setReportableType('all');
-        setStatus('pending');
+        setStatus('all');
         setReason('all');
         setPriority('all');
         setPage(1);
-    };
-
-    const handleSuspendTarget = (target) => {
-        if (!target) return;
-        if (target.id === adminUser?.id) {
-            toast.error('You cannot suspend your own account.');
-            return;
-        }
-        if (
-            !window.confirm(
-                `Suspend @${target.username} for "${durationLabel}"? They will be blocked from signing in until the suspension ends or is lifted.`
-            )
-        ) {
-            return;
-        }
-        suspendUserMutation.mutate({ userId: target.id, duration: suspendDuration });
     };
 
     if (statsQuery.isError) {
@@ -216,7 +256,7 @@ const AdminReports = () => {
             <AdminPageHeader
                 eyebrow="Admin · Content moderation"
                 title="Content reports"
-                description="Triage the queue, preview reported posts in a modal, and apply suspensions with a defined duration when needed."
+                description="Triage the queue: use Preview post or Preview comment to review content, the reported user, and report actions in one place."
             />
 
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
@@ -230,6 +270,7 @@ const AdminReports = () => {
                     label="Total reports"
                     value={stats?.total?.toLocaleString()}
                     loading={statsQuery.isLoading}
+                    sublabel="All status · all time"
                 />
                 <AdminStatCard
                     label="By type (all)"
@@ -246,8 +287,8 @@ const AdminReports = () => {
                         Workflow
                     </p>
                     <p className="text-sm text-[var(--text-secondary)] mt-2 leading-relaxed">
-                        Preview the post, then remove content or suspend the author. Use{' '}
-                        <strong className="text-[var(--text-primary)]">Pending</strong> first.
+                        Use <strong className="text-[var(--text-primary)]">Status</strong> for Pending, Moderated, or
+                        Cancelled. Total above counts every report; the list follows your filters.
                     </p>
                 </div>
             </div>
@@ -333,40 +374,34 @@ const AdminReports = () => {
                         >
                             Clear filters
                         </button>
-                        <p className="text-xs text-[var(--text-secondary)] uppercase tracking-wide sm:text-right">
+                        <div className="text-xs text-[var(--text-secondary)] uppercase tracking-wide sm:text-right max-w-md sm:max-w-none">
                             {listQuery.isFetching ? (
                                 'Updating…'
                             ) : (
                                 <>
-                                    Showing{' '}
-                                    <span className="font-semibold text-[var(--text-primary)] tabular-nums">
-                                        {reports.length}
-                                    </span>{' '}
-                                    of{' '}
                                     <span className="font-semibold text-[var(--text-primary)] tabular-nums">
                                         {(pagination.total ?? 0).toLocaleString()}
                                     </span>{' '}
-                                    results
+                                    report{(pagination.total ?? 0) === 1 ? '' : 's'} match filters
+                                    {stats?.total != null && (
+                                        <>
+                                            {' '}
+                                            · Total in system:{' '}
+                                            <span className="font-semibold text-[var(--text-primary)] tabular-nums">
+                                                {stats.total.toLocaleString()}
+                                            </span>{' '}
+                                            (all status)
+                                        </>
+                                    )}
                                 </>
                             )}
-                        </p>
+                        </div>
                     </div>
                 </div>
             </div>
 
             {listQuery.isLoading ? (
-                <div className="space-y-4">
-                    {[1, 2, 3].map((i) => (
-                        <div
-                            key={i}
-                            className="rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-5 space-y-3"
-                        >
-                            <AdminSkeletonBlock className="h-4 w-2/3" />
-                            <AdminSkeletonBlock className="h-3 w-full" />
-                            <AdminSkeletonBlock className="h-20 w-full" />
-                        </div>
-                    ))}
-                </div>
+                <AdminTableSkeleton rows={6} cols={7} />
             ) : listQuery.isError ? (
                 <AdminErrorState
                     title="Could not load reports"
@@ -377,255 +412,165 @@ const AdminReports = () => {
                 <AdminEmptyState
                     icon="flag"
                     title="No reports in this view"
-                    description="Change filters or check another status tab."
+                    description="Try Status → All status, or filter by Pending / Moderated / Cancelled. Total above counts every report in the system."
                 />
             ) : (
-                <ul className="space-y-4 list-none p-0 m-0">
-                    {reports.map((r) => {
-                        const target = getReportTarget(r);
-                        const canSuspend = target && target.id !== adminUser?.id;
-
-                        return (
-                            <li
-                                key={r.id}
-                                className="rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] shadow-sm overflow-hidden"
-                            >
-                                <div className="grid grid-cols-1 lg:grid-cols-[1fr_minmax(220px,280px)] gap-0 lg:gap-6">
-                                    <div className="p-5 border-b lg:border-b-0 lg:border-r border-[var(--theme-border)] min-w-0">
-                                        <div className="flex flex-wrap items-center gap-2 mb-3">
+                <div className="space-y-4">
+                    <AdminDataTable className="min-w-[920px]">
+                        <AdminTableHead>
+                            <AdminTh>Target</AdminTh>
+                            <AdminTh>Type</AdminTh>
+                            <AdminTh>Reporter</AdminTh>
+                            <AdminTh>Reason</AdminTh>
+                            <AdminTh>Status</AdminTh>
+                            <AdminTh>Reported</AdminTh>
+                            <AdminTh className="min-w-[220px]">Actions</AdminTh>
+                        </AdminTableHead>
+                        <tbody className="divide-y divide-[var(--theme-border)]">
+                            {reports.map((r) => {
+                                const target = getReportTarget(r);
+                                const isPostReport = r.reportable?.type === 'post' && r.reportable?.id;
+                                const isProfileCommentReport =
+                                    r.reportable?.type === 'profile_comment' && r.reportable?.id;
+                                const isContentPreviewReport = isPostReport || isProfileCommentReport;
+                                const summary =
+                                    r.description ||
+                                    (r.reportable?.type === 'post' ? r.reportable?.content : '') ||
+                                    (r.reportable?.type === 'profile_comment' ? r.reportable?.content : '') ||
+                                    '';
+                                return (
+                                    <tr key={r.id} className="hover:bg-[var(--theme-surface-hover)]/50 align-top">
+                                        <td className="px-4 py-3 text-sm font-medium text-[var(--text-primary)] whitespace-nowrap">
+                                            {getTargetLabel(r)}
+                                            {r.urgent && (
+                                                <span className="ml-1 text-[10px] font-bold uppercase text-red-500">
+                                                    Prio
+                                                </span>
+                                            )}
+                                        </td>
+                                        <td className="px-4 py-3 text-sm text-[var(--text-secondary)]">
+                                            {getTypeLabel(r)}
+                                        </td>
+                                        <td className="px-4 py-3 text-sm text-[var(--text-primary)]">
+                                            @{r.reporter?.username ?? '—'}
+                                        </td>
+                                        <td className="px-4 py-3 text-sm max-w-[220px]">
+                                            <span className="font-medium capitalize text-[var(--text-primary)]">
+                                                {r.reason?.replace(/_/g, ' ') ?? '—'}
+                                            </span>
+                                            {summary ? (
+                                                <p className="text-xs text-[var(--text-secondary)] mt-1 line-clamp-2">
+                                                    {truncateText(summary, 120)}
+                                                </p>
+                                            ) : null}
+                                        </td>
+                                        <td className="px-4 py-3">
                                             <span
-                                                className={`text-xs font-semibold px-2 py-0.5 rounded-md ${
-                                                    r.urgent
-                                                        ? 'bg-red-500/15 text-red-500'
-                                                        : 'bg-[var(--theme-surface-hover)] text-[var(--text-secondary)]'
-                                                }`}
+                                                className={`inline-flex text-xs font-semibold px-2 py-0.5 rounded-md border ${statusBadgeClass(r.status)}`}
                                             >
-                                                {r.urgent ? 'Priority' : 'Standard'}
-                                            </span>
-                                            <span className="text-xs font-medium uppercase tracking-wide text-[var(--text-secondary)]">
-                                                {r.reportable?.type?.replace('_', ' ') ?? 'Unknown'}
-                                            </span>
-                                            <span className="text-xs px-2 py-0.5 rounded-md bg-[var(--theme-accent)]/15 text-[var(--theme-accent)] font-medium">
                                                 {STATUS_LABELS[r.status] ?? r.status}
                                             </span>
-                                        </div>
-
-                                        <dl className="space-y-2 text-sm">
-                                            <div>
-                                                <dt className="text-[var(--text-secondary)] text-xs uppercase tracking-wide">
-                                                    Reporter
-                                                </dt>
-                                                <dd className="text-[var(--text-primary)] font-medium">
-                                                    @{r.reporter?.username}{' '}
-                                                    <span className="text-[var(--text-secondary)] font-normal">
-                                                        · {r.created_at ? new Date(r.created_at).toLocaleString() : '—'}
-                                                    </span>
-                                                </dd>
-                                            </div>
-                                            <div>
-                                                <dt className="text-[var(--text-secondary)] text-xs uppercase tracking-wide">
-                                                    Reason
-                                                </dt>
-                                                <dd className="text-[var(--text-primary)] capitalize">
-                                                    {r.reason?.replace(/_/g, ' ') ?? '—'}
-                                                </dd>
-                                            </div>
-                                            {r.description && (
-                                                <div>
-                                                    <dt className="text-[var(--text-secondary)] text-xs uppercase tracking-wide">
-                                                        Details
-                                                    </dt>
-                                                    <dd className="text-[var(--text-primary)] whitespace-pre-wrap">
-                                                        {r.description}
-                                                    </dd>
-                                                </div>
-                                            )}
-                                        </dl>
-
-                                        {r.reportable?.type === 'user' && (
-                                            <p className="mt-4 text-sm">
-                                                <span className="text-[var(--text-secondary)]">Profile: </span>
-                                                <Link
-                                                    to={`/profile/${r.reportable?.username}`}
-                                                    className="text-[var(--theme-accent)] font-medium hover:underline"
-                                                >
-                                                    @{r.reportable?.username}
-                                                </Link>
-                                            </p>
-                                        )}
-
-                                        {r.reportable?.type === 'post' && r.reportable?.id && (
-                                            <div className="mt-4 space-y-2">
-                                                <p className="text-sm text-[var(--text-secondary)]">
-                                                    Author:{' '}
-                                                    <span className="text-[var(--text-primary)] font-medium">
-                                                        @{r.reportable?.user?.username}
-                                                    </span>
-                                                </p>
-                                                <p className="text-sm text-[var(--text-primary)] line-clamp-4 whitespace-pre-wrap">
-                                                    {r.reportable?.content}
-                                                </p>
-                                                {r.reportable?.media_url && (
-                                                    <div className="rounded-lg overflow-hidden border border-[var(--theme-border)] max-w-md bg-black/5">
-                                                        {r.reportable?.media_type === 'image' ? (
-                                                            <img
-                                                                src={r.reportable.media_url}
-                                                                alt=""
-                                                                className="w-full max-h-40 object-cover"
-                                                            />
-                                                        ) : (
-                                                            <p className="p-2 text-xs text-[var(--text-secondary)]">
-                                                                Video attached — open preview for full player.
-                                                            </p>
-                                                        )}
-                                                    </div>
-                                                )}
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setPreviewPostId(r.reportable.id)}
-                                                    className="inline-flex items-center gap-1 text-sm font-semibold text-[var(--theme-accent)] hover:underline"
-                                                >
-                                                    <span className="material-symbols-outlined text-lg">open_in_new</span>
-                                                    Preview full post
-                                                </button>
-                                            </div>
-                                        )}
-
-                                        {r.reportable?.type === 'deleted' && (
-                                            <p className="mt-4 text-amber-600 text-sm">{r.reportable?.message}</p>
-                                        )}
-
-                                        {r.reportable?.type === 'profile_comment' && (
-                                            <div className="mt-4 space-y-2 text-sm">
-                                                <p>
-                                                    On{' '}
-                                                    <Link
-                                                        to={`/profile/${r.reportable?.profile_username}`}
-                                                        className="text-[var(--theme-accent)] font-medium hover:underline"
-                                                    >
-                                                        @{r.reportable?.profile_username}
-                                                    </Link>
-                                                </p>
-                                                <p className="text-[var(--text-secondary)]">
-                                                    Comment by{' '}
-                                                    {r.reportable?.author ? (
-                                                        <Link
-                                                            to={`/profile/${r.reportable.author.username}`}
-                                                            className="text-[var(--text-primary)] hover:underline"
-                                                        >
-                                                            @{r.reportable.author.username}
-                                                        </Link>
-                                                    ) : (
-                                                        '—'
-                                                    )}
-                                                </p>
-                                                <p className="text-[var(--text-primary)] line-clamp-4">{r.reportable?.content}</p>
-                                            </div>
-                                        )}
-                                    </div>
-
-                                    <div className="p-5 bg-[var(--theme-surface-hover)]/30 lg:bg-transparent flex flex-col gap-3">
-                                        <p className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wide">
-                                            Moderation
-                                        </p>
-                                        {status === 'pending' && (
-                                            <>
-                                                <div className="flex flex-col gap-2">
-                                                    <label className="text-xs text-[var(--text-secondary)]">
-                                                        Suspension length
-                                                    </label>
-                                                    <select
-                                                        value={suspendDuration}
-                                                        onChange={(e) => setSuspendDuration(e.target.value)}
-                                                        className="w-full text-sm rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] text-[var(--text-primary)] px-3 py-2 focus:ring-2 focus:ring-[var(--theme-accent)]/30 outline-none"
-                                                    >
-                                                        {SUSPEND_DURATION_OPTIONS.map((o) => (
-                                                            <option key={o.value} value={o.value}>
-                                                                {o.label}
-                                                            </option>
-                                                        ))}
-                                                    </select>
+                                        </td>
+                                        <td className="px-4 py-3 text-xs text-[var(--text-secondary)] whitespace-nowrap">
+                                            {r.created_at ? new Date(r.created_at).toLocaleString() : '—'}
+                                        </td>
+                                        <td className="px-4 py-3">
+                                            <div className="flex flex-col gap-1.5 min-w-[200px]">
+                                                {isPostReport && (
                                                     <button
                                                         type="button"
-                                                        disabled={!canSuspend || suspendUserMutation.isPending}
-                                                        onClick={() => handleSuspendTarget(target)}
-                                                        className="w-full px-3 py-2 rounded-xl text-sm font-medium border border-amber-500/40 text-amber-800 bg-amber-500/10 hover:bg-amber-500/15 disabled:opacity-50"
+                                                        onClick={() =>
+                                                            setPostPreview({
+                                                                postId: r.reportable.id,
+                                                                authorUserId:
+                                                                    target?.id ?? r.reportable?.user?.id ?? null,
+                                                                reportId: r.id,
+                                                                status: r.status,
+                                                                reportReason: r.reason,
+                                                            })
+                                                        }
+                                                        className={
+                                                            r.status === 'pending'
+                                                                ? ACTIONS_BTN_PRIMARY
+                                                                : ACTIONS_BTN_SECONDARY
+                                                        }
                                                     >
-                                                        Suspend account
-                                                        {target ? ` @${target.username}` : ''}
+                                                        Preview post
                                                     </button>
-                                                    {!target && (
-                                                        <p className="text-xs text-[var(--text-secondary)]">
-                                                            No account target for this report type.
-                                                        </p>
-                                                    )}
-                                                </div>
-
-                                                <div className="flex flex-col gap-2 pt-2 border-t border-[var(--theme-border)]">
-                                                    {r.reportable?.type === 'post' && (
+                                                )}
+                                                {isProfileCommentReport && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setCommentPreview(r)}
+                                                        className={
+                                                            r.status === 'pending'
+                                                                ? ACTIONS_BTN_PRIMARY
+                                                                : ACTIONS_BTN_SECONDARY
+                                                        }
+                                                    >
+                                                        Preview comment
+                                                    </button>
+                                                )}
+                                                {!isContentPreviewReport && target && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setModerateUserId(target.id)}
+                                                        className={
+                                                            r.status === 'pending'
+                                                                ? ACTIONS_BTN_PRIMARY
+                                                                : ACTIONS_BTN_SECONDARY
+                                                        }
+                                                    >
+                                                        Moderate user
+                                                    </button>
+                                                )}
+                                                {r.status === 'pending' && isContentPreviewReport && (
+                                                    <span className="text-[11px] text-[var(--text-secondary)] leading-snug max-w-[220px]">
+                                                        Preview: moderation actions update report status automatically
+                                                        (moderated or cancelled).
+                                                    </span>
+                                                )}
+                                                {r.status === 'pending' && !isContentPreviewReport && (
+                                                    <>
                                                         <button
                                                             type="button"
                                                             onClick={() => {
                                                                 if (
                                                                     window.confirm(
-                                                                        'Remove this post from the platform? This cannot be undone from here.'
+                                                                        'Mark this report as moderated (you took action: warning, suspension, etc.)?'
                                                                     )
                                                                 ) {
-                                                                    removePostMutation.mutate(r.id);
+                                                                    actionTakenMutation.mutate(r.id);
                                                                 }
                                                             }}
-                                                            disabled={removePostMutation.isPending}
-                                                            className="w-full px-3 py-2 rounded-xl text-sm font-medium bg-red-500/15 text-red-600 hover:bg-red-500/20"
+                                                            disabled={actionTakenMutation.isPending}
+                                                            className="inline-flex items-center justify-center w-fit py-1.5 px-3 rounded-lg text-sm font-medium bg-emerald-600/12 text-emerald-950 border border-emerald-600/30 hover:bg-emerald-600/18 dark:bg-emerald-400/16 dark:text-emerald-50 dark:border-emerald-400/40 dark:hover:bg-emerald-400/24"
                                                         >
-                                                            Remove post
+                                                            Mark moderated
                                                         </button>
-                                                    )}
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => {
-                                                            if (
-                                                                window.confirm(
-                                                                    'Mark this report as resolved (action taken)?'
-                                                                )
-                                                            ) {
-                                                                actionTakenMutation.mutate(r.id);
-                                                            }
-                                                        }}
-                                                        disabled={actionTakenMutation.isPending}
-                                                        className="w-full px-3 py-2 rounded-xl text-sm font-medium bg-emerald-500/15 text-emerald-800 hover:bg-emerald-500/20"
-                                                    >
-                                                        Mark resolved
-                                                    </button>
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => {
-                                                            if (
-                                                                window.confirm(
-                                                                    'Dismiss this report without further action?'
-                                                                )
-                                                            ) {
-                                                                dismissMutation.mutate(r.id);
-                                                            }
-                                                        }}
-                                                        disabled={dismissMutation.isPending}
-                                                        className="w-full px-3 py-2 rounded-xl text-sm font-medium border border-[var(--theme-border)] text-[var(--text-secondary)] hover:bg-[var(--theme-surface-hover)]"
-                                                    >
-                                                        Dismiss
-                                                    </button>
-                                                </div>
-                                            </>
-                                        )}
-                                        {status !== 'pending' && (
-                                            <p className="text-xs text-[var(--text-secondary)]">
-                                                This report is closed. Change status filter to Pending for open items.
-                                            </p>
-                                        )}
-                                    </div>
-                                </div>
-                            </li>
-                        );
-                    })}
-                </ul>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setDismissModalReportId(r.id)}
+                                                            disabled={dismissMutation.isPending}
+                                                            className="inline-flex items-center justify-center w-fit py-1.5 px-3 rounded-lg text-sm font-medium border border-[var(--theme-border)] text-[var(--text-secondary)] hover:bg-[var(--theme-surface-hover)]"
+                                                        >
+                                                            Cancel
+                                                        </button>
+                                                    </>
+                                                )}
+                                                {r.status !== 'pending' && (
+                                                    <span className="text-[11px] text-[var(--text-secondary)] leading-snug max-w-[220px]">
+                                                        Closed — only Pending rows can be moderated here.
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                );
+                            })}
+                        </tbody>
+                    </AdminDataTable>
+                </div>
             )}
 
             {pagination.last_page > 1 && (
@@ -653,9 +598,91 @@ const AdminReports = () => {
             )}
 
             <AdminPostPreviewModal
-                postId={previewPostId}
-                isOpen={!!previewPostId}
-                onClose={() => setPreviewPostId(null)}
+                postId={postPreview?.postId}
+                isOpen={!!postPreview}
+                onClose={() => setPostPreview(null)}
+                authorUserId={postPreview?.authorUserId ?? undefined}
+                adminUserId={adminUser?.id}
+                reportContext={
+                    postPreview
+                        ? {
+                              reportId: postPreview.reportId,
+                              status: postPreview.status,
+                              removePending: removePostMutation.isPending,
+                              dismissPending: dismissMutation.isPending,
+                              onRequestDismiss: () => setDismissModalReportId(postPreview.reportId),
+                              onRemovePost:
+                                  postPreview.status === 'pending'
+                                      ? () => {
+                                            if (
+                                                window.confirm(
+                                                    'Remove this post from the platform? This cannot be undone from here.'
+                                                )
+                                            ) {
+                                                removePostMutation.mutate(postPreview.reportId);
+                                            }
+                                        }
+                                      : undefined,
+                          }
+                        : undefined
+                }
+            />
+
+            <AdminProfileCommentPreviewModal
+                report={commentPreview}
+                isOpen={!!commentPreview}
+                onClose={() => setCommentPreview(null)}
+                authorUserId={
+                    commentPreview?.reportable?.author?.id != null
+                        ? commentPreview.reportable.author.id
+                        : undefined
+                }
+                adminUserId={adminUser?.id}
+                reportContext={
+                    commentPreview
+                        ? {
+                              reportId: commentPreview.id,
+                              status: commentPreview.status,
+                              removePending: removeProfileCommentMutation.isPending,
+                              dismissPending: dismissMutation.isPending,
+                              onRequestDismiss: () => setDismissModalReportId(commentPreview.id),
+                              onRemoveComment:
+                                  commentPreview.status === 'pending'
+                                      ? () => {
+                                            if (
+                                                window.confirm(
+                                                    'Remove this comment from the platform? This cannot be undone from here.'
+                                                )
+                                            ) {
+                                                removeProfileCommentMutation.mutate(commentPreview.id);
+                                            }
+                                        }
+                                      : undefined,
+                          }
+                        : undefined
+                }
+            />
+
+            <AdminReportUserModal
+                userId={moderateUserId}
+                open={moderateUserId !== null}
+                onClose={() => setModerateUserId(null)}
+                adminUserId={adminUser?.id}
+            />
+
+            <AdminDismissReportModal
+                isOpen={dismissModalReportId !== null}
+                onClose={() => setDismissModalReportId(null)}
+                initialReason={
+                    reports.find((r) => r.id === dismissModalReportId)?.reason ??
+                    (postPreview?.reportId === dismissModalReportId ? postPreview.reportReason : undefined) ??
+                    (commentPreview?.id === dismissModalReportId ? commentPreview.reason : undefined)
+                }
+                onConfirm={(payload) => {
+                    if (dismissModalReportId == null) return;
+                    dismissMutation.mutate({ reportId: dismissModalReportId, ...payload });
+                }}
+                isPending={dismissMutation.isPending}
             />
         </div>
     );

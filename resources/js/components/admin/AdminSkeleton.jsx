@@ -35,10 +35,15 @@ export const AdminStatsRowSkeleton = ({ count = 3 }) => (
         {Array.from({ length: count }).map((_, i) => (
             <div
                 key={i}
-                className="rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4"
+                className="rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-5 shadow-[0_4px_24px_-8px_rgba(0,0,0,0.35)]"
             >
-                <AdminSkeletonBlock className="h-3 w-24 mb-3" />
-                <AdminSkeletonBlock className="h-8 w-16" />
+                <div className="flex justify-between gap-3">
+                    <div className="flex-1">
+                        <AdminSkeletonBlock className="h-3 w-24 mb-4" />
+                        <AdminSkeletonBlock className="h-9 w-20" />
+                    </div>
+                    <AdminSkeletonBlock className="h-11 w-11 shrink-0 rounded-xl" />
+                </div>
             </div>
         ))}
     </div>

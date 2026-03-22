@@ -53,6 +53,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'notification_preferences',
         'suspended_at',
         'suspended_until',
+        'banned_at',
     ];
 
     /**
@@ -77,6 +78,7 @@ class User extends Authenticatable implements MustVerifyEmail
             'email_verified_at' => 'datetime',
             'suspended_at' => 'datetime',
             'suspended_until' => 'datetime',
+            'banned_at' => 'datetime',
             'password' => 'hashed',
             'notification_preferences' => 'array',
             'two_factor_recovery_codes' => 'array',
@@ -415,6 +417,19 @@ class User extends Authenticatable implements MustVerifyEmail
     public function reports(): MorphMany
     {
         return $this->morphMany(Report::class, 'reportable');
+    }
+
+    /**
+     * Moderation history (warnings, suspensions logged as events, etc.).
+     */
+    public function moderationEvents(): HasMany
+    {
+        return $this->hasMany(ModerationEvent::class);
+    }
+
+    public function isBanned(): bool
+    {
+        return $this->banned_at !== null;
     }
 
     /**

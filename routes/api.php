@@ -26,6 +26,9 @@ use App\Http\Controllers\Api\SocialAuthController;
 use App\Http\Controllers\Api\TrendingController;
 use App\Http\Controllers\Api\TwoFactorController;
 use App\Http\Controllers\Api\UserController;
+use App\Http\Controllers\Api\WarningAppealController;
+use App\Http\Controllers\Api\WarningEventController;
+use App\Http\Controllers\Api\Admin\AdminWarningAppealController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -170,6 +173,10 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function () {
     Route::post('/reports', [ReportController::class, 'store']);
     Route::get('/reports/status', [ReportController::class, 'status']);
 
+    // Moderation warnings (member: view warning context, submit appeal)
+    Route::get('/warning-events/{moderationEvent}', [WarningEventController::class, 'show']);
+    Route::post('/warning-appeals', [WarningAppealController::class, 'store']);
+
     // Communities
     Route::get('/communities', [CommunityController::class, 'index']);
     Route::post('/communities', [CommunityController::class, 'store']);
@@ -235,6 +242,9 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function () {
     Route::prefix('admin')->middleware('admin')->group(function () {
         Route::get('/users/stats', [\App\Http\Controllers\Api\Admin\AdminUserController::class, 'stats']);
         Route::get('/users', [\App\Http\Controllers\Api\Admin\AdminUserController::class, 'index']);
+        Route::get('/users/{user}/moderation', [\App\Http\Controllers\Api\Admin\AdminUserController::class, 'moderationDetails']);
+        Route::post('/users/{user}/warn', [\App\Http\Controllers\Api\Admin\AdminUserController::class, 'warn']);
+        Route::post('/users/{user}/ban', [\App\Http\Controllers\Api\Admin\AdminUserController::class, 'ban']);
         Route::put('/users/{user}/role', [\App\Http\Controllers\Api\Admin\AdminUserController::class, 'updateRole']);
         Route::post('/users/{user}/suspend', [\App\Http\Controllers\Api\Admin\AdminUserController::class, 'suspend']);
         Route::post('/users/{user}/unsuspend', [\App\Http\Controllers\Api\Admin\AdminUserController::class, 'unsuspend']);
@@ -244,6 +254,10 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function () {
         Route::post('/reports/{report}/dismiss', [\App\Http\Controllers\Api\Admin\AdminReportController::class, 'dismiss']);
         Route::post('/reports/{report}/action-taken', [\App\Http\Controllers\Api\Admin\AdminReportController::class, 'actionTaken']);
         Route::post('/reports/{report}/remove-post', [\App\Http\Controllers\Api\Admin\AdminReportController::class, 'removePost']);
+        Route::post('/reports/{report}/remove-profile-comment', [\App\Http\Controllers\Api\Admin\AdminReportController::class, 'removeProfileComment']);
+
+        Route::get('/warning-appeals', [AdminWarningAppealController::class, 'index']);
+        Route::post('/warning-appeals/{warningAppeal}/respond', [AdminWarningAppealController::class, 'respond']);
 
         Route::get('/settings', [\App\Http\Controllers\Api\Admin\AdminSettingsController::class, 'index']);
     });

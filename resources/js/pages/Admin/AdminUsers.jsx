@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { adminAPI } from '../../services/adminApi';
 import useAuthStore from '../../store/authStore';
 import Avatar from '../../components/common/Avatar';
@@ -11,15 +11,13 @@ import AdminDataTable, { AdminTableHead, AdminTh } from '../../components/admin/
 import AdminEmptyState from '../../components/admin/AdminEmptyState';
 import AdminErrorState from '../../components/admin/AdminErrorState';
 import { AdminTableSkeleton } from '../../components/admin/AdminSkeleton';
-import { SUSPEND_DURATION_OPTIONS } from '../../constants/adminModeration';
+import AdminReportUserModal from '../../components/admin/AdminReportUserModal';
 
 const AdminUsers = () => {
     const user = useAuthStore((state) => state.user);
-    const queryClient = useQueryClient();
     const [search, setSearch] = useState('');
-    const [role, setRole] = useState('');
     const [page, setPage] = useState(1);
-    const [suspendDuration, setSuspendDuration] = useState('7d');
+    const [viewUserId, setViewUserId] = useState(null);
 
     const statsQuery = useQuery({
         queryKey: ['admin-users-stats'],
@@ -28,47 +26,17 @@ const AdminUsers = () => {
     });
 
     const listQuery = useQuery({
-        queryKey: ['admin-users', search, role, page],
-        queryFn: () => adminAPI.getUsers({ q: search, role, page, per_page: 20 }),
+        queryKey: ['admin-users', search, page],
+        queryFn: () => adminAPI.getUsers({ q: search, page, per_page: 20 }),
         select: (res) => res.data,
     });
 
     const errMsg = (err) =>
         err?.response?.data?.message || err?.response?.data?.errors?.email?.[0] || err?.message || 'Request failed';
 
-    const updateRoleMutation = useMutation({
-        mutationFn: ({ userId, role: r }) => adminAPI.updateUserRole(userId, r),
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['admin-users'] });
-            queryClient.invalidateQueries({ queryKey: ['admin-users-stats'] });
-            toast.success('Role updated');
-        },
-        onError: (err) => toast.error(errMsg(err)),
-    });
-
-    const suspendMutation = useMutation({
-        mutationFn: ({ userId, duration }) => adminAPI.suspendUser(userId, { duration }),
-        onSuccess: (res) => {
-            queryClient.invalidateQueries({ queryKey: ['admin-users'] });
-            queryClient.invalidateQueries({ queryKey: ['admin-users-stats'] });
-            toast.success(res?.data?.message || 'User suspended');
-        },
-        onError: (err) => toast.error(errMsg(err)),
-    });
-
-    const unsuspendMutation = useMutation({
-        mutationFn: (userId) => adminAPI.unsuspendUser(userId),
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['admin-users'] });
-            queryClient.invalidateQueries({ queryKey: ['admin-users-stats'] });
-            toast.success('User unsuspended');
-        },
-        onError: (err) => toast.error(errMsg(err)),
-    });
-
     const handleExport = async () => {
         try {
-            await adminAPI.exportUsersCsv({ q: search, role });
+            await adminAPI.exportUsersCsv({ q: search });
             toast.success('Export started');
         } catch (err) {
             toast.error(errMsg(err));
@@ -85,7 +53,7 @@ const AdminUsers = () => {
                 <AdminPageHeader
                     eyebrow="Admin · Users"
                     title="Users & community"
-                    description="Search, roles, suspend, and export."
+                    description="Search and export. Use View to moderate (suspend, warn, ban) with context."
                 />
                 <AdminErrorState
                     title="Could not load statistics"
@@ -101,7 +69,7 @@ const AdminUsers = () => {
             <AdminPageHeader
                 eyebrow="Admin · Users"
                 title="Users & community"
-                description="Search, roles, suspend, and export."
+                description="Search and export. Use View to moderate (suspend, warn, ban) with context."
             />
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
@@ -136,38 +104,6 @@ const AdminUsers = () => {
                     className="flex-1 min-w-[200px] px-4 py-2 rounded-xl bg-[var(--theme-surface-hover)] border border-[var(--theme-border)] text-[var(--text-primary)] placeholder-[var(--text-secondary)] focus:ring-2 focus:ring-[var(--theme-accent)]/40 focus:border-[var(--theme-accent)] outline-none"
                     aria-label="Search users"
                 />
-                <select
-                    value={role}
-                    onChange={(e) => {
-                        setRole(e.target.value);
-                        setPage(1);
-                    }}
-                    className="px-4 py-2 rounded-xl bg-[var(--theme-surface-hover)] border border-[var(--theme-border)] text-[var(--text-primary)]"
-                    aria-label="Filter by role"
-                >
-                    <option value="">All roles</option>
-                    <option value="admin">Admin</option>
-                    <option value="moderator">Moderator</option>
-                    <option value="user">User</option>
-                </select>
-                <div className="flex items-center gap-2 min-w-[200px]">
-                    <label htmlFor="suspend-duration" className="text-xs text-[var(--text-secondary)] sr-only">
-                        Default suspend duration
-                    </label>
-                    <select
-                        id="suspend-duration"
-                        value={suspendDuration}
-                        onChange={(e) => setSuspendDuration(e.target.value)}
-                        className="px-3 py-2 rounded-xl text-sm bg-[var(--theme-surface-hover)] border border-[var(--theme-border)] text-[var(--text-primary)]"
-                        title="Suspension length when using Suspend in the table"
-                    >
-                        {SUSPEND_DURATION_OPTIONS.map((o) => (
-                            <option key={o.value} value={o.value}>
-                                {o.label}
-                            </option>
-                        ))}
-                    </select>
-                </div>
                 <button
                     type="button"
                     onClick={handleExport}
@@ -178,7 +114,7 @@ const AdminUsers = () => {
             </div>
 
             {listQuery.isLoading ? (
-                <AdminTableSkeleton rows={6} cols={6} />
+                <AdminTableSkeleton rows={6} cols={5} />
             ) : listQuery.isError ? (
                 <AdminErrorState
                     title="Could not load users"
@@ -189,14 +125,13 @@ const AdminUsers = () => {
                 <AdminEmptyState
                     icon="person_off"
                     title="No users in this view"
-                    description="Try adjusting search or role filters."
+                    description="Try adjusting your search."
                 />
             ) : (
                 <AdminDataTable>
                     <AdminTableHead>
                         <AdminTh>User</AdminTh>
                         <AdminTh>Email</AdminTh>
-                        <AdminTh>Role</AdminTh>
                         <AdminTh>Status</AdminTh>
                         <AdminTh>Stats</AdminTh>
                         <AdminTh>Actions</AdminTh>
@@ -220,24 +155,18 @@ const AdminUsers = () => {
                                     {u.email ?? '—'}
                                 </td>
                                 <td className="px-4 py-3">
-                                    <select
-                                        value={u.role ?? 'user'}
-                                        onChange={(e) =>
-                                            updateRoleMutation.mutate({ userId: u.id, role: e.target.value })
-                                        }
-                                        disabled={u.id === user.id || updateRoleMutation.isPending}
-                                        className="px-2 py-1 rounded-lg bg-[var(--theme-surface-hover)] border border-[var(--theme-border)] text-[var(--text-primary)] text-sm"
-                                        aria-label={`Role for ${u.username}`}
-                                    >
-                                        <option value="user">User</option>
-                                        <option value="moderator">Moderator</option>
-                                        <option value="admin">Admin</option>
-                                    </select>
-                                </td>
-                                <td className="px-4 py-3">
-                                    {u.suspended_at ? (
+                                    {u.banned_at ? (
                                         <div className="text-sm">
-                                            <span className="text-red-500 font-medium">Suspended</span>
+                                            <span className="text-red-600 dark:text-red-400 font-medium">Banned</span>
+                                            <span className="block text-xs text-[var(--text-secondary)] mt-0.5">
+                                                {new Date(u.banned_at).toLocaleString()}
+                                            </span>
+                                        </div>
+                                    ) : u.suspended_at ? (
+                                        <div className="text-sm">
+                                            <span className="text-amber-700 dark:text-amber-400 font-medium">
+                                                Suspended
+                                            </span>
                                             {u.suspended_until ? (
                                                 <span className="block text-xs text-[var(--text-secondary)] mt-0.5">
                                                     Until {new Date(u.suspended_until).toLocaleString()}
@@ -249,47 +178,22 @@ const AdminUsers = () => {
                                             )}
                                         </div>
                                     ) : (
-                                        <span className="text-emerald-600 text-sm font-medium">Active</span>
+                                        <span className="text-emerald-700 dark:text-emerald-400 text-sm font-medium">
+                                            Active
+                                        </span>
                                     )}
                                 </td>
                                 <td className="px-4 py-3 text-[var(--text-secondary)] text-sm">
                                     {u.posts_count ?? 0} posts · {u.followers_count ?? 0} followers
                                 </td>
                                 <td className="px-4 py-3">
-                                    {u.id !== user.id &&
-                                        (u.suspended_at ? (
-                                            <button
-                                                type="button"
-                                                onClick={() => unsuspendMutation.mutate(u.id)}
-                                                disabled={unsuspendMutation.isPending}
-                                                className="px-3 py-1 rounded-lg bg-emerald-500/15 text-emerald-500 text-sm"
-                                            >
-                                                Unsuspend
-                                            </button>
-                                        ) : !u.role || u.role !== 'admin' ? (
-                                            <button
-                                                type="button"
-                                                onClick={() => {
-                                                    const label =
-                                                        SUSPEND_DURATION_OPTIONS.find((o) => o.value === suspendDuration)
-                                                            ?.label ?? suspendDuration;
-                                                    if (
-                                                        window.confirm(
-                                                            `Suspend @${u.username} for "${label}"? They cannot sign in until the suspension ends or you unsuspend them.`
-                                                        )
-                                                    ) {
-                                                        suspendMutation.mutate({
-                                                            userId: u.id,
-                                                            duration: suspendDuration,
-                                                        });
-                                                    }
-                                                }}
-                                                disabled={suspendMutation.isPending}
-                                                className="px-3 py-1 rounded-lg bg-red-500/15 text-red-600 text-sm font-medium"
-                                            >
-                                                Suspend
-                                            </button>
-                                        ) : null)}
+                                    <button
+                                        type="button"
+                                        onClick={() => setViewUserId(u.id)}
+                                        className="px-3 py-1.5 rounded-lg text-sm font-medium border border-[var(--theme-accent)] text-[var(--theme-accent)] bg-[var(--theme-accent)]/10 hover:bg-[var(--theme-accent)]/15"
+                                    >
+                                        View
+                                    </button>
                                 </td>
                             </tr>
                         ))}
@@ -320,6 +224,13 @@ const AdminUsers = () => {
                     </button>
                 </div>
             )}
+
+            <AdminReportUserModal
+                userId={viewUserId}
+                open={viewUserId !== null}
+                onClose={() => setViewUserId(null)}
+                adminUserId={user?.id}
+            />
         </div>
     );
 };

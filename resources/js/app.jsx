@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'react-hot-toast';
 import MainLayout from './components/layout/MainLayout';
 import Login from './pages/Auth/Login';
+import AccountBanned from './pages/Auth/AccountBanned';
 import Register from './pages/Auth/Register';
 import ForgotPassword from './pages/Auth/ForgotPassword';
 import ResetPassword from './pages/Auth/ResetPassword';
@@ -26,12 +27,14 @@ import Settings from './pages/Settings';
 import Onboarding from './pages/Onboarding';
 import Connections from './pages/Connections';
 import SafetyCenter from './pages/SafetyCenter';
+import WarningDetail from './pages/WarningDetail';
 import AdminLayout from './components/admin/AdminLayout';
 import AdminLogin from './pages/Admin/AdminLogin';
 import AdminDashboard from './pages/Admin/AdminDashboard';
 import AdminReports from './pages/Admin/AdminReports';
 import AdminUsers from './pages/Admin/AdminUsers';
 import AdminSettings from './pages/Admin/AdminSettings';
+import AdminWarningAppeals from './pages/Admin/AdminWarningAppeals';
 import useAuthStore from './store/authStore';
 import useThemeStore from './store/themeStore';
 import ThemeCustomizer from './components/layout/ThemeCustomizer';
@@ -105,8 +108,9 @@ function AppContent() {
     }, []);
     const pathNorm = location.pathname.replace(/\/$/, '') || '/';
     const isPublicPage =
-        ['/', '/login', '/register', '/forgot-password', '/auth/callback', '/admin/login'].includes(pathNorm) ||
-        location.pathname.startsWith('/reset-password');
+        ['/', '/login', '/register', '/forgot-password', '/auth/callback', '/admin/login', '/account-banned'].includes(
+            pathNorm
+        ) || location.pathname.startsWith('/reset-password');
     /** Admin portal: all /admin/* except the public admin login page — no MainLayout / user chrome */
     const isAdminPortal = pathNorm.startsWith('/admin') && pathNorm !== '/admin/login';
 
@@ -116,6 +120,7 @@ function AppContent() {
             <>
                 <Routes>
                     <Route path="/" element={<Landing />} />
+                    <Route path="/account-banned" element={<AccountBanned />} />
                     <Route
                         path="/login"
                         element={
@@ -203,6 +208,7 @@ function AppContent() {
                         <Route index element={<AdminDashboard />} />
                         <Route path="reports" element={<AdminReports />} />
                         <Route path="users" element={<AdminUsers />} />
+                        <Route path="warning-appeals" element={<AdminWarningAppeals />} />
                         <Route path="settings" element={<AdminSettings />} />
                     </Route>
                     <Route path="*" element={<Navigate to="/admin" replace />} />
@@ -374,6 +380,14 @@ function AppContent() {
                             element={
                                 <ProtectedRoute>
                                     <SafetyCenter />
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/warnings/:eventId"
+                            element={
+                                <ProtectedRoute>
+                                    <WarningDetail />
                                 </ProtectedRoute>
                             }
                         />

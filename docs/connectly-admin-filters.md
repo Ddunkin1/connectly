@@ -13,7 +13,7 @@ When adding a reason, update **both** PHP and JS (or generate one from the other
 
 | Param | Values |
 |--------|--------|
-| `status` | `pending`, `reviewed`, `dismissed`, `action_taken` |
+| `status` | `all` (no filter) or `pending`, `reviewed`, `dismissed`, `action_taken` |
 | `reportable_type` | `all`, `user`, `post`, `profile_comment` |
 | `reason` | `all` or any value from `Report::REASONS` |
 | `priority` | `all`, `urgent` (priority queue), `standard` |

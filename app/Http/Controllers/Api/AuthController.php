@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
 use App\Http\Requests\Auth\RegisterRequest;
 use App\Http\Resources\UserResource;
+use App\Models\ModerationEvent;
 use App\Models\User;
 use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Auth\Events\Verified;
@@ -93,6 +94,21 @@ class AuthController extends Controller
 
         $user->clearExpiredSuspensionIfNeeded();
         $user->refresh();
+
+        if ($user->banned_at !== null) {
+            $banEvent = ModerationEvent::query()
+                ->where('user_id', $user->id)
+                ->where('action', ModerationEvent::ACTION_BAN)
+                ->orderByDesc('id')
+                ->first();
+
+            return response()->json([
+                'message' => 'This account has been permanently banned.',
+                'code' => 'account_banned',
+                'reason_code' => $banEvent?->reason_code,
+                'ban_message' => $banEvent?->message,
+            ], 403);
+        }
 
         if ($user->isSuspended()) {
             throw ValidationException::withMessages([

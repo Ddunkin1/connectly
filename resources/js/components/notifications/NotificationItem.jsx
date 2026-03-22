@@ -21,8 +21,15 @@ const NotificationItem = ({
         switch (type) {
             case 'report_outcome':
                 return '/notifications';
+            case 'moderation_warning':
+                return data.moderation_event_id ? `/warnings/${data.moderation_event_id}` : '/safety';
+            case 'warning_appeal_answered':
+                return data.moderation_event_id ? `/warnings/${data.moderation_event_id}` : '/safety';
+            case 'warning_appeal_submitted':
+                return data.appeal_id ? `/admin/warning-appeals?appeal=${data.appeal_id}` : '/admin/warning-appeals';
             case 'moderation_content_removed':
             case 'account_suspended':
+            case 'account_banned':
                 return '/safety';
             case 'friend_request':
                 return `/profile/${data.sender_username}`;
@@ -68,7 +75,15 @@ const NotificationItem = ({
         }
     };
 
-    const isModerationSystem = ['report_outcome', 'moderation_content_removed', 'account_suspended'].includes(type);
+    const isModerationSystem = [
+        'report_outcome',
+        'moderation_content_removed',
+        'account_suspended',
+        'moderation_warning',
+        'account_banned',
+        'warning_appeal_submitted',
+        'warning_appeal_answered',
+    ].includes(type);
 
     if (isModerationSystem) {
         const moderationContent = (
@@ -84,8 +99,55 @@ const NotificationItem = ({
                     </span>
                     <div className="flex-1 min-w-0">
                         <p className="text-sm text-[var(--text-primary)] leading-snug">{data.message || 'Update from moderation'}</p>
+                        {data.reason_label && (
+                            <p className="text-xs font-medium text-[var(--text-primary)] mt-1">
+                                Reason: {data.reason_label}
+                            </p>
+                        )}
                         {data.detail && (
-                            <p className="text-xs text-[var(--text-secondary)] mt-1 leading-relaxed">{data.detail}</p>
+                            <p
+                                className={`text-xs text-[var(--text-secondary)] mt-1 leading-relaxed ${
+                                    type === 'moderation_warning' || type === 'warning_appeal_answered'
+                                        ? 'line-clamp-3'
+                                        : ''
+                                }`}
+                            >
+                                {data.detail}
+                            </p>
+                        )}
+                        {type === 'moderation_warning' && (data.post_preview || data.post_media_url) && (
+                            <div className="flex gap-2 mt-2 rounded-lg overflow-hidden border border-[var(--theme-border)] bg-[var(--theme-surface)]">
+                                {data.post_media_url && (
+                                    <div className="w-14 h-14 shrink-0 bg-black/10">
+                                        <img
+                                            src={data.post_media_url}
+                                            alt=""
+                                            className="w-full h-full object-cover"
+                                        />
+                                    </div>
+                                )}
+                                <div className="min-w-0 py-1.5 pr-2 flex-1">
+                                    {data.post_preview && (
+                                        <p className="text-xs text-[var(--text-secondary)] line-clamp-2">{data.post_preview}</p>
+                                    )}
+                                    <p className="text-[11px] text-[var(--theme-accent)] mt-1 font-medium">
+                                        Review post · delete · appeal
+                                    </p>
+                                </div>
+                            </div>
+                        )}
+                        {type === 'moderation_warning' && !data.post_preview && !data.post_media_url && (
+                            <p className="text-[11px] text-[var(--text-secondary)] mt-1">
+                                Tap to view details and submit an appeal if you disagree.
+                            </p>
+                        )}
+                        {type === 'warning_appeal_submitted' && data.appeal_preview && (
+                            <p className="text-xs text-[var(--text-secondary)] mt-1 leading-relaxed line-clamp-3">
+                                {data.appeal_preview}
+                            </p>
+                        )}
+                        {type === 'warning_appeal_submitted' && data.username && (
+                            <p className="text-[11px] text-[var(--text-secondary)] mt-1">@{data.username}</p>
                         )}
                     </div>
                 </div>
@@ -93,8 +155,14 @@ const NotificationItem = ({
                     <span className="text-[11px] text-[var(--text-secondary)] uppercase tracking-wide">
                         {formatDateUppercase(created_at)}
                     </span>
-                    <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-500/15 text-amber-700 dark:text-amber-400">
-                        Safety
+                    <span
+                        className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                            type === 'warning_appeal_submitted'
+                                ? 'bg-violet-500/15 text-violet-700 dark:text-violet-400'
+                                : 'bg-amber-500/15 text-amber-700 dark:text-amber-400'
+                        }`}
+                    >
+                        {type === 'warning_appeal_submitted' ? 'Appeal' : 'Safety'}
                     </span>
                 </div>
             </div>

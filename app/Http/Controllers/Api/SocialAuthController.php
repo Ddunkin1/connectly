@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\ModerationEvent;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -93,6 +94,28 @@ class SocialAuthController extends Controller
                     'email_verified_at' => now(),
                 ]);
             }
+        }
+
+        $user->refresh();
+        $user->clearExpiredSuspensionIfNeeded();
+        $user->refresh();
+
+        if ($user->banned_at !== null) {
+            $banEvent = ModerationEvent::query()
+                ->where('user_id', $user->id)
+                ->where('action', ModerationEvent::ACTION_BAN)
+                ->orderByDesc('id')
+                ->first();
+            $frontend = rtrim(config('app.frontend_url', env('FRONTEND_URL', env('APP_URL'))), '/');
+            $qs = $banEvent?->reason_code
+                ? '?reason_code=' . rawurlencode($banEvent->reason_code)
+                : '';
+
+            return redirect()->away($frontend . '/account-banned' . $qs);
+        }
+
+        if ($user->isSuspended()) {
+            return $this->redirectToFrontendWithError('Your account has been suspended.');
         }
 
         $token = $user->createToken('auth_token')->plainTextToken;

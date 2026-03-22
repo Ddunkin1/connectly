@@ -17,10 +17,10 @@ export const AdminTableHead = ({ children }) => (
     </thead>
 );
 
-export const AdminTh = ({ children, scope = 'col' }) => (
+export const AdminTh = ({ children, scope = 'col', className = '' }) => (
     <th
         scope={scope}
-        className="text-left px-4 py-3 text-xs font-semibold text-[var(--text-secondary)] uppercase"
+        className={`text-left px-4 py-3 text-xs font-semibold text-[var(--text-secondary)] uppercase ${className}`}
     >
         {children}
     </th>

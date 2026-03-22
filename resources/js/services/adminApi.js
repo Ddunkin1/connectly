@@ -3,6 +3,9 @@ import api from './api';
 export const adminAPI = {
     getUserStats: () => api.get('/admin/users/stats'),
     getUsers: (params = {}) => api.get('/admin/users', { params }),
+    getUserModeration: (userId) => api.get(`/admin/users/${userId}/moderation`),
+    warnUser: (userId, data) => api.post(`/admin/users/${userId}/warn`, data),
+    banUser: (userId, data = {}) => api.post(`/admin/users/${userId}/ban`, data),
     updateUserRole: (userId, role) => api.put(`/admin/users/${userId}/role`, { role }),
     suspendUser: (userId, data = {}) => api.post(`/admin/users/${userId}/suspend`, data),
     unsuspendUser: (userId) => api.post(`/admin/users/${userId}/unsuspend`),
@@ -24,9 +27,13 @@ export const adminAPI = {
 
     getReportStats: () => api.get('/admin/reports/stats'),
     getReports: (params = {}) => api.get('/admin/reports', { params }),
-    dismissReport: (reportId) => api.post(`/admin/reports/${reportId}/dismiss`),
+    dismissReport: (reportId, data) => api.post(`/admin/reports/${reportId}/dismiss`, data),
     markActionTaken: (reportId) => api.post(`/admin/reports/${reportId}/action-taken`),
     removePost: (reportId) => api.post(`/admin/reports/${reportId}/remove-post`),
+    removeProfileComment: (reportId) => api.post(`/admin/reports/${reportId}/remove-profile-comment`),
+
+    getWarningAppeals: (page = 1) => api.get('/admin/warning-appeals', { params: { page } }),
+    respondWarningAppeal: (appealId, data) => api.post(`/admin/warning-appeals/${appealId}/respond`, data),
 
     getSystemSettings: () => api.get('/admin/settings'),
 };

@@ -65,6 +65,7 @@ class UserResource extends JsonResource
             ),
             'suspended_at' => $this->when($currentUser?->isAdmin(), $this->suspended_at),
             'suspended_until' => $this->when($currentUser?->isAdmin(), $this->suspended_until),
+            'banned_at' => $this->when($currentUser?->isAdmin(), $this->banned_at),
             'is_blocked' => $this->when($currentUser && $currentUser->id !== $this->id, $isBlocked ?? false),
             'has_blocked_you' => $this->when($currentUser && $currentUser->id !== $this->id, $hasBlockedYou ?? false),
             'email' => $this->when(
@@ -83,6 +84,7 @@ class UserResource extends JsonResource
             'privacy_settings' => $this->privacy_settings,
             'followers_count' => $this->whenCounted('followers'),
             'following_count' => $this->whenCounted('following'),
+            'posts_count' => $this->whenCounted('posts'),
             'is_following' => $this->when($request->user(), $isConnected ?? false),
             'friend_request_status' => $friendRequestStatus,
             'email_verified_at' => $this->when($request->user()?->id === $this->id, $this->email_verified_at),

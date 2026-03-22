@@ -200,6 +200,12 @@ export const reportsAPI = {
         api.get('/reports/status', { params: { reportable_type: reportableType, reportable_id: reportableId } }),
 };
 
+/** Formal warnings: view linked post, delete post, appeal */
+export const moderationAPI = {
+    getWarningEvent: (eventId) => api.get(`/warning-events/${eventId}`),
+    submitWarningAppeal: (data) => api.post('/warning-appeals', data),
+};
+
 // Communities API
 export const communityAPI = {
     getAll: (params = {}) => api.get('/communities', { params }),

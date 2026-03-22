@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 
 class AdminReportController extends Controller
 {
@@ -28,7 +29,7 @@ class AdminReportController extends Controller
     public function index(Request $request): JsonResponse
     {
         $perPage = (int) $request->input('per_page', 20);
-        $status = $request->input('status', 'pending');
+        $status = $request->input('status', 'all');
         $reportableTypeFilter = $request->input('reportable_type', 'all');
         $reasonFilter = $request->input('reason');
         $priority = $request->input('priority', 'all');
@@ -42,7 +43,7 @@ class AdminReportController extends Controller
             }])
             ->orderBy('created_at', 'desc');
 
-        if ($status && in_array($status, ['pending', 'reviewed', 'dismissed', 'action_taken'], true)) {
+        if ($status && $status !== 'all' && in_array($status, ['pending', 'reviewed', 'dismissed', 'action_taken'], true)) {
             $query->where('status', $status);
         }
 
@@ -160,6 +161,7 @@ class AdminReportController extends Controller
                 'type' => 'profile_comment',
                 'id' => $reportable->id,
                 'content' => \Str::limit((string) $reportable->content, 100),
+                'content_full' => (string) $reportable->content,
                 'profile_user_id' => $reportable->user_id,
                 'profile_username' => $reportable->user?->username,
                 'profile_name' => $reportable->user?->name,
@@ -167,6 +169,7 @@ class AdminReportController extends Controller
                     'id' => $reportable->author->id,
                     'username' => $reportable->author->username,
                     'name' => $reportable->author->name,
+                    'profile_picture' => $reportable->author->profile_picture,
                 ] : null,
             ];
         }
@@ -189,12 +192,22 @@ class AdminReportController extends Controller
     }
 
     /**
-     * Dismiss a report.
+     * Dismiss a report (cancel with no enforcement action).
+     * `reason` uses the same enum as user-submitted reports; `message` is shown to the reporter.
      */
-    public function dismiss(Report $report): JsonResponse
+    public function dismiss(Request $request, Report $report): JsonResponse
     {
+        $validated = $request->validate([
+            'reason' => ['required', 'string', Rule::in(Report::REASONS)],
+            'message' => ['required', 'string', 'min:10', 'max:2000'],
+        ]);
+
         $report->loadMissing('reporter');
-        $report->update(['status' => Report::STATUS_DISMISSED]);
+        $report->update([
+            'status' => Report::STATUS_DISMISSED,
+            'dismissal_reason' => $validated['reason'],
+            'dismissal_message' => $validated['message'],
+        ]);
 
         if ($report->reporter) {
             $report->reporter->notify(new ReportOutcomeNotification($report, 'dismissed'));
@@ -243,5 +256,33 @@ class AdminReportController extends Controller
         }
 
         return response()->json(['message' => 'Post removed']);
+    }
+
+    /**
+     * Delete reported profile comment (admin action).
+     */
+    public function removeProfileComment(Report $report): JsonResponse
+    {
+        $comment = $report->reportable;
+        if (!$comment instanceof ProfileComment) {
+            return response()->json(['message' => 'Report is not for a profile comment'], 400);
+        }
+
+        $report->loadMissing('reporter');
+        $comment->loadMissing('author');
+
+        $author = $comment->author;
+
+        $comment->delete();
+        $report->update(['status' => Report::STATUS_ACTION_TAKEN]);
+
+        if ($report->reporter) {
+            $report->reporter->notify(new ReportOutcomeNotification($report, 'content_removed'));
+        }
+        if ($author && (!$report->reporter || $author->id !== $report->reporter->id)) {
+            $author->notify(new ContentRemovedByModerationNotification($report));
+        }
+
+        return response()->json(['message' => 'Comment removed']);
     }
 }

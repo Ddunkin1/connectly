@@ -4,10 +4,17 @@ namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Resources\UserResource;
+use App\Models\ModerationEvent;
+use App\Models\Post;
+use App\Models\ProfileComment;
+use App\Models\Report;
 use App\Models\User;
+use App\Notifications\AccountBannedNotification;
 use App\Notifications\AccountSuspendedNotification;
+use App\Notifications\ModerationWarningNotification;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\Rule;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -167,6 +174,20 @@ class AdminUserController extends Controller
             'suspended_until' => $until,
         ]);
 
+        if (Schema::hasTable('moderation_events')) {
+            ModerationEvent::create([
+                'user_id' => $user->id,
+                'admin_id' => $request->user()->id,
+                'action' => ModerationEvent::ACTION_SUSPEND,
+                'reason_code' => null,
+                'message' => null,
+                'meta' => [
+                    'duration' => $duration,
+                    'suspended_until' => $until?->toIso8601String(),
+                ],
+            ]);
+        }
+
         $user->notify(new AccountSuspendedNotification($until));
 
         $fresh = $user->fresh();
@@ -193,5 +214,196 @@ class AdminUserController extends Controller
             'message' => 'User unsuspended',
             'user' => new UserResource($user->fresh()),
         ]);
+    }
+
+    /**
+     * User detail for admin moderation modal (violations, reports against user, activity).
+     */
+    public function moderationDetails(User $user): JsonResponse
+    {
+        $user->loadCount(['posts', 'followers', 'following']);
+        $commentsCount = ProfileComment::where('author_id', $user->id)->count();
+        $lastPostAt = $user->posts()->max('created_at');
+        $lastActive = $lastPostAt !== null ? \Carbon\Carbon::parse($lastPostAt) : $user->updated_at;
+
+        $violations = collect();
+        if (Schema::hasTable('moderation_events')) {
+            $violations = ModerationEvent::query()
+                ->where('user_id', $user->id)
+                ->with('admin:id,name,username')
+                ->orderByDesc('created_at')
+                ->limit(50)
+                ->get()
+                ->map(fn (ModerationEvent $e) => [
+                    'id' => $e->id,
+                    'action' => $e->action,
+                    'reason_code' => $e->reason_code,
+                    'message' => $e->message,
+                    'meta' => $e->meta,
+                    'created_at' => $e->created_at?->toIso8601String(),
+                    'admin' => $e->admin ? [
+                        'username' => $e->admin->username,
+                        'name' => $e->admin->name,
+                    ] : null,
+                ]);
+        }
+
+        return response()->json([
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'username' => $user->username,
+                'email' => $user->email,
+                'profile_picture' => $user->profile_picture,
+                'created_at' => $user->created_at?->toIso8601String(),
+                'role' => $user->role,
+                'banned_at' => $user->banned_at?->toIso8601String(),
+                'suspended_at' => $user->suspended_at?->toIso8601String(),
+                'suspended_until' => $user->suspended_until?->toIso8601String(),
+            ],
+            'activity' => [
+                'posts_count' => $user->posts_count,
+                'comments_count' => $commentsCount,
+                'followers_count' => $user->followers_count,
+                'following_count' => $user->following_count,
+                'last_active_at' => $lastActive?->toIso8601String(),
+            ],
+            'violations' => $violations,
+            'reports' => $this->reportsAgainstUser($user),
+        ]);
+    }
+
+    /**
+     * Send a formal warning (notification + violation log).
+     */
+    public function warn(Request $request, User $user): JsonResponse
+    {
+        if ($user->isAdmin()) {
+            return response()->json(['message' => 'Cannot warn an admin account'], 400);
+        }
+
+        $validated = $request->validate([
+            'reason' => ['required', 'string', Rule::in(Report::REASONS)],
+            'message' => ['required', 'string', 'max:5000'],
+            'post_id' => ['nullable', 'integer', 'exists:posts,id'],
+        ]);
+
+        if (! empty($validated['post_id'])) {
+            $post = Post::query()->find((int) $validated['post_id']);
+            if (!$post || (int) $post->user_id !== (int) $user->id) {
+                return response()->json(['message' => 'Post does not belong to this user.'], 422);
+            }
+        }
+
+        $event = null;
+        if (Schema::hasTable('moderation_events')) {
+            $meta = [];
+            if (! empty($validated['post_id'])) {
+                $meta['post_id'] = (int) $validated['post_id'];
+            }
+            $event = ModerationEvent::create([
+                'user_id' => $user->id,
+                'admin_id' => $request->user()->id,
+                'action' => ModerationEvent::ACTION_WARNING,
+                'reason_code' => $validated['reason'],
+                'message' => $validated['message'],
+                'meta' => $meta ?: null,
+            ]);
+        }
+
+        $user->notify(new ModerationWarningNotification(
+            $validated['reason'],
+            $validated['message'],
+            isset($validated['post_id']) ? (int) $validated['post_id'] : null,
+            $event?->id
+        ));
+
+        return response()->json(['message' => 'Warning sent to the user.']);
+    }
+
+    /**
+     * Permanent ban (blocks sign-in).
+     */
+    public function ban(Request $request, User $user): JsonResponse
+    {
+        if ($user->isAdmin()) {
+            return response()->json(['message' => 'Cannot ban an admin account'], 400);
+        }
+
+        if ($user->banned_at !== null) {
+            return response()->json(['message' => 'User is already banned'], 400);
+        }
+
+        $validated = $request->validate([
+            'reason' => ['required', 'string', Rule::in(Report::REASONS)],
+            'message' => ['required', 'string', 'min:10', 'max:2000'],
+        ]);
+
+        $user->update([
+            'banned_at' => now(),
+            'suspended_at' => null,
+            'suspended_until' => null,
+        ]);
+
+        if (Schema::hasTable('moderation_events')) {
+            ModerationEvent::create([
+                'user_id' => $user->id,
+                'admin_id' => $request->user()->id,
+                'action' => ModerationEvent::ACTION_BAN,
+                'reason_code' => $validated['reason'],
+                'message' => $validated['message'],
+            ]);
+        }
+
+        $user->notify(new AccountBannedNotification($validated['message'], $validated['reason']));
+
+        $user->tokens()->delete();
+
+        return response()->json([
+            'message' => 'User banned.',
+            'user' => new UserResource($user->fresh()),
+        ]);
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    private function reportsAgainstUser(User $user): array
+    {
+        $postIds = $user->posts()->pluck('id');
+        $commentIds = ProfileComment::where('author_id', $user->id)->pluck('id');
+
+        $query = Report::query()
+            ->with(['reporter:id,username,name'])
+            ->orderByDesc('created_at')
+            ->limit(40);
+
+        $query->where(function ($q) use ($user, $postIds, $commentIds) {
+            $q->where('reportable_type', User::class)->where('reportable_id', $user->id);
+            if ($postIds->isNotEmpty()) {
+                $q->orWhere(function ($q2) use ($postIds) {
+                    $q2->where('reportable_type', Post::class)->whereIn('reportable_id', $postIds);
+                });
+            }
+            if ($commentIds->isNotEmpty()) {
+                $q->orWhere(function ($q3) use ($commentIds) {
+                    $q3->where('reportable_type', ProfileComment::class)->whereIn('reportable_id', $commentIds);
+                });
+            }
+        });
+
+        return $query->get()->map(function (Report $r) {
+            return [
+                'id' => $r->id,
+                'reason' => $r->reason,
+                'status' => $r->status,
+                'description' => $r->description,
+                'created_at' => $r->created_at?->toIso8601String(),
+                'reporter' => $r->reporter ? [
+                    'username' => $r->reporter->username,
+                    'name' => $r->reporter->name,
+                ] : null,
+            ];
+        })->all();
     }
 }

@@ -23,6 +23,9 @@ export const useLogin = () => {
                 return;
             }
             const data = error.response.data;
+            if (error.response.status === 403 && data?.code === 'account_banned') {
+                return;
+            }
             const errors = data?.errors;
             if (errors && typeof errors === 'object') {
                 Object.values(errors).flat().forEach((msg) => toast.error(msg));

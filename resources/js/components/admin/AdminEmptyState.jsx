@@ -7,18 +7,19 @@ const AdminEmptyState = ({
     action,
 }) => (
     <div
-        className="flex flex-col items-center justify-center py-14 px-4 text-center rounded-2xl border border-dashed border-[var(--theme-border)] bg-[var(--theme-surface)]/60"
+        className="flex flex-col items-center justify-center py-16 px-6 text-center rounded-xl border border-dashed border-[var(--theme-border)] bg-[var(--theme-surface-hover)]/40"
         role="status"
     >
-        <span
-            className="material-symbols-outlined text-5xl text-[var(--text-secondary)]/50 mb-3"
-            aria-hidden
-        >
-            {icon}
-        </span>
-        <p className="text-[var(--text-primary)] font-medium">{title}</p>
-        {description && <p className="text-sm text-[var(--text-secondary)] mt-1 max-w-md">{description}</p>}
-        {action && <div className="mt-4">{action}</div>}
+        <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--theme-accent)]/10 text-[var(--theme-accent)]">
+            <span className="material-symbols-outlined text-3xl" aria-hidden>
+                {icon}
+            </span>
+        </div>
+        <p className="text-[var(--text-primary)] font-semibold tracking-tight">{title}</p>
+        {description && (
+            <p className="text-sm text-[var(--text-secondary)] mt-2 max-w-md leading-relaxed">{description}</p>
+        )}
+        {action && <div className="mt-5">{action}</div>}
     </div>
 );
 
