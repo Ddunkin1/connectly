@@ -56,11 +56,21 @@ class UserResource extends JsonResource
             'id' => $this->id,
             'name' => $this->name,
             'username' => $this->username,
-            'role' => $this->when($currentUser?->isAdmin() || $currentUser?->id === $this->id, $this->role),
+            // Login/register run without auth context; still expose own role so SPA can route admins.
+            'role' => $this->when(
+                $currentUser?->isAdmin()
+                || $currentUser?->id === $this->id
+                || $this->shouldExposeRoleForLoginOrRegisterResponse($request),
+                $this->role
+            ),
             'suspended_at' => $this->when($currentUser?->isAdmin(), $this->suspended_at),
+            'suspended_until' => $this->when($currentUser?->isAdmin(), $this->suspended_until),
             'is_blocked' => $this->when($currentUser && $currentUser->id !== $this->id, $isBlocked ?? false),
             'has_blocked_you' => $this->when($currentUser && $currentUser->id !== $this->id, $hasBlockedYou ?? false),
-            'email' => $this->when($request->user()?->id === $this->id, $this->email),
+            'email' => $this->when(
+                $request->user()?->id === $this->id || $request->user()?->isAdmin(),
+                $this->email
+            ),
             'bio' => $this->bio,
             'profile_picture' => $this->formatProfilePictureUrl($request),
             'profile_picture_caption' => $this->profile_picture_caption,
@@ -80,6 +90,19 @@ class UserResource extends JsonResource
             'latest_profile_picture_post' => new PostResource($this->whenLoaded('latestProfilePicturePost')),
             'latest_cover_image_post' => new PostResource($this->whenLoaded('latestCoverImagePost')),
         ];
+    }
+
+    /**
+     * POST /login and POST /register return UserResource before the client sends Bearer token;
+     * $request->user() is null, so we still include role for the signed-in/registered user only.
+     */
+    private function shouldExposeRoleForLoginOrRegisterResponse(Request $request): bool
+    {
+        if ($request->user() !== null) {
+            return false;
+        }
+
+        return $request->is('api/login', 'api/register', 'login', 'register');
     }
 
     /**

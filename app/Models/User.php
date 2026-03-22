@@ -51,6 +51,8 @@ class User extends Authenticatable implements MustVerifyEmail
         'website',
         'privacy_settings',
         'notification_preferences',
+        'suspended_at',
+        'suspended_until',
     ];
 
     /**
@@ -74,6 +76,7 @@ class User extends Authenticatable implements MustVerifyEmail
         return [
             'email_verified_at' => 'datetime',
             'suspended_at' => 'datetime',
+            'suspended_until' => 'datetime',
             'password' => 'hashed',
             'notification_preferences' => 'array',
             'two_factor_recovery_codes' => 'array',
@@ -417,9 +420,35 @@ class User extends Authenticatable implements MustVerifyEmail
     /**
      * Check if user is suspended.
      */
+    /**
+     * Suspended when suspended_at is set and either indefinite (no end) or end is in the future.
+     */
     public function isSuspended(): bool
     {
-        return $this->suspended_at !== null;
+        if ($this->suspended_at === null) {
+            return false;
+        }
+        if ($this->suspended_until !== null && now()->greaterThanOrEqualTo($this->suspended_until)) {
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Clear expired timed suspension (call on login / token refresh).
+     */
+    public function clearExpiredSuspensionIfNeeded(): void
+    {
+        if ($this->suspended_at === null) {
+            return;
+        }
+        if ($this->suspended_until !== null && now()->greaterThanOrEqualTo($this->suspended_until)) {
+            $this->forceFill([
+                'suspended_at' => null,
+                'suspended_until' => null,
+            ])->save();
+        }
     }
 
     /**

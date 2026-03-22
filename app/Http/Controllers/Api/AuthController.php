@@ -91,6 +91,9 @@ class AuthController extends Controller
             ]);
         }
 
+        $user->clearExpiredSuspensionIfNeeded();
+        $user->refresh();
+
         if ($user->isSuspended()) {
             throw ValidationException::withMessages([
                 'email' => ['Your account has been suspended. Please contact support.'],
@@ -138,8 +141,12 @@ class AuthController extends Controller
      */
     public function user(Request $request): JsonResponse
     {
+        $user = $request->user();
+        $user->clearExpiredSuspensionIfNeeded();
+        $user->refresh();
+
         return response()->json([
-            'user' => new UserResource($request->user()->loadCount(['followers', 'following'])),
+            'user' => new UserResource($user->loadCount(['followers', 'following'])),
         ]);
     }
 

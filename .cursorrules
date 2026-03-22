@@ -1,0 +1,109 @@
+# Connectly — Cursor AI rules
+
+## Project snapshot
+- **Backend:** Laravel (PHP), API routes in `routes/api.php`, Sail optional (`docker-compose.yml`).
+- **Frontend:** React + Vite; source under **`resources/js/`** (not `src/`).
+- **DB:** MySQL. **Media:** Supabase. **API client:** axios in `resources/js/services/api.js` (Bearer Sanctum token from Zustand persist).
+- **Auth:** Laravel **Sanctum** personal access tokens — not JWT unless explicitly added.
+
+## Response format (all tasks)
+1. Name which skill(s) apply.
+2. List file paths to create/edit.
+3. Prefer minimal, working diffs; add short comments where non-obvious.
+4. Note security (mass assignment, validation, auth middleware).
+5. Suggest one test or manual check.
+
+## Anti-hallucination
+- **Read** or **search** (`grep`) before claiming routes, env keys, or DB columns. Canonical API list: `routes/api.php`.
+- **Do not invent** endpoints, middleware names, or React paths — verify against this repo.
+- If unsure, say what to check and propose a small verification step.
+
+## Token efficiency
+- Short bullets; one canonical path example per area.
+- Avoid repeating full file contents when a pointer suffices.
+
+---
+
+## SKILL 1 — API Development Agent
+**When:** “Create API for X”, “add endpoint”, “admin route”.
+**Do:** REST verbs, FormRequest validation, `JsonResource` responses, `auth:sanctum` + domain middleware (e.g. `admin`), consistent error JSON.
+**Files:** `app/Http/Controllers/`, `routes/api.php`, `app/Http/Requests/`, `app/Http/Resources/`.
+
+## SKILL 2 — Database Design Agent
+**When:** “New table”, “migration”, “relationship”.
+**Do:** Migrations with indexes/FKs, Eloquent `$fillable`/`casts`, avoid breaking renames without data plan.
+**Files:** `database/migrations/`, `app/Models/`, `database/seeders/`.
+
+## SKILL 3 — User Authentication Agent
+**When:** “Login”, “register”, “roles”, “password reset”.
+**Do:** Sanctum tokens, `User` model `role`, `AuthController` patterns, never log secrets. Say **Sanctum**, not JWT, unless JWT exists in repo.
+**Files:** `app/Http/Controllers/Api/AuthController.php`, `app/Models/User.php`, `routes/api.php`, `resources/js/hooks/useAuth.js`, `resources/js/store/authStore.js`.
+
+## SKILL 4 — React Component Builder Agent
+**When:** “Build UI”, “new page”, “component”.
+**Do:** Functional components, hooks, loading/error states, a11y (`aria-*`, labels).
+**Files:** `resources/js/components/`, `resources/js/pages/`.
+
+## SKILL 5 — API Integration Agent
+**When:** “Fetch from API”, “wire form to backend”.
+**Do:** Add methods in `resources/js/services/*.js`, use React Query for server state, handle 401 (see `api.js` interceptors).
+**Files:** `resources/js/services/`, page/hook callers.
+
+## SKILL 6 — Media Storage Agent
+**When:** “Upload image”, “Supabase file”.
+**Do:** Server-side validation, size/type limits, use existing `SupabaseService` / storage patterns; signed URLs and proxies as already implemented.
+**Files:** `app/Services/`, `resources/js/services/`.
+
+## SKILL 7 — Admin Dashboard Agent
+**When:** “Admin panel”, “moderation”, “admin users/reports”.
+**Do:** Admin UI under `resources/js/pages/Admin/`, shell `resources/js/components/admin/`, backend `app/Http/Controllers/Api/Admin/`, routes under `Route::prefix('admin')->middleware('admin')`. Admin portal is separate from member `MainLayout` (see `resources/js/app.jsx`).
+**Files:** `resources/js/pages/Admin/*.jsx`, `resources/js/components/admin/`, `app/Http/Controllers/Api/Admin/*.php`.
+
+## SKILL 8 — Real-Time Notification Agent
+**When:** “Live notifications”, “broadcast”, “Echo”.
+**Do:** Laravel broadcasting + existing notification patterns; frontend consumers under `resources/js/components/`.
+**Files:** `app/Events/`, `app/Listeners/`, `resources/js/components/` (notifications).
+
+## SKILL 9 — Security Agent
+**When:** “Secure this”, “audit”, “XSS”.
+**Do:** Validate all inputs, policy/middleware for authorization, rate limits in `routes/api.php`, secrets only in `.env`, CSRF for web routes; API uses token auth.
+**Files:** `app/Http/Middleware/`, `app/Policies/`, `.env.example`, `config/`.
+
+## SKILL 10 — Docker & Deployment Agent
+**When:** “Sail”, “compose”, “deploy”.
+**Do:** Document env vars; DB hostnames in Docker vs local; never commit `.env`.
+**Files:** `docker-compose.yml`, `Dockerfile`, `.env.example`.
+
+## SKILL 11 — Testing Agent
+**When:** “Write tests”, “PHPUnit”, “Jest”.
+**Do:** Feature tests for API contracts; factory/seed data; frontend tests colocated or `tests/` as project convention allows.
+**Files:** `tests/`, optional `resources/js/**/__tests__/`.
+
+## SKILL 12 — Performance Optimization Agent
+**When:** “Slow query”, “N+1”, “bundle size”.
+**Do:** Eager loads, indexes, pagination, React lazy routes where appropriate; measure before micro-optimizing.
+**Files:** `app/Http/Controllers/`, `config/`, `resources/js/`.
+
+---
+
+## File naming (this repo)
+
+| Area | Path |
+|------|------|
+| Laravel controllers | `app/Http/Controllers/Api/...` |
+| Models | `app/Models/{Model}.php` |
+| API routes | `routes/api.php` |
+| Migrations | `database/migrations/` |
+| React pages | `resources/js/pages/` |
+| Admin pages | `resources/js/pages/Admin/` |
+| Admin UI shared | `resources/js/components/admin/` |
+| Hooks | `resources/js/hooks/use{Name}.js` |
+| API services | `resources/js/services/{name}.js` |
+
+## Skill combinations (examples)
+| Request | Skills |
+|---------|--------|
+| New admin report action | 1 + 7 + 9 |
+| Upload avatar | 1 + 5 + 6 + 9 |
+| Feed component | 4 + 5 |
+| New table + API | 1 + 2 |

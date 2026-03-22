@@ -19,6 +19,11 @@ const NotificationItem = ({
 
     const getLink = () => {
         switch (type) {
+            case 'report_outcome':
+                return '/notifications';
+            case 'moderation_content_removed':
+            case 'account_suspended':
+                return '/safety';
             case 'friend_request':
                 return `/profile/${data.sender_username}`;
             case 'friend_request_accepted':
@@ -62,6 +67,45 @@ const NotificationItem = ({
             onMarkAsRead(id);
         }
     };
+
+    const isModerationSystem = ['report_outcome', 'moderation_content_removed', 'account_suspended'].includes(type);
+
+    if (isModerationSystem) {
+        const moderationContent = (
+            <div
+                className={`flex flex-col gap-2 p-3 hover:bg-[var(--theme-surface-hover)] transition-colors ${
+                    isUnread ? 'bg-[var(--theme-accent)]/5' : ''
+                }`}
+                onClick={handleClick}
+            >
+                <div className="flex items-start gap-3">
+                    <span className="material-symbols-outlined text-[var(--theme-accent)] shrink-0 text-[22px] leading-none mt-0.5">
+                        gavel
+                    </span>
+                    <div className="flex-1 min-w-0">
+                        <p className="text-sm text-[var(--text-primary)] leading-snug">{data.message || 'Update from moderation'}</p>
+                        {data.detail && (
+                            <p className="text-xs text-[var(--text-secondary)] mt-1 leading-relaxed">{data.detail}</p>
+                        )}
+                    </div>
+                </div>
+                <div className="flex items-center justify-between gap-2 flex-wrap pt-0.5 pl-[34px]">
+                    <span className="text-[11px] text-[var(--text-secondary)] uppercase tracking-wide">
+                        {formatDateUppercase(created_at)}
+                    </span>
+                    <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-500/15 text-amber-700 dark:text-amber-400">
+                        Safety
+                    </span>
+                </div>
+            </div>
+        );
+
+        return (
+            <Link to={getLink()} className="block">
+                {moderationContent}
+            </Link>
+        );
+    }
 
     const hasActions = (type === 'community_invite' && onAcceptCommunityInvite && onDeclineCommunityInvite) ||
         (type === 'community_invite_suggested' && onApproveSuggestedInvite && onRejectSuggestedInvite) ||

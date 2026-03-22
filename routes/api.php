@@ -233,14 +233,18 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function () {
 
     // Admin routes
     Route::prefix('admin')->middleware('admin')->group(function () {
+        Route::get('/users/stats', [\App\Http\Controllers\Api\Admin\AdminUserController::class, 'stats']);
         Route::get('/users', [\App\Http\Controllers\Api\Admin\AdminUserController::class, 'index']);
         Route::put('/users/{user}/role', [\App\Http\Controllers\Api\Admin\AdminUserController::class, 'updateRole']);
         Route::post('/users/{user}/suspend', [\App\Http\Controllers\Api\Admin\AdminUserController::class, 'suspend']);
         Route::post('/users/{user}/unsuspend', [\App\Http\Controllers\Api\Admin\AdminUserController::class, 'unsuspend']);
 
+        Route::get('/reports/stats', [\App\Http\Controllers\Api\Admin\AdminReportController::class, 'stats']);
         Route::get('/reports', [\App\Http\Controllers\Api\Admin\AdminReportController::class, 'index']);
         Route::post('/reports/{report}/dismiss', [\App\Http\Controllers\Api\Admin\AdminReportController::class, 'dismiss']);
         Route::post('/reports/{report}/action-taken', [\App\Http\Controllers\Api\Admin\AdminReportController::class, 'actionTaken']);
         Route::post('/reports/{report}/remove-post', [\App\Http\Controllers\Api\Admin\AdminReportController::class, 'removePost']);
+
+        Route::get('/settings', [\App\Http\Controllers\Api\Admin\AdminSettingsController::class, 'index']);
     });
 });

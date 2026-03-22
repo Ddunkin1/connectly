@@ -8,14 +8,23 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 class Report extends Model
 {
+    /** Values must match frontend `REPORT_REASONS` and API validation. */
     public const REASONS = [
         'spam',
         'harassment',
         'hate_speech',
         'violence',
+        'sexual_content',
+        'misinformation',
+        'impersonation',
+        'intellectual_property',
+        'self_harm',
         'inappropriate',
         'other',
     ];
+
+    /** Shown as “Priority” in admin UI; keep in sync with frontend `URGENT_REPORT_REASONS`. */
+    public const URGENT_REASONS = ['violence', 'hate_speech', 'harassment'];
 
     public const STATUS_PENDING = 'pending';
     public const STATUS_REVIEWED = 'reviewed';

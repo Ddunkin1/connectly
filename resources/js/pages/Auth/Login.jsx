@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { useLogin, useTwoFactorChallenge, useLogout } from '../../hooks/useAuth';
+import useAuthStore from '../../store/authStore';
 import Button from '../../components/common/Button';
 import toast from 'react-hot-toast';
 
@@ -43,7 +44,8 @@ const Login = () => {
             if (res.data?.requires_two_factor) {
                 setShowTwoFactor(true);
             } else {
-                navigate('/home');
+                const u = useAuthStore.getState().user;
+                navigate(u?.role === 'admin' ? '/admin' : '/home');
             }
         } catch (error) {
             const res = error?.response?.data;
@@ -58,7 +60,8 @@ const Login = () => {
         e.preventDefault();
         try {
             await twoFactorMutation.mutateAsync(twoFactorCode);
-            navigate('/home');
+            const u = useAuthStore.getState().user;
+            navigate(u?.role === 'admin' ? '/admin' : '/home');
         } catch (error) {
             const msg = error?.response?.data?.message || error?.message || 'Verification failed. Please try again.';
             toast.error(msg);

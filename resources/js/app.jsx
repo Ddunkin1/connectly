@@ -26,8 +26,12 @@ import Settings from './pages/Settings';
 import Onboarding from './pages/Onboarding';
 import Connections from './pages/Connections';
 import SafetyCenter from './pages/SafetyCenter';
+import AdminLayout from './components/admin/AdminLayout';
+import AdminLogin from './pages/Admin/AdminLogin';
+import AdminDashboard from './pages/Admin/AdminDashboard';
 import AdminReports from './pages/Admin/AdminReports';
 import AdminUsers from './pages/Admin/AdminUsers';
+import AdminSettings from './pages/Admin/AdminSettings';
 import useAuthStore from './store/authStore';
 import useThemeStore from './store/themeStore';
 import ThemeCustomizer from './components/layout/ThemeCustomizer';
@@ -56,11 +60,38 @@ const ProtectedRoute = ({ children }) => {
 
 const PublicRoute = ({ children }) => {
     const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
-    
+    const user = useAuthStore((state) => state.user);
+
     if (isAuthenticated) {
+        return <Navigate to={user?.role === 'admin' ? '/admin' : '/home'} replace />;
+    }
+
+    return children;
+};
+
+/** Admin login: redirect if already signed in as admin; regular users go to app home. */
+const AdminPublicRoute = ({ children }) => {
+    const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+    const user = useAuthStore((state) => state.user);
+    if (isAuthenticated && user?.role === 'admin') {
+        return <Navigate to="/admin" replace />;
+    }
+    if (isAuthenticated && user && user.role !== 'admin') {
         return <Navigate to="/home" replace />;
     }
-    
+    return children;
+};
+
+/** Only admins; others go to the member app. Unauthenticated → /admin/login */
+const AdminProtectedRoute = ({ children }) => {
+    const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+    const user = useAuthStore((state) => state.user);
+    if (!isAuthenticated) {
+        return <Navigate to="/admin/login" replace />;
+    }
+    if (user?.role !== 'admin') {
+        return <Navigate to="/home" replace />;
+    }
     return children;
 };
 
@@ -72,8 +103,12 @@ function AppContent() {
     useEffect(() => {
         useThemeStore.getState().applyToDom();
     }, []);
-    const isPublicPage = ['/', '/login', '/register', '/forgot-password', '/auth/callback'].includes(location.pathname) ||
+    const pathNorm = location.pathname.replace(/\/$/, '') || '/';
+    const isPublicPage =
+        ['/', '/login', '/register', '/forgot-password', '/auth/callback', '/admin/login'].includes(pathNorm) ||
         location.pathname.startsWith('/reset-password');
+    /** Admin portal: all /admin/* except the public admin login page — no MainLayout / user chrome */
+    const isAdminPortal = pathNorm.startsWith('/admin') && pathNorm !== '/admin/login';
 
     // Render public pages (Landing, Login, Register) without layout wrapper
     if (isPublicPage) {
@@ -114,6 +149,14 @@ function AppContent() {
                         }
                     />
                     <Route path="/auth/callback" element={<AuthCallback />} />
+                    <Route
+                        path="/admin/login"
+                        element={
+                            <AdminPublicRoute>
+                                <AdminLogin />
+                            </AdminPublicRoute>
+                        }
+                    />
                     <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>
                 <Toaster
@@ -144,6 +187,60 @@ function AppContent() {
         );
     }
 
+    /** Full-screen admin portal — no MainLayout, AppTopBar, or member sidebars */
+    if (isAdminPortal) {
+        return (
+            <>
+                <Routes>
+                    <Route
+                        path="/admin"
+                        element={
+                            <AdminProtectedRoute>
+                                <AdminLayout />
+                            </AdminProtectedRoute>
+                        }
+                    >
+                        <Route index element={<AdminDashboard />} />
+                        <Route path="reports" element={<AdminReports />} />
+                        <Route path="users" element={<AdminUsers />} />
+                        <Route path="settings" element={<AdminSettings />} />
+                    </Route>
+                    <Route path="*" element={<Navigate to="/admin" replace />} />
+                </Routes>
+                <Toaster
+                    position="top-right"
+                    toastOptions={{
+                        duration: 3000,
+                        style: {
+                            background: '#363636',
+                            color: '#fff',
+                        },
+                        success: {
+                            duration: 3000,
+                            iconTheme: {
+                                primary: '#6366f1',
+                                secondary: '#fff',
+                            },
+                        },
+                        error: {
+                            duration: 4000,
+                            iconTheme: {
+                                primary: '#ef4444',
+                                secondary: '#fff',
+                            },
+                        },
+                    }}
+                />
+            </>
+        );
+    }
+
+    const user = useAuthStore((state) => state.user);
+    /** Admins use only the admin portal; keep member UI separate */
+    if (user?.role === 'admin') {
+        return <Navigate to="/admin" replace />;
+    }
+
     const isMessagesPage = location.pathname.startsWith('/messages');
 
     return (
@@ -158,7 +255,7 @@ function AppContent() {
                     </div>
                 ) : (
                 <div className="flex-1 overflow-y-auto custom-scrollbar min-w-0 flex justify-center bg-[var(--bg-primary)]">
-                    <div className="w-full max-w-5xl min-w-0 flex flex-col pt-8 px-6 pb-6">
+                    <div className="min-w-0 flex flex-col w-full max-w-5xl pt-8 px-6 pb-6">
                         <Routes>
                         <Route
                             path="/home"
@@ -277,22 +374,6 @@ function AppContent() {
                             element={
                                 <ProtectedRoute>
                                     <SafetyCenter />
-                                </ProtectedRoute>
-                            }
-                        />
-                        <Route
-                            path="/admin/reports"
-                            element={
-                                <ProtectedRoute>
-                                    <AdminReports />
-                                </ProtectedRoute>
-                            }
-                        />
-                        <Route
-                            path="/admin/users"
-                            element={
-                                <ProtectedRoute>
-                                    <AdminUsers />
                                 </ProtectedRoute>
                             }
                         />

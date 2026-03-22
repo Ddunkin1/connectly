@@ -50,7 +50,8 @@ api.interceptors.response.use(
     (error) => {
         if (error.response?.status === 401) {
             useAuthStore.getState().logout();
-            window.location.href = '/login';
+            const path = typeof window !== 'undefined' ? window.location.pathname || '' : '';
+            window.location.href = path.startsWith('/admin') ? '/admin/login' : '/login';
         }
         return Promise.reject(error);
     }

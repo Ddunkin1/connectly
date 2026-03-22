@@ -72,7 +72,7 @@ class ReportController extends Controller
         ]);
 
         return response()->json([
-            'message' => 'Report submitted successfully. Our team will review it.',
+            'message' => 'Thanks — we received your report. Our team will investigate and follow up as soon as possible.',
             'report' => [
                 'id' => $report->id,
                 'status' => $report->status,
