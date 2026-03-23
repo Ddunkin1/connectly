@@ -1,8 +1,10 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { useRegister } from '../../hooks/useAuth';
 import { validateUsername } from '../../utils/validateForm';
+import useThemeStore from '../../store/themeStore';
+import AdminThemeToggle from '../../components/admin/AdminThemeToggle';
 import toast from 'react-hot-toast';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 
@@ -16,6 +18,11 @@ const Register = () => {
     const [isNavigating, setIsNavigating] = useState(false);
     const [apiError, setApiError] = useState(null);
     const fileInputRef = useRef(null);
+    const applyTheme = useThemeStore((s) => s.applyToDom);
+
+    useEffect(() => {
+        applyTheme();
+    }, [applyTheme]);
     
     const {
         register,
@@ -718,7 +725,12 @@ const Register = () => {
     };
 
     return (
-        <div className="min-h-screen flex">
+        <div className="member-canvas min-h-screen flex relative overflow-hidden">
+            <div className="member-orb pointer-events-none absolute -top-20 -left-16 h-72 w-72 rounded-full bg-blue-500/20 blur-[95px]" />
+            <div className="member-orb-slow pointer-events-none absolute top-1/3 -right-20 h-80 w-80 rounded-full bg-violet-500/20 blur-[105px]" />
+            <div className="fixed top-4 right-4 z-50">
+                <AdminThemeToggle />
+            </div>
             {/* Left Panel - Promotional Section */}
             <div className="hidden lg:flex lg:w-1/2 relative bg-gradient-to-br from-[#359EFF] via-[#2a8eef] to-[#1e7dd6]">
                 <div
@@ -749,15 +761,15 @@ const Register = () => {
             </div>
 
             {/* Right Panel - Registration Form */}
-            <div className="auth-form-panel w-full lg:w-1/2 flex items-center justify-center bg-white px-4 py-12 overflow-y-auto">
-                <div className="w-full max-w-md">
+            <div className="auth-form-panel w-full lg:w-1/2 flex items-center justify-center bg-[var(--theme-surface)]/40 px-4 py-12 overflow-y-auto backdrop-blur-sm">
+                <div className="member-shimmer w-full max-w-md rounded-3xl border border-[var(--theme-border)] bg-[var(--theme-surface)]/95 p-7 shadow-[0_24px_60px_-24px_rgba(37,99,235,0.45)] admin-fade-up">
                     {/* Logo for mobile */}
                     <div className="lg:hidden flex items-center justify-between mb-8">
                         <div className="flex items-center space-x-2">
                             <div className="w-10 h-10 bg-[#359EFF] rounded-lg flex items-center justify-center">
                                 <span className="text-white font-bold text-xl">C</span>
                             </div>
-                            <span className="text-xl font-bold text-gray-900">Connectly</span>
+                            <span className="text-xl font-bold text-[var(--text-primary)]">Connectly</span>
                         </div>
                         <button className="text-[#359EFF] font-medium hover:underline">Help</button>
                     </div>

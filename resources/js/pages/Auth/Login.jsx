@@ -3,7 +3,9 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { useLogin, useTwoFactorChallenge, useLogout } from '../../hooks/useAuth';
 import useAuthStore from '../../store/authStore';
+import useThemeStore from '../../store/themeStore';
 import Button from '../../components/common/Button';
+import AdminThemeToggle from '../../components/admin/AdminThemeToggle';
 import toast from 'react-hot-toast';
 
 const Login = () => {
@@ -16,6 +18,11 @@ const Login = () => {
     const [showTwoFactor, setShowTwoFactor] = useState(false);
     const [twoFactorCode, setTwoFactorCode] = useState('');
     const [apiError, setApiError] = useState(null);
+    const applyTheme = useThemeStore((s) => s.applyToDom);
+
+    useEffect(() => {
+        applyTheme();
+    }, [applyTheme]);
 
     useEffect(() => {
         if (searchParams.get('verified') === '1') {
@@ -82,7 +89,12 @@ const Login = () => {
     };
 
     return (
-        <div className="min-h-screen flex">
+        <div className="member-canvas min-h-screen flex relative overflow-hidden">
+            <div className="member-orb pointer-events-none absolute -top-20 -left-16 h-72 w-72 rounded-full bg-blue-500/20 blur-[95px]" />
+            <div className="member-orb-slow pointer-events-none absolute top-1/3 -right-20 h-80 w-80 rounded-full bg-violet-500/20 blur-[105px]" />
+            <div className="fixed top-4 right-4 z-50">
+                <AdminThemeToggle />
+            </div>
             {/* Left Panel - Promotional Section */}
             <div className="hidden lg:flex lg:w-1/2 relative bg-gradient-to-br from-[#359EFF] via-[#2a8eef] to-[#1e7dd6]">
                 <div
@@ -113,14 +125,14 @@ const Login = () => {
             </div>
 
             {/* Right Panel - Login Form */}
-            <div className="auth-form-panel w-full lg:w-1/2 flex items-center justify-center bg-white px-4 py-12">
-                <div className="w-full max-w-md">
+            <div className="auth-form-panel w-full lg:w-1/2 flex items-center justify-center bg-[var(--theme-surface)]/40 px-4 py-12 backdrop-blur-sm">
+                <div className="member-shimmer w-full max-w-md rounded-3xl border border-[var(--theme-border)] bg-[var(--theme-surface)]/95 p-7 shadow-[0_24px_60px_-24px_rgba(37,99,235,0.45)] admin-fade-up">
                     {/* Logo for mobile */}
                     <div className="lg:hidden flex items-center justify-center mb-8">
                         <div className="w-10 h-10 bg-[#359EFF] rounded-lg flex items-center justify-center">
                             <span className="text-white font-bold text-xl">C</span>
                         </div>
-                        <span className="ml-2 text-xl font-bold text-gray-900">Connectly</span>
+                        <span className="ml-2 text-xl font-bold text-[var(--text-primary)]">Connectly</span>
                     </div>
 
                     {/* API error (e.g. wrong credentials, suspended) */}
@@ -151,10 +163,14 @@ const Login = () => {
 
                     {/* Form Header */}
                     <div className="mb-8">
-                        <h1 className="text-3xl font-bold text-gray-900 mb-2">
+                        <p className="inline-flex items-center gap-2 rounded-full border border-[var(--theme-accent)]/30 bg-[var(--theme-accent)]/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--theme-accent)] mb-3">
+                            <span className="h-1.5 w-1.5 rounded-full bg-[var(--theme-accent)]" />
+                            Welcome back
+                        </p>
+                        <h1 className="text-3xl font-bold text-[var(--text-primary)] mb-2">
                             {showTwoFactor ? 'Two-factor authentication' : 'Sign in to your account'}
                         </h1>
-                        <p className="text-gray-600">
+                        <p className="text-[var(--text-secondary)]">
                             {showTwoFactor
                                 ? 'Enter the 6-digit code from your authenticator app.'
                                 : 'Welcome back! Please enter your details.'}
@@ -174,13 +190,13 @@ const Login = () => {
                                     onChange={(e) => setTwoFactorCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
                                     placeholder="000000"
                                     maxLength={6}
-                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#359EFF] focus:border-transparent text-center text-lg tracking-widest"
+                                    className="w-full px-4 py-3 border border-gray-300 dark:border-[var(--theme-border)] rounded-xl bg-white dark:bg-[var(--bg-primary)] text-center text-lg tracking-widest focus:outline-none focus:ring-2 focus:ring-[#359EFF] focus:border-transparent"
                                 />
                             </div>
                             <Button
                                 type="submit"
                                 disabled={twoFactorCode.length !== 6 || twoFactorMutation.isPending}
-                                className="w-full"
+                                className="member-shimmer w-full !rounded-xl"
                             >
                                 {twoFactorMutation.isPending ? 'Verifying...' : 'Verify'}
                             </Button>
@@ -208,7 +224,7 @@ const Login = () => {
                                 type="text"
                                 id="email"
                                 autoComplete="username"
-                                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#359EFF] focus:border-transparent transition-colors"
+                                className="w-full px-4 py-3 border border-gray-300 dark:border-[var(--theme-border)] rounded-xl bg-white dark:bg-[var(--bg-primary)] focus:outline-none focus:ring-2 focus:ring-[#359EFF] focus:border-transparent transition-colors"
                                 placeholder="name@company.com or username"
                             />
                             {errors.email && (
@@ -225,7 +241,7 @@ const Login = () => {
                                     {...register('password', { required: 'Password is required' })}
                                     type={showPassword ? 'text' : 'password'}
                                     id="password"
-                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#359EFF] focus:border-transparent transition-colors pr-12"
+                                    className="w-full px-4 py-3 border border-gray-300 dark:border-[var(--theme-border)] rounded-xl bg-white dark:bg-[var(--bg-primary)] focus:outline-none focus:ring-2 focus:ring-[#359EFF] focus:border-transparent transition-colors pr-12"
                                     placeholder="Enter your password"
                                 />
                                 <button
@@ -261,7 +277,7 @@ const Login = () => {
 
                         <Button
                             type="submit"
-                            className="w-full bg-[#359EFF] hover:bg-[#2a8eef] text-white font-semibold py-3 px-6 rounded-lg transition-colors flex items-center justify-center space-x-2"
+                            className="member-shimmer w-full bg-[#359EFF] hover:bg-[#2a8eef] text-white font-semibold py-3 px-6 rounded-xl transition-all duration-300 hover:-translate-y-[1px] flex items-center justify-center space-x-2"
                             disabled={loginMutation.isPending}
                             loading={loginMutation.isPending}
                         >
@@ -283,7 +299,7 @@ const Login = () => {
                     {/* Google Sign In */}
                     <a
                         href={`${import.meta.env.VITE_API_URL || '/api'}/auth/google`}
-                        className="w-full flex items-center justify-center space-x-3 px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors font-medium text-gray-700 no-underline"
+                        className="w-full flex items-center justify-center space-x-3 px-4 py-3 border border-gray-300 dark:border-[var(--theme-border)] rounded-xl hover:bg-gray-50 dark:hover:bg-[var(--theme-surface-hover)] transition-colors font-medium text-gray-700 dark:text-[var(--text-primary)] no-underline"
                     >
                         <svg className="w-5 h-5" viewBox="0 0 24 24">
                             <path
@@ -309,7 +325,7 @@ const Login = () => {
                     {/* Facebook Sign In */}
                     <a
                         href={`${import.meta.env.VITE_API_URL || '/api'}/auth/facebook`}
-                        className="w-full flex items-center justify-center space-x-3 px-4 py-3 mt-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors font-medium text-gray-700 no-underline"
+                        className="w-full flex items-center justify-center space-x-3 px-4 py-3 mt-3 border border-gray-300 dark:border-[var(--theme-border)] rounded-xl hover:bg-gray-50 dark:hover:bg-[var(--theme-surface-hover)] transition-colors font-medium text-gray-700 dark:text-[var(--text-primary)] no-underline"
                     >
                         <svg className="w-5 h-5" viewBox="0 0 24 24" fill="#1877F2">
                             <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>

@@ -41,7 +41,7 @@ const RightSidebar = () => {
         return (
             <aside className="w-[260px] h-full px-4 py-5 overflow-y-auto space-y-5">
                 {/* Trends card */}
-                <div className="rounded-2xl bg-[var(--theme-surface)] border border-[var(--theme-border)] p-4 space-y-3 shadow-post-card">
+                <div className="rounded-3xl bg-[var(--theme-surface)] border border-[var(--theme-border)] p-4 space-y-3 shadow-post-card">
                     <div className="flex items-center justify-between">
                         <h2 className="text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)]">
                             Trends for you
@@ -68,7 +68,7 @@ const RightSidebar = () => {
                 </div>
 
                 {/* Who to follow */}
-                <div className="rounded-2xl bg-[var(--theme-surface)] border border-[var(--theme-border)] p-4 space-y-3 shadow-post-card">
+                <div className="rounded-3xl bg-[var(--theme-surface)] border border-[var(--theme-border)] p-4 space-y-3 shadow-post-card">
                     <div className="flex items-center justify-between">
                         <h2 className="text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)]">Who to follow</h2>
                         <Link to="/connections" className="text-[11px] text-[var(--theme-accent)] hover:underline">Show more</Link>
@@ -83,7 +83,7 @@ const RightSidebar = () => {
                                         {user.username && <p className="text-xs text-[var(--text-secondary)] truncate">@{user.username}</p>}
                                     </div>
                                 </Link>
-                                <button type="button" className="px-3 py-1.5 rounded-full bg-[var(--theme-accent)] text-xs font-medium text-white hover:opacity-90 active:scale-[0.97] transition-all whitespace-nowrap shrink-0">
+                                <button type="button" className="px-3 py-1.5 rounded-full bg-[var(--theme-accent)] text-xs font-medium text-white hover:opacity-90 active:scale-[0.97] transition-colors whitespace-nowrap shrink-0">
                                     Follow
                                 </button>
                             </div>

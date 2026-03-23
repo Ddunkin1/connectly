@@ -48,7 +48,7 @@ const LeftSidebar = ({ className = '', onNavigate, positionBelowNav = false }) =
         });
     };
 
-    const wrapperClass = `w-[240px] flex flex-col px-4 pt-6 pb-4 bg-[var(--theme-bg-sidebar)]/95 backdrop-blur-xl z-30 overflow-y-auto h-full
+    const wrapperClass = `w-[240px] flex flex-col px-4 pt-6 pb-4 bg-[var(--theme-bg-sidebar)] z-30 overflow-y-auto h-full border-r border-white/5
         ${className}`.trim();
 
     const handleNavClick = () => { onNavigate?.(); };
@@ -60,7 +60,7 @@ const LeftSidebar = ({ className = '', onNavigate, positionBelowNav = false }) =
                     <button
                         type="button"
                         onClick={() => setShowUserMenu((v) => !v)}
-                        className="w-full flex items-center gap-3 px-3 py-2.5 rounded-2xl bg-[var(--theme-surface)] hover:bg-[var(--theme-surface-hover)] transition-colors cursor-pointer text-left shadow-sm"
+                        className="w-full flex items-center gap-3 px-3 py-2.5 rounded-2xl bg-[var(--theme-surface)] hover:bg-[var(--theme-surface-hover)] transition-colors cursor-pointer text-left shadow-sm border border-white/5"
                     >
                         <Avatar src={user.profile_picture} alt={user.name} size="md" className="w-10 h-10 rounded-full shrink-0" />
                         <div className="flex flex-col overflow-hidden">
@@ -112,10 +112,10 @@ const LeftSidebar = ({ className = '', onNavigate, positionBelowNav = false }) =
                             key={item.path}
                             to={item.path}
                             onClick={handleNavClick}
-                            className={`group flex items-center gap-3 px-4 py-2.5 rounded-2xl transition-all relative ${
+                            className={`group flex items-center gap-3 px-4 py-2.5 rounded-2xl transition-colors relative ${
                                 isActive
                                     ? 'bg-primary/10 text-primary shadow-[0_10px_30px_rgba(37,99,235,0.25)]'
-                                    : 'text-slate-500 hover:text-[var(--text-primary)] hover:bg-white/5'
+                                    : 'text-slate-500 hover:text-[var(--text-primary)] hover:bg-white/10'
                             }`}
                         >
                             <span

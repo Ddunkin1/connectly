@@ -30,7 +30,7 @@ const Modal = ({ isOpen, onClose, title, children, size = 'md' }) => {
         <div className="fixed inset-0 z-50 overflow-hidden admin-fade-up" role="dialog" aria-modal="true">
             <div className="flex items-center justify-center h-full p-4 text-center">
                 <div
-                    className="fixed inset-0 z-40 transition-opacity bg-gradient-to-br from-fuchsia-500/10 via-transparent to-indigo-500/10 backdrop-blur-[1px]"
+                    className="fixed inset-0 z-40 transition-opacity bg-black/55 backdrop-blur-[1px]"
                     aria-hidden="true"
                     onClick={onClose}
                 />
@@ -41,7 +41,7 @@ const Modal = ({ isOpen, onClose, title, children, size = 'md' }) => {
                     onClick={(e) => e.stopPropagation()}
                 >
                     {title && (
-                        <div className="px-5 py-3 border-b border-[var(--theme-border)] shrink-0 bg-gradient-to-r from-[var(--theme-surface-hover)]/65 to-[var(--theme-accent)]/10">
+                        <div className="px-5 py-3 border-b border-[var(--theme-border)] shrink-0 bg-[var(--theme-surface-hover)]/65">
                             <h3 className="text-base font-semibold text-[var(--text-primary)]">{title}</h3>
                         </div>
                     )}

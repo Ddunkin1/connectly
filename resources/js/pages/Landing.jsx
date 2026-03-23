@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { useLogin } from '../hooks/useAuth';
+import AdminThemeToggle from '../components/admin/AdminThemeToggle';
 
 const Landing = () => {
     const navigate = useNavigate();
@@ -30,9 +31,14 @@ const Landing = () => {
     };
 
     return (
-        <div className="auth-form-panel min-h-screen bg-white">
+        <div className="auth-form-panel member-canvas min-h-screen bg-[#f5f8ff] relative overflow-hidden">
+            <div className="fixed top-4 right-4 z-50">
+                <AdminThemeToggle />
+            </div>
+            <div className="member-orb pointer-events-none absolute -top-20 left-0 h-72 w-72 rounded-full bg-blue-400/25 blur-[95px]" />
+            <div className="member-orb-slow pointer-events-none absolute top-1/2 -right-20 h-80 w-80 rounded-full bg-violet-400/25 blur-[105px]" />
             {/* Header */}
-            <header className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <header className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 relative z-10">
                 <div className="flex items-center justify-between">
                     {/* Logo */}
                     <div className="flex items-center space-x-2">
@@ -55,7 +61,7 @@ const Landing = () => {
                             Log In
                         </Link>
                         <Link to="/register">
-                            <button className="px-5 py-2 bg-[#359EFF] text-white rounded-lg font-medium hover:bg-[#2a8eef] transition-colors">
+                            <button className="member-shimmer px-5 py-2 bg-[#359EFF] text-white rounded-xl font-medium hover:bg-[#2a8eef] transition-all duration-300 hover:-translate-y-[1px]">
                                 Sign Up
                             </button>
                         </Link>
@@ -64,24 +70,27 @@ const Landing = () => {
             </header>
 
             {/* Hero Section */}
-            <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-20">
+            <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-20 relative z-10">
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
                     {/* Left Side - Marketing Content */}
-                    <div>
+                    <div className="admin-fade-up">
                         <div className="inline-block mb-6">
                             <span className="px-4 py-1.5 bg-[#359EFF]/10 text-[#359EFF] rounded-full text-sm font-medium">
                                 NOW IN BETA
                             </span>
                         </div>
                         <h1 className="text-5xl md:text-6xl font-bold text-gray-900 mb-6 leading-tight">
-                            Connect with your world
+                            Social media that
+                            <span className="block bg-gradient-to-r from-[#359EFF] via-violet-500 to-indigo-600 bg-clip-text text-transparent">
+                                feels alive
+                            </span>
                         </h1>
                         <p className="text-xl text-gray-600 mb-8 leading-relaxed">
                             Join thousands of people building communities and chatting in real-time. Secure, fast, and free.
                         </p>
                         <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-4 sm:space-y-0 sm:space-x-4">
                             <Link to="/register">
-                                <button className="px-8 py-3 bg-[#359EFF] text-white rounded-lg font-semibold hover:bg-[#2a8eef] transition-colors shadow-lg">
+                                <button className="member-shimmer px-8 py-3 bg-[#359EFF] text-white rounded-xl font-semibold hover:bg-[#2a8eef] transition-all duration-300 shadow-lg hover:-translate-y-[2px]">
                                     Get Started - It's Free
                                 </button>
                             </Link>
@@ -93,15 +102,15 @@ const Landing = () => {
                     </div>
 
                     {/* Right Side - Login/Signup Form */}
-                    <div className="bg-white rounded-2xl border border-gray-200 shadow-xl p-8">
+                    <div className="member-shimmer bg-white/90 dark:bg-[var(--theme-surface)] rounded-3xl border border-white dark:border-[var(--theme-border)] shadow-[0_24px_60px_-24px_rgba(37,99,235,0.45)] p-8 backdrop-blur-sm admin-fade-up">
                         {/* Tabs */}
-                        <div className="flex border-b border-gray-200 mb-6">
+                        <div className="flex border-b border-gray-200 dark:border-[var(--theme-border)] mb-6">
                             <button
                                 onClick={() => { setActiveTab('login'); setLoginError(null); }}
                                 className={`flex-1 py-3 font-medium text-center transition-colors ${
                                     activeTab === 'login'
                                         ? 'text-[#359EFF] border-b-2 border-[#359EFF]'
-                                        : 'text-gray-500 hover:text-gray-700'
+                                        : 'text-gray-500 dark:text-[var(--text-secondary)] hover:text-gray-700 dark:hover:text-[var(--text-primary)]'
                                 }`}
                             >
                                 Log In
@@ -111,7 +120,7 @@ const Landing = () => {
                                 className={`flex-1 py-3 font-medium text-center transition-colors ${
                                     activeTab === 'signup'
                                         ? 'text-[#359EFF] border-b-2 border-[#359EFF]'
-                                        : 'text-gray-500 hover:text-gray-700'
+                                        : 'text-gray-500 dark:text-[var(--text-secondary)] hover:text-gray-700 dark:hover:text-[var(--text-primary)]'
                                 }`}
                             >
                                 Sign Up
@@ -128,7 +137,7 @@ const Landing = () => {
                         {activeTab === 'login' ? (
                             <form onSubmit={handleSubmit(onLoginSubmit)} className="space-y-5">
                                 <div>
-                                    <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+                                    <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-[var(--text-secondary)] mb-2">
                                         Email Address
                                     </label>
                                     <input
@@ -141,7 +150,7 @@ const Landing = () => {
                                         })}
                                         type="email"
                                         id="email"
-                                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#359EFF] focus:border-transparent"
+                                        className="w-full px-4 py-3 border border-gray-300 dark:border-[var(--theme-border)] rounded-lg bg-white dark:bg-[var(--bg-primary)] text-gray-900 dark:text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[#359EFF] focus:border-transparent"
                                         placeholder="name@example.com"
                                     />
                                     {errors.email && (
@@ -151,7 +160,7 @@ const Landing = () => {
 
                                 <div>
                                     <div className="flex items-center justify-between mb-2">
-                                        <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+                                        <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-[var(--text-secondary)]">
                                             Password
                                         </label>
                                         <Link to="/forgot-password" className="text-sm text-[#359EFF] hover:underline">
@@ -163,13 +172,13 @@ const Landing = () => {
                                             {...register('password', { required: 'Password is required' })}
                                             type={showPassword ? 'text' : 'password'}
                                             id="password"
-                                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#359EFF] focus:border-transparent pr-12"
+                                            className="w-full px-4 py-3 border border-gray-300 dark:border-[var(--theme-border)] rounded-lg bg-white dark:bg-[var(--bg-primary)] text-gray-900 dark:text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[#359EFF] focus:border-transparent pr-12"
                                             placeholder="Enter your password"
                                         />
                                         <button
                                             type="button"
                                             onClick={() => setShowPassword(!showPassword)}
-                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-[var(--text-secondary)] hover:text-gray-700 dark:hover:text-[var(--text-primary)]"
                                         >
                                             <span className="material-symbols-outlined text-xl">
                                                 {showPassword ? 'visibility_off' : 'visibility'}
@@ -183,7 +192,7 @@ const Landing = () => {
 
                                 <button
                                     type="submit"
-                                    className="w-full py-3 bg-[#359EFF] text-white rounded-lg font-semibold hover:bg-[#2a8eef] transition-colors"
+                                    className="member-shimmer w-full py-3 bg-[#359EFF] text-white rounded-xl font-semibold hover:bg-[#2a8eef] transition-all duration-300 hover:-translate-y-[1px]"
                                     disabled={loginMutation.isPending}
                                 >
                                     {loginMutation.isPending ? 'Logging in...' : 'Log In'}
@@ -191,9 +200,9 @@ const Landing = () => {
                             </form>
                         ) : (
                             <div className="text-center py-8">
-                                <p className="text-gray-600 mb-6">Create your account to get started</p>
+                                <p className="text-gray-600 dark:text-[var(--text-secondary)] mb-6">Create your account to get started</p>
                                 <Link to="/register">
-                                    <button className="w-full py-3 bg-[#359EFF] text-white rounded-lg font-semibold hover:bg-[#2a8eef] transition-colors">
+                                    <button className="member-shimmer w-full py-3 bg-[#359EFF] text-white rounded-xl font-semibold hover:bg-[#2a8eef] transition-all duration-300 hover:-translate-y-[1px]">
                                         Sign Up Now
                                     </button>
                                 </Link>
@@ -203,10 +212,10 @@ const Landing = () => {
                         {/* Divider */}
                         <div className="relative my-6">
                             <div className="absolute inset-0 flex items-center">
-                                <div className="w-full border-t border-gray-300"></div>
+                                <div className="w-full border-t border-gray-300 dark:border-[var(--theme-border)]"></div>
                             </div>
                             <div className="relative flex justify-center text-sm">
-                                <span className="px-4 bg-white text-gray-500 font-medium">OR CONTINUE WITH</span>
+                                <span className="px-4 bg-white dark:bg-[var(--theme-surface)] text-gray-500 dark:text-[var(--text-secondary)] font-medium">OR CONTINUE WITH</span>
                             </div>
                         </div>
 
@@ -214,7 +223,7 @@ const Landing = () => {
                         <div className="space-y-3">
                             <a
                                 href={`${import.meta.env.VITE_API_URL || '/api'}/auth/google`}
-                                className="w-full flex items-center justify-center space-x-3 px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors font-medium text-gray-700 no-underline"
+                                className="w-full flex items-center justify-center space-x-3 px-4 py-3 border border-gray-300 dark:border-[var(--theme-border)] rounded-lg hover:bg-gray-50 dark:hover:bg-[var(--theme-surface-hover)] transition-colors font-medium text-gray-700 dark:text-[var(--text-primary)] no-underline"
                             >
                                 <svg className="w-5 h-5" viewBox="0 0 24 24">
                                     <path
@@ -238,7 +247,7 @@ const Landing = () => {
                             </a>
                             <button
                                 type="button"
-                                className="w-full flex items-center justify-center space-x-3 px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors font-medium text-gray-700"
+                                className="w-full flex items-center justify-center space-x-3 px-4 py-3 border border-gray-300 dark:border-[var(--theme-border)] rounded-lg hover:bg-gray-50 dark:hover:bg-[var(--theme-surface-hover)] transition-colors font-medium text-gray-700 dark:text-[var(--text-primary)]"
                             >
                                 <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
                                     <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
@@ -251,47 +260,47 @@ const Landing = () => {
             </section>
 
             {/* Features Section */}
-            <section id="features" className="bg-gray-50 py-20">
+            <section id="features" className="bg-[var(--theme-surface)]/55 py-20">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="text-center mb-12">
-                        <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
+                        <h2 className="text-4xl md:text-5xl font-bold text-[var(--text-primary)] mb-4">
                             Built for modern collaboration
                         </h2>
-                        <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+                        <p className="text-xl text-[var(--text-secondary)] max-w-3xl mx-auto">
                             Discover how Connectly brings people together with powerful tools designed for simplicity and scale.
                         </p>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                         {/* Communities Feature */}
-                        <div className="bg-white rounded-xl p-8 shadow-sm hover:shadow-lg transition-shadow">
+                        <div className="member-shimmer bg-[var(--theme-surface)] rounded-2xl border border-[var(--theme-border)] p-8 shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
                             <div className="w-12 h-12 bg-[#359EFF]/10 rounded-lg flex items-center justify-center mb-6">
                                 <span className="material-symbols-outlined text-[#359EFF] text-3xl">groups</span>
                             </div>
-                            <h3 className="text-2xl font-bold text-gray-900 mb-3">Communities</h3>
-                            <p className="text-gray-600 leading-relaxed">
+                            <h3 className="text-2xl font-bold text-[var(--text-primary)] mb-3">Communities</h3>
+                            <p className="text-[var(--text-secondary)] leading-relaxed">
                                 Find your niche and grow together. Create or join vibrant spaces tailored to your specific interests.
                             </p>
                         </div>
 
                         {/* Real-time Chat Feature */}
-                        <div className="bg-white rounded-xl p-8 shadow-sm hover:shadow-lg transition-shadow">
+                        <div className="member-shimmer bg-[var(--theme-surface)] rounded-2xl border border-[var(--theme-border)] p-8 shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
                             <div className="w-12 h-12 bg-[#359EFF]/10 rounded-lg flex items-center justify-center mb-6">
                                 <span className="material-symbols-outlined text-[#359EFF] text-3xl">chat_bubble</span>
                             </div>
-                            <h3 className="text-2xl font-bold text-gray-900 mb-3">Real-time Chat</h3>
-                            <p className="text-gray-600 leading-relaxed">
+                            <h3 className="text-2xl font-bold text-[var(--text-primary)] mb-3">Real-time Chat</h3>
+                            <p className="text-[var(--text-secondary)] leading-relaxed">
                                 Instant messaging with zero lag. Connect instantly with members across the globe with low latency.
                             </p>
                         </div>
 
                         {/* Privacy Feature */}
-                        <div className="bg-white rounded-xl p-8 shadow-sm hover:shadow-lg transition-shadow">
+                        <div className="member-shimmer bg-[var(--theme-surface)] rounded-2xl border border-[var(--theme-border)] p-8 shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
                             <div className="w-12 h-12 bg-[#359EFF]/10 rounded-lg flex items-center justify-center mb-6">
                                 <span className="material-symbols-outlined text-[#359EFF] text-3xl">shield</span>
                             </div>
-                            <h3 className="text-2xl font-bold text-gray-900 mb-3">Privacy</h3>
-                            <p className="text-gray-600 leading-relaxed">
+                            <h3 className="text-2xl font-bold text-[var(--text-primary)] mb-3">Privacy</h3>
+                            <p className="text-[var(--text-secondary)] leading-relaxed">
                                 Your data belongs to you, always encrypted. We prioritize your digital safety with end-to-end security.
                             </p>
                         </div>
@@ -300,20 +309,20 @@ const Landing = () => {
             </section>
 
             {/* Ready to Join Section */}
-            <section className="py-20">
+            <section className="py-20 bg-[var(--bg-primary)]/35">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
                         {/* Left Side - Image */}
                         <div className="relative">
-                            <div className="bg-gradient-to-br from-teal-100 to-green-100 rounded-2xl p-12 aspect-square flex items-center justify-center">
+                            <div className="bg-gradient-to-br from-teal-100 to-green-100 dark:from-teal-500/25 dark:to-emerald-500/20 rounded-2xl p-12 aspect-square flex items-center justify-center">
                                 <div className="text-center">
-                                    <div className="w-32 h-32 bg-white rounded-full mx-auto mb-4 flex items-center justify-center shadow-lg">
+                                    <div className="w-32 h-32 bg-white/95 dark:bg-[var(--theme-surface)] rounded-full mx-auto mb-4 flex items-center justify-center shadow-lg">
                                         <span className="material-symbols-outlined text-6xl text-[#359EFF]">person</span>
                                     </div>
                                     <div className="grid grid-cols-3 gap-2 mt-8">
                                         {[1, 2, 3, 4, 5, 6].map((i) => (
-                                            <div key={i} className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-md">
-                                                <span className="text-xs text-gray-600">U{i}</span>
+                                            <div key={i} className="w-12 h-12 bg-white/95 dark:bg-[var(--theme-surface)] rounded-full flex items-center justify-center shadow-md">
+                                                <span className="text-xs text-gray-600 dark:text-[var(--text-secondary)]">U{i}</span>
                                             </div>
                                         ))}
                                     </div>
@@ -323,29 +332,29 @@ const Landing = () => {
 
                         {/* Right Side - Benefits */}
                         <div>
-                            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
+                            <h2 className="text-4xl md:text-5xl font-bold text-[var(--text-primary)] mb-6">
                                 Ready to join the conversation?
                             </h2>
-                            <p className="text-xl text-gray-600 mb-8 leading-relaxed">
+                            <p className="text-xl text-[var(--text-secondary)] mb-8 leading-relaxed">
                                 Connectly is more than just a chat app. It's where ideas take root and friendships are built. Join our ever-growing network today.
                             </p>
                             <div className="space-y-4">
                                 <div className="flex items-center space-x-3">
                                     <span className="material-symbols-outlined text-green-500 text-2xl">check_circle</span>
-                                    <span className="text-lg text-gray-700">256-bit AES encryption</span>
+                                    <span className="text-lg text-[var(--text-primary)]">256-bit AES encryption</span>
                                 </div>
                                 <div className="flex items-center space-x-3">
                                     <span className="material-symbols-outlined text-green-500 text-2xl">check_circle</span>
-                                    <span className="text-lg text-gray-700">Unlimited community members</span>
+                                    <span className="text-lg text-[var(--text-primary)]">Unlimited community members</span>
                                 </div>
                                 <div className="flex items-center space-x-3">
                                     <span className="material-symbols-outlined text-green-500 text-2xl">check_circle</span>
-                                    <span className="text-lg text-gray-700">Mobile and desktop apps</span>
+                                    <span className="text-lg text-[var(--text-primary)]">Mobile and desktop apps</span>
                                 </div>
                             </div>
                             <div className="mt-8">
                                 <Link to="/register">
-                                    <button className="px-8 py-3 bg-[#359EFF] text-white rounded-lg font-semibold hover:bg-[#2a8eef] transition-colors shadow-lg">
+                                    <button className="member-shimmer px-8 py-3 bg-[#359EFF] text-white rounded-xl font-semibold hover:bg-[#2a8eef] transition-all duration-300 shadow-lg hover:-translate-y-[1px]">
                                         Get Started Free
                                     </button>
                                 </Link>
@@ -356,7 +365,7 @@ const Landing = () => {
             </section>
 
             {/* Footer */}
-            <footer className="bg-gray-50 border-t border-gray-200 py-8">
+            <footer className="bg-[var(--theme-surface)] border-t border-[var(--theme-border)] py-8">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex flex-col md:flex-row items-center justify-between">
                         {/* Left - Logo & Copyright */}
@@ -364,29 +373,29 @@ const Landing = () => {
                             <div className="w-6 h-6 bg-[#359EFF] rounded flex items-center justify-center">
                                 <span className="text-white font-bold text-sm">C</span>
                             </div>
-                            <span className="text-gray-700 font-semibold">Connectly</span>
-                            <span className="text-gray-500">© 2024</span>
+                            <span className="text-[var(--text-primary)] font-semibold">Connectly</span>
+                            <span className="text-[var(--text-secondary)]">© 2024</span>
                         </div>
 
                         {/* Center - Links */}
                         <nav className="flex items-center space-x-6 mb-4 md:mb-0">
-                            <Link to="/privacy" className="text-gray-600 hover:text-[#359EFF] transition-colors text-sm">
+                            <Link to="/privacy" className="text-[var(--text-secondary)] hover:text-[#359EFF] transition-colors text-sm">
                                 Privacy Policy
                             </Link>
-                            <Link to="/terms" className="text-gray-600 hover:text-[#359EFF] transition-colors text-sm">
+                            <Link to="/terms" className="text-[var(--text-secondary)] hover:text-[#359EFF] transition-colors text-sm">
                                 Terms of Service
                             </Link>
-                            <Link to="/contact" className="text-gray-600 hover:text-[#359EFF] transition-colors text-sm">
+                            <Link to="/contact" className="text-[var(--text-secondary)] hover:text-[#359EFF] transition-colors text-sm">
                                 Contact Us
                             </Link>
                         </nav>
 
                         {/* Right - Icons */}
                         <div className="flex items-center space-x-4">
-                            <button className="text-gray-600 hover:text-[#359EFF] transition-colors">
+                            <button className="text-[var(--text-secondary)] hover:text-[#359EFF] transition-colors">
                                 <span className="material-symbols-outlined">language</span>
                             </button>
-                            <button className="text-gray-600 hover:text-[#359EFF] transition-colors">
+                            <button className="text-[var(--text-secondary)] hover:text-[#359EFF] transition-colors">
                                 <span className="material-symbols-outlined">chat_bubble</span>
                             </button>
                         </div>

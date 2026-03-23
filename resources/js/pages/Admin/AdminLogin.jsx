@@ -120,14 +120,15 @@ const AdminLogin = () => {
     };
 
     return (
-        <div className="relative min-h-screen flex items-center justify-center bg-[var(--bg-primary)] px-4 py-10 text-[var(--text-primary)] overflow-hidden">
-            <div className="pointer-events-none absolute -top-24 -left-20 h-72 w-72 rounded-full bg-fuchsia-500/15 blur-[95px]" />
-            <div className="pointer-events-none absolute top-1/3 -right-16 h-72 w-72 rounded-full bg-indigo-500/15 blur-[95px]" />
+        <div className="admin-login-canvas relative min-h-screen flex items-center justify-center bg-[var(--bg-primary)] px-4 py-10 text-[var(--text-primary)] overflow-hidden">
+            <div className="admin-login-orb pointer-events-none absolute -top-24 -left-20 h-72 w-72 rounded-full bg-fuchsia-500/25 blur-[95px]" />
+            <div className="admin-login-orb-slow pointer-events-none absolute top-1/3 -right-16 h-72 w-72 rounded-full bg-indigo-500/25 blur-[95px]" />
+            <div className="admin-login-orb-fast pointer-events-none absolute -bottom-28 left-1/3 h-80 w-80 rounded-full bg-violet-500/20 blur-[110px]" />
             <div className="fixed top-4 right-4 z-50">
                 <AdminThemeToggle />
             </div>
 
-            <div className="relative z-10 w-full max-w-md rounded-3xl border border-[var(--theme-border)] bg-[var(--theme-surface)]/95 shadow-[0_24px_60px_-24px_rgba(0,0,0,0.75)] overflow-hidden min-h-[560px] admin-fade-up">
+            <div className="admin-login-card admin-shimmer relative z-10 w-full max-w-md rounded-3xl border border-[var(--theme-border)] bg-[var(--theme-surface)]/95 shadow-[0_24px_60px_-24px_rgba(0,0,0,0.75)] overflow-hidden min-h-[560px]">
                 <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/25 to-transparent" />
                 <div className="p-8 sm:p-10 flex flex-col justify-center h-full">
                     {showTwoFactor ? (
@@ -148,7 +149,7 @@ const AdminLogin = () => {
                             <button
                                 type="submit"
                                 disabled={twoFactorMutation.isPending || twoFactorCode.length !== 6}
-                                className="mt-4 w-full rounded-xl bg-gradient-to-r from-fuchsia-600 via-violet-600 to-indigo-600 text-white font-semibold py-3.5 hover:opacity-95 disabled:opacity-60 transition-all duration-300 hover:-translate-y-[1px]"
+                                className="admin-login-cta mt-4 w-full rounded-xl bg-gradient-to-r from-fuchsia-600 via-violet-600 to-indigo-600 text-white font-semibold py-3.5 hover:opacity-95 disabled:opacity-60 transition-all duration-300 hover:-translate-y-[1px]"
                             >
                                 {twoFactorMutation.isPending ? 'Verifying…' : 'Verify & continue'}
                             </button>
@@ -166,6 +167,14 @@ const AdminLogin = () => {
                         </form>
                     ) : (
                         <div className="w-full">
+                            <div className="mb-4 flex items-center gap-3">
+                                <div className="admin-login-logo-pulse flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-[#359EFF] to-indigo-600">
+                                    <span className="text-white font-bold text-lg leading-none">C</span>
+                                </div>
+                                <span className="text-sm font-semibold uppercase tracking-[0.16em] text-[var(--text-secondary)]">
+                                    Admin Portal
+                                </span>
+                            </div>
                             <h2 className="text-2xl font-extrabold tracking-tight text-[var(--text-primary)]">Admin sign in</h2>
                             <p className="text-sm text-[var(--text-secondary)] mt-2">
                                 Real-time validation is enabled. Enter your admin credentials to continue.
@@ -279,7 +288,7 @@ const AdminLogin = () => {
                                 <button
                                     type="submit"
                                     disabled={!canSubmit}
-                                    className="w-full rounded-xl bg-gradient-to-r from-fuchsia-600 via-violet-600 to-indigo-600 text-white font-semibold py-3.5 shadow-lg shadow-violet-500/30 hover:opacity-95 disabled:opacity-60 flex items-center justify-center gap-2 transition-all duration-300 hover:-translate-y-[1px]"
+                                    className="admin-login-cta w-full rounded-xl bg-gradient-to-r from-fuchsia-600 via-violet-600 to-indigo-600 text-white font-semibold py-3.5 shadow-lg shadow-violet-500/30 hover:opacity-95 disabled:opacity-60 flex items-center justify-center gap-2 transition-all duration-300 hover:-translate-y-[1px]"
                                 >
                                     {loginMutation.isPending ? 'Signing in…' : 'Sign In to Dashboard'}
                                     {!loginMutation.isPending && (

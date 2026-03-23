@@ -55,18 +55,34 @@ html.dark #app-root {
 }
 html.dark .text-inherit { color: inherit; }
 
-/* Auth pages (Register/Login): form panel is always light – force dark text on white so it's visible even when app theme is dark */
+/* Auth pages (Landing/Login/Register): theme-aware text + inputs */
 .auth-form-panel {
-    color: #1a1a1a;
+    color: var(--text-primary);
 }
-.auth-form-panel .text-gray-500 { color: #374151 !important; }
-.auth-form-panel .text-gray-600 { color: #4b5563 !important; }
-.auth-form-panel .text-gray-700 { color: #374151 !important; }
-.auth-form-panel .text-gray-900 { color: #111827 !important; }
-.auth-form-panel input,
-.auth-form-panel textarea { color: #1a1a1a !important; }
-.auth-form-panel input::placeholder,
-.auth-form-panel textarea::placeholder { color: #6b7280 !important; }
+html:not(.dark) .auth-form-panel .text-gray-500 { color: #374151 !important; }
+html:not(.dark) .auth-form-panel .text-gray-600 { color: #4b5563 !important; }
+html:not(.dark) .auth-form-panel .text-gray-700 { color: #374151 !important; }
+html:not(.dark) .auth-form-panel .text-gray-900 { color: #111827 !important; }
+html:not(.dark) .auth-form-panel input,
+html:not(.dark) .auth-form-panel textarea { color: #1a1a1a !important; }
+html:not(.dark) .auth-form-panel input::placeholder,
+html:not(.dark) .auth-form-panel textarea::placeholder { color: #6b7280 !important; }
+
+html.dark .auth-form-panel .text-gray-500,
+html.dark .auth-form-panel .text-gray-600,
+html.dark .auth-form-panel .text-gray-700 { color: var(--text-secondary, #a0a0a0) !important; }
+html.dark .auth-form-panel .text-gray-900,
+html.dark .auth-form-panel .text-black { color: var(--text-primary, #ffffff) !important; }
+html.dark .auth-form-panel input,
+html.dark .auth-form-panel textarea {
+    color: var(--text-primary, #ffffff) !important;
+    background-color: color-mix(in srgb, var(--theme-surface) 85%, black) !important;
+    border-color: var(--theme-border, #26262E) !important;
+}
+html.dark .auth-form-panel input::placeholder,
+html.dark .auth-form-panel textarea::placeholder {
+    color: color-mix(in srgb, var(--text-secondary, #a0a0a0) 85%, #ffffff 15%) !important;
+}
 
 /* Light mode: explicit overrides when not dark */
 html:not(.dark),
@@ -486,6 +502,156 @@ html:not(.dark) .admin-shimmer::after {
         rgba(99, 102, 241, 0.03) 72%,
         transparent 100%
     );
+}
+
+/* Admin login animation system */
+@keyframes admin-login-orb-float {
+    0% {
+        transform: translate3d(0, 0, 0) scale(1);
+        opacity: 0.38;
+    }
+    35% {
+        transform: translate3d(16px, -20px, 0) scale(1.08);
+        opacity: 0.62;
+    }
+    68% {
+        transform: translate3d(-14px, 14px, 0) scale(0.96);
+        opacity: 0.48;
+    }
+    100% {
+        transform: translate3d(0, 0, 0) scale(1);
+        opacity: 0.38;
+    }
+}
+
+@keyframes admin-login-card-pop {
+    0% {
+        opacity: 0;
+        transform: translateY(16px) scale(0.98);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@keyframes admin-login-logo-pulse {
+    0%,
+    100% {
+        transform: translateY(0) scale(1);
+        box-shadow: 0 10px 28px -16px rgba(99, 102, 241, 0.7);
+    }
+    50% {
+        transform: translateY(-2px) scale(1.06);
+        box-shadow: 0 16px 36px -14px rgba(139, 92, 246, 0.85);
+    }
+}
+
+@keyframes admin-login-button-breathe {
+    0%,
+    100% {
+        box-shadow: 0 10px 28px -16px rgba(99, 102, 241, 0.65);
+    }
+    50% {
+        box-shadow: 0 20px 38px -14px rgba(139, 92, 246, 0.85);
+    }
+}
+
+.admin-login-canvas {
+    position: relative;
+    background:
+        radial-gradient(900px 500px at 8% -8%, rgba(236, 72, 153, 0.2), transparent 60%),
+        radial-gradient(860px 500px at 102% 14%, rgba(99, 102, 241, 0.2), transparent 62%),
+        radial-gradient(800px 460px at 50% 112%, rgba(139, 92, 246, 0.15), transparent 64%);
+}
+html.dark .admin-login-canvas {
+    background:
+        radial-gradient(900px 500px at 8% -8%, rgba(236, 72, 153, 0.24), transparent 60%),
+        radial-gradient(860px 500px at 102% 14%, rgba(99, 102, 241, 0.26), transparent 62%),
+        radial-gradient(800px 460px at 50% 112%, rgba(139, 92, 246, 0.2), transparent 64%);
+}
+
+.admin-login-orb {
+    animation: admin-login-orb-float 10s ease-in-out infinite;
+}
+.admin-login-orb-slow {
+    animation: admin-login-orb-float 14s ease-in-out infinite reverse;
+}
+.admin-login-orb-fast {
+    animation: admin-login-orb-float 7s ease-in-out infinite;
+}
+
+.admin-login-card {
+    animation: admin-login-card-pop 0.45s ease-out both;
+}
+
+.admin-login-logo-pulse {
+    animation: admin-login-logo-pulse 2.8s ease-in-out infinite;
+}
+
+.admin-login-cta {
+    animation: admin-login-button-breathe 2.6s ease-in-out infinite;
+}
+
+/* Member app motion system */
+@keyframes member-orb-float {
+    0% {
+        transform: translate3d(0, 0, 0) scale(1);
+        opacity: 0.32;
+    }
+    35% {
+        transform: translate3d(14px, -16px, 0) scale(1.08);
+        opacity: 0.52;
+    }
+    68% {
+        transform: translate3d(-12px, 10px, 0) scale(0.96);
+        opacity: 0.4;
+    }
+    100% {
+        transform: translate3d(0, 0, 0) scale(1);
+        opacity: 0.32;
+    }
+}
+
+@keyframes member-shimmer {
+    0% { transform: translateX(-120%) skewX(-18deg); opacity: 0; }
+    22% { opacity: 0.35; }
+    100% { transform: translateX(150%) skewX(-18deg); opacity: 0; }
+}
+
+.member-canvas {
+    position: relative;
+    background:
+        radial-gradient(900px 420px at 88% -8%, rgba(59, 130, 246, 0.15), transparent 60%),
+        radial-gradient(860px 420px at -6% 66%, rgba(139, 92, 246, 0.14), transparent 62%),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.01), rgba(255, 255, 255, 0));
+}
+html.dark .member-canvas {
+    background:
+        radial-gradient(900px 420px at 88% -8%, rgba(59, 130, 246, 0.2), transparent 60%),
+        radial-gradient(860px 420px at -6% 66%, rgba(139, 92, 246, 0.2), transparent 62%),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0));
+}
+
+.member-orb { animation: member-orb-float 9s ease-in-out infinite; }
+.member-orb-slow { animation: member-orb-float 13s ease-in-out infinite reverse; }
+.member-orb-fast { animation: member-orb-float 7s ease-in-out infinite; }
+
+.member-shimmer {
+    position: relative;
+    overflow: hidden;
+}
+.member-shimmer::after {
+    content: '';
+    position: absolute;
+    top: -20%;
+    left: 0;
+    width: 44%;
+    height: 140%;
+    transform: translateX(-120%) skewX(-18deg);
+    background: linear-gradient(90deg, transparent 0%, rgba(59, 130, 246, 0.02) 30%, rgba(139, 92, 246, 0.2) 50%, rgba(59, 130, 246, 0.02) 70%, transparent 100%);
+    pointer-events: none;
+    animation: member-shimmer 3.2s ease-in-out infinite;
 }
 
 /* Focus states for accessibility */

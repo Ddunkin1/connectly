@@ -68,7 +68,7 @@ const AppTopBar = ({ onMenuToggle, showMenuButton = false }) => {
     };
 
     return (
-        <header className="fixed top-0 left-0 right-0 h-[60px] z-40 flex items-center px-4 lg:px-6 glass-effect border-b border-white/5">
+        <header className="fixed top-0 left-0 right-0 h-[60px] z-40 flex items-center px-4 lg:px-6 glass-effect border-b border-white/10">
             <div className="flex items-center w-full max-w-6xl mx-auto gap-4">
                 {/* Left: Hamburger (mobile) or Logo */}
                 <div className="flex items-center w-[240px] shrink-0">
@@ -83,7 +83,7 @@ const AppTopBar = ({ onMenuToggle, showMenuButton = false }) => {
                         </button>
                     ) : (
                         <Link to="/home" className="flex items-center gap-2">
-                            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+                            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center shadow-md shadow-blue-500/30">
                                 <span className="text-white font-bold text-lg leading-none">C</span>
                             </div>
                             <span className="text-xl font-bold tracking-tight text-[var(--text-primary)]">Connectly</span>
@@ -108,7 +108,7 @@ const AppTopBar = ({ onMenuToggle, showMenuButton = false }) => {
                                     if (searchQuery.trim().length > 1) setShowSuggestions(true);
                                 }}
                                 placeholder="Search creators, communities, and topics..."
-                                className="w-full bg-white/5 border-none rounded-2xl py-2.5 pl-12 pr-4 focus:ring-2 focus:ring-primary/50 focus:outline-none text-sm text-white placeholder:text-slate-500 transition-standard"
+                                className="w-full bg-white/5 border border-white/10 rounded-2xl py-2.5 pl-12 pr-4 focus:ring-2 focus:ring-primary/50 focus:outline-none text-sm text-white placeholder:text-slate-500 transition-standard"
                             />
                         </div>
                     </form>
@@ -191,7 +191,7 @@ const AppTopBar = ({ onMenuToggle, showMenuButton = false }) => {
                     {/* Notifications shortcut */}
                     <Link
                         to="/notifications"
-                        className="relative p-2 rounded-xl hover:bg-white/5 text-slate-300"
+                        className="relative p-2 rounded-xl hover:bg-white/10 text-slate-300 transition-colors"
                         aria-label="Notifications"
                     >
                         <span className="material-symbols-outlined">notifications</span>
@@ -205,7 +205,7 @@ const AppTopBar = ({ onMenuToggle, showMenuButton = false }) => {
                     <button
                         type="button"
                         onClick={() => setIsCreatePostOpen(true)}
-                        className="p-2 rounded-xl hover:bg-white/5 text-slate-300 cursor-pointer"
+                        className="p-2 rounded-xl hover:bg-white/10 text-slate-300 cursor-pointer transition-colors"
                         aria-label="Create post"
                     >
                         <span className="material-symbols-outlined">add</span>
@@ -213,7 +213,7 @@ const AppTopBar = ({ onMenuToggle, showMenuButton = false }) => {
                     {/* Messages shortcut */}
                     <Link
                         to="/messages"
-                        className="relative p-2 rounded-xl hover:bg-white/5 text-slate-300"
+                        className="relative p-2 rounded-xl hover:bg-white/10 text-slate-300 transition-colors"
                         aria-label="Messages"
                     >
                         <span className="material-symbols-outlined">mail</span>

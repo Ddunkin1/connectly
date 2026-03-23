@@ -4,6 +4,20 @@
  */
 import '../css/app.css';
 
+function isPublicPath(pathname) {
+    const normalized = (pathname || '/').replace(/\/$/, '') || '/';
+    return (
+        normalized === '/' ||
+        normalized === '/login' ||
+        normalized === '/register' ||
+        normalized === '/forgot-password' ||
+        normalized === '/auth/callback' ||
+        normalized === '/admin/login' ||
+        normalized === '/account-banned' ||
+        normalized.startsWith('/reset-password')
+    );
+}
+
 function showError(message, detail) {
     const app = document.getElementById('app');
     if (!app) return;
@@ -21,7 +35,7 @@ function showError(message, detail) {
 // Dynamic import so we can catch module load errors (e.g. failed imports)
 import('./app.jsx')
     .then(async (module) => {
-        if (import.meta.env.DEV) {
+        if (import.meta.env.DEV && !isPublicPath(window.location.pathname)) {
             await new Promise((r) => setTimeout(r, 3000));
         }
         if (typeof module.mountApp === 'function') {
