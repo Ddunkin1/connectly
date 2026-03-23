@@ -27,7 +27,7 @@ import Avatar from '../components/common/Avatar';
 import Button from '../components/common/Button';
 import PostCard from '../components/posts/PostCard';
 import CommunityPostInput from '../components/posts/CommunityPostInput';
-import LoadingSpinner from '../components/common/LoadingSpinner';
+import { CommunitySkeleton, FeedSkeleton } from '../components/common/skeletons';
 import Modal from '../components/common/Modal';
 import InviteUserModal from '../components/communities/InviteUserModal';
 
@@ -103,8 +103,8 @@ const CommunityDetail = () => {
 
     if (isLoadingCommunity) {
         return (
-            <div className="max-w-4xl mx-auto flex items-center justify-center py-12">
-                <LoadingSpinner size="lg" />
+            <div className="max-w-4xl mx-auto py-8">
+                <CommunitySkeleton variant="detail" />
             </div>
         );
     }
@@ -465,9 +465,7 @@ const CommunityDetail = () => {
                 {activeTab === 'posts' && (
                     <>
                         {isLoadingPosts ? (
-                    <div className="flex items-center justify-center py-12">
-                        <LoadingSpinner size="lg" />
-                    </div>
+                    <FeedSkeleton cards={3} showComposer={false} />
                 ) : posts.length === 0 ? (
                     <div className="rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-10 text-center">
                         <span className="material-symbols-outlined text-4xl text-[var(--text-secondary)]/50 mb-3 block">article</span>
@@ -487,9 +485,7 @@ const CommunityDetail = () => {
                 {activeTab === 'pending' && isModerator && requiresApproval && (
                     <>
                         {isLoadingPending ? (
-                            <div className="flex items-center justify-center py-12">
-                                <LoadingSpinner size="lg" />
-                            </div>
+                            <FeedSkeleton cards={2} showComposer={false} />
                         ) : pendingPosts.length === 0 ? (
                             <div className="rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-10 text-center">
                                 <span className="material-symbols-outlined text-4xl text-[var(--text-secondary)]/50 mb-3 block">pending_actions</span>

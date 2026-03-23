@@ -1,6 +1,13 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import {
+    INITIAL_SKELETON_STYLE_TAG,
+    INITIAL_THEME_SCRIPT,
+    INITIAL_VARIANT_SCRIPT,
+    INITIAL_STUCK_SCRIPT,
+    getInitialSkeletonInnerHtml,
+} from './initial-skeleton-template.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -34,6 +41,8 @@ if (!jsPath) {
     process.exit(1);
 }
 
+const appInnerHtml = getInitialSkeletonInnerHtml({ initialAdminShell: false });
+
 // Create index.html for Vercel deployment.
 // Vercel root = public/build, so asset URLs must be /assets/... never /build/assets/
 const indexHtmlRaw = `<!DOCTYPE html>
@@ -42,19 +51,20 @@ const indexHtmlRaw = `<!DOCTYPE html>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Connectly</title>
+    ${INITIAL_THEME_SCRIPT}
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
     ${cssPath ? `<link rel="stylesheet" href="${cssPath}">` : ''}
+    ${INITIAL_SKELETON_STYLE_TAG}
 </head>
 <body>
     <div id="app">
-        <div style="padding: 20px; text-align: center;">
-            <p>Loading Connectly...</p>
-            <p style="font-size: 12px; color: #666;">If this message persists, check the browser console for errors.</p>
-        </div>
+        ${appInnerHtml}
     </div>
+    ${INITIAL_VARIANT_SCRIPT}
+    ${INITIAL_STUCK_SCRIPT}
     ${jsPath ? `<script type="module" src="${jsPath}"></script>` : ''}
 </body>
 </html>`;

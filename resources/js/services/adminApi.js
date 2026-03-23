@@ -35,5 +35,8 @@ export const adminAPI = {
     getWarningAppeals: (page = 1) => api.get('/admin/warning-appeals', { params: { page } }),
     respondWarningAppeal: (appealId, data) => api.post(`/admin/warning-appeals/${appealId}/respond`, data),
 
+    getBanAppeals: (page = 1) => api.get('/admin/ban-appeals', { params: { page } }),
+    respondBanAppeal: (appealId, data) => api.post(`/admin/ban-appeals/${appealId}/respond`, data),
+
     getSystemSettings: () => api.get('/admin/settings'),
 };

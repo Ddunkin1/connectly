@@ -20,7 +20,10 @@ function showError(message, detail) {
 
 // Dynamic import so we can catch module load errors (e.g. failed imports)
 import('./app.jsx')
-    .then((module) => {
+    .then(async (module) => {
+        if (import.meta.env.DEV) {
+            await new Promise((r) => setTimeout(r, 3000));
+        }
         if (typeof module.mountApp === 'function') {
             module.mountApp();
         } else {

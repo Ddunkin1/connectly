@@ -126,7 +126,9 @@ class GroupMessageController extends Controller
         $deleted = DB::transaction(function () use ($request, $groupMessage) {
             $oldAttachmentUrl = $groupMessage->attachment_url;
             $groupMessage->update([
-                'content' => null,
+                // Keep `group_messages.content` non-null (DB column is NOT NULL).
+                // UI uses `is_deleted` to show a "This message was deleted" placeholder.
+                'content' => '',
                 'attachment_url' => null,
                 'attachment_type' => null,
                 'deleted_by' => $request->user()->id,

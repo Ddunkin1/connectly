@@ -5,11 +5,12 @@ import React from 'react';
  */
 const AdminSection = ({ title, description, actions, children, className = '', padding = true }) => (
     <section
-        className={`relative overflow-hidden rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] shadow-[0_1px_0_rgba(255,255,255,0.04)_inset,0_8px_40px_-12px_rgba(0,0,0,0.4)] ${className}`}
+        className={`relative overflow-hidden rounded-3xl border border-[var(--theme-border)] bg-[var(--theme-surface)]/95 shadow-[0_1px_0_rgba(255,255,255,0.06)_inset,0_14px_36px_-18px_rgba(0,0,0,0.55)] transition-all duration-300 hover:border-[var(--theme-accent)]/25 ${className}`}
     >
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/25 to-transparent" />
         {(title || actions) && (
             <div
-                className={`flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-[var(--theme-border)] bg-[var(--theme-surface-hover)]/30 ${
+                className={`flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-[var(--theme-border)] bg-gradient-to-r from-[var(--theme-surface-hover)]/40 to-[var(--theme-accent)]/5 ${
                     padding ? 'px-6 py-4' : ''
                 }`}
             >

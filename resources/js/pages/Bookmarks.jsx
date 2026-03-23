@@ -2,7 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { useBookmarks } from '../hooks/useBookmarks';
 import PostCard from '../components/posts/PostCard';
-import LoadingSpinner from '../components/common/LoadingSpinner';
+import { FeedSkeleton } from '../components/common/skeletons';
 
 const Bookmarks = () => {
     const { data, isLoading, isError, fetchNextPage, hasNextPage, isFetchingNextPage } = useBookmarks();
@@ -16,9 +16,7 @@ const Bookmarks = () => {
                     <h1 className="text-2xl font-bold text-[var(--text-primary)]">Bookmarks</h1>
                     <p className="text-sm text-[var(--text-secondary)] mt-1">Posts you saved for later</p>
                 </header>
-                <div className="flex justify-center py-12">
-                    <LoadingSpinner size="lg" />
-                </div>
+                <FeedSkeleton cards={4} showComposer={false} />
             </div>
         );
     }

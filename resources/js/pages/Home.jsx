@@ -2,7 +2,7 @@ import React, { useRef, useCallback, useEffect } from 'react';
 import { useFeed, useSuggestedPosts } from '../hooks/usePosts';
 import PostInput from '../components/posts/PostInput';
 import PostCard from '../components/posts/PostCard';
-import LoadingSpinner from '../components/common/LoadingSpinner';
+import { FeedSkeleton, SkeletonBlock } from '../components/common/skeletons';
 import OnboardingChecklistCard from '../components/onboarding/OnboardingChecklistCard';
 
 const Home = () => {
@@ -41,11 +41,7 @@ const Home = () => {
     );
 
     if (isLoading) {
-        return (
-            <div className="flex justify-center items-center py-12">
-                <LoadingSpinner size="lg" />
-            </div>
-        );
+        return <FeedSkeleton cards={4} showComposer />;
     }
 
     if (isError) {
@@ -126,8 +122,8 @@ const Home = () => {
                             })
                         )}
                         {isFetchingNextPage && (
-                            <div className="flex justify-center py-2">
-                                <LoadingSpinner />
+                            <div className="flex justify-center py-4">
+                                <SkeletonBlock className="h-8 w-8 rounded-full" />
                             </div>
                         )}
                     </div>

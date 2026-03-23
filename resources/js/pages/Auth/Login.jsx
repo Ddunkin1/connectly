@@ -56,6 +56,8 @@ const Login = () => {
                     state: {
                         reasonCode: res.reason_code ?? null,
                         banMessage: res.ban_message ?? null,
+                        moderationEventId: res.moderation_event_id ?? null,
+                        appealToken: res.appeal_token ?? null,
                     },
                 });
                 return;

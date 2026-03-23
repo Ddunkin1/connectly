@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { moderationAPI, postsAPI } from '../services/api';
 import { getReasonLabel } from '../hooks/useReports';
-import LoadingSpinner from '../components/common/LoadingSpinner';
+import { SimplePageSkeleton } from '../components/common/skeletons';
 import Avatar from '../components/common/Avatar';
 
 const errMsg = (err) =>
@@ -73,8 +73,8 @@ const WarningDetail = () => {
 
     if (q.isLoading) {
         return (
-            <div className="flex justify-center py-16">
-                <LoadingSpinner />
+            <div className="max-w-2xl mx-auto py-8">
+                <SimplePageSkeleton rows={6} title={false} />
             </div>
         );
     }

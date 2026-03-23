@@ -280,7 +280,7 @@ export default function AdminReportUserPanel({
                 </div>
 
                 {/* Scrollable: Violations / Reports / Activity — parent modal must have explicit height so flex-1 gets space */}
-                <div className="min-h-0 flex-1 basis-0 overflow-y-auto overflow-x-hidden px-5 py-4 overscroll-contain">
+                <div className="flex-1 min-h-0 basis-0 overflow-y-auto overflow-x-hidden px-5 py-4 overscroll-contain">
                     {u && (
                         <div>
                             {tab === 'violations' && (
@@ -455,7 +455,7 @@ export default function AdminReportUserPanel({
                         className={
                             variant === 'modal'
                                 ? 'grid grid-cols-1 sm:grid-cols-3 gap-2'
-                                : 'grid grid-cols-1 gap-2'
+                                : 'grid grid-cols-1 sm:grid-cols-3 gap-2'
                         }
                     >
                         <button

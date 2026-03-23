@@ -35,6 +35,7 @@ import AdminReports from './pages/Admin/AdminReports';
 import AdminUsers from './pages/Admin/AdminUsers';
 import AdminSettings from './pages/Admin/AdminSettings';
 import AdminWarningAppeals from './pages/Admin/AdminWarningAppeals';
+import AdminBanAppeals from './pages/Admin/AdminBanAppeals';
 import useAuthStore from './store/authStore';
 import useThemeStore from './store/themeStore';
 import ThemeCustomizer from './components/layout/ThemeCustomizer';
@@ -113,6 +114,11 @@ function AppContent() {
         ) || location.pathname.startsWith('/reset-password');
     /** Admin portal: all /admin/* except the public admin login page — no MainLayout / user chrome */
     const isAdminPortal = pathNorm.startsWith('/admin') && pathNorm !== '/admin/login';
+
+    // IMPORTANT: Hooks must be called unconditionally.
+    // This prevents "Rendered more hooks than during the previous render" when
+    // navigating between public/admin routes and member routes.
+    const user = useAuthStore((state) => state.user);
 
     // Render public pages (Landing, Login, Register) without layout wrapper
     if (isPublicPage) {
@@ -209,6 +215,7 @@ function AppContent() {
                         <Route path="reports" element={<AdminReports />} />
                         <Route path="users" element={<AdminUsers />} />
                         <Route path="warning-appeals" element={<AdminWarningAppeals />} />
+                        <Route path="ban-appeals" element={<AdminBanAppeals />} />
                         <Route path="settings" element={<AdminSettings />} />
                     </Route>
                     <Route path="*" element={<Navigate to="/admin" replace />} />
@@ -240,8 +247,6 @@ function AppContent() {
             </>
         );
     }
-
-    const user = useAuthStore((state) => state.user);
     /** Admins use only the admin portal; keep member UI separate */
     if (user?.role === 'admin') {
         return <Navigate to="/admin" replace />;
@@ -484,6 +489,7 @@ export function mountApp() {
                 </ErrorBoundary>
             </React.StrictMode>
         );
+        document.documentElement.setAttribute('data-react-mounted', 'true');
     } catch (error) {
         console.error('React render error:', error);
         rootElement.innerHTML = `<div style="padding: 20px; font-family: sans-serif;"><h1>React Render Error</h1><pre style="background: #f5f5f5; padding: 10px;">${error.toString()}</pre></div>`;

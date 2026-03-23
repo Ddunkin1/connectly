@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { useConnections } from '../hooks/useConnections';
 import { useFriendRequests } from '../hooks/useFriendRequests';
 import Avatar from '../components/common/Avatar';
-import LoadingSpinner from '../components/common/LoadingSpinner';
+import { SimplePageSkeleton } from '../components/common/skeletons';
 import ProfilePreviewCard from '../components/profile/ProfilePreviewCard';
 
 const tabOptions = [
@@ -116,11 +116,7 @@ const Connections = () => {
 
     let content = null;
     if (loading) {
-        content = (
-            <div className="flex justify-center py-10">
-                <LoadingSpinner size="lg" />
-            </div>
-        );
+        content = <SimplePageSkeleton rows={8} title={false} />;
     } else {
         switch (activeTab) {
             case 'following':

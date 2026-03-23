@@ -29,7 +29,11 @@ export const AdminTableSkeleton = ({ rows = 5, cols = 6 }) => (
 export const AdminStatsRowSkeleton = ({ count = 3 }) => (
     <div
         className={`grid grid-cols-1 gap-4 mb-8 ${
-            count >= 4 ? 'sm:grid-cols-2 xl:grid-cols-4' : 'sm:grid-cols-3'
+            count >= 5
+                ? 'sm:grid-cols-2 xl:grid-cols-5'
+                : count >= 4
+                  ? 'sm:grid-cols-2 xl:grid-cols-4'
+                  : 'sm:grid-cols-3'
         }`}
     >
         {Array.from({ length: count }).map((_, i) => (

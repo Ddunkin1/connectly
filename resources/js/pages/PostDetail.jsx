@@ -9,7 +9,7 @@ import PostCard from '../components/posts/PostCard';
 import CommentThread from '../components/posts/CommentThread';
 import Avatar from '../components/common/Avatar';
 import Button from '../components/common/Button';
-import LoadingSpinner from '../components/common/LoadingSpinner';
+import { PostDetailSkeleton, SkeletonBlock } from '../components/common/skeletons';
 import useAuthStore from '../store/authStore';
 
 const PostDetail = () => {
@@ -38,8 +38,8 @@ const PostDetail = () => {
 
     if (isLoading) {
         return (
-            <div className="flex justify-center items-center py-12">
-                <LoadingSpinner size="lg" />
+            <div className="max-w-3xl mx-auto">
+                <PostDetailSkeleton />
             </div>
         );
     }
@@ -94,8 +94,10 @@ const PostDetail = () => {
                     Comments ({Math.max(post.comments_count ?? 0, commentsData?.length ?? 0)})
                 </h3>
                 {commentsLoading ? (
-                    <div className="flex justify-center py-8">
-                        <LoadingSpinner />
+                    <div className="space-y-3 py-4">
+                        {[1, 2, 3].map((i) => (
+                            <SkeletonBlock key={i} className="h-16 w-full rounded-lg" />
+                        ))}
                     </div>
                 ) : topLevelComments.length === 0 ? (
                     <div className="text-center py-8 bg-white rounded-lg border border-gray-200">

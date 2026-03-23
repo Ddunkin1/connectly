@@ -342,6 +342,152 @@ html:not(.dark) .scrollbar-styled::-webkit-scrollbar-thumb { background: rgba(0,
 .transition-standard { transition: all 0.2s ease; }
 .transition-smooth { transition: all 0.3s ease; }
 
+/* Admin motion utilities */
+@keyframes admin-fade-up {
+    from {
+        opacity: 0;
+        transform: translateY(10px) scale(0.995);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+.admin-fade-up {
+    animation: admin-fade-up 0.38s ease-out both;
+}
+
+@keyframes admin-soft-pop {
+    from {
+        opacity: 0;
+        transform: translateY(6px) scale(0.985);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+.admin-soft-pop {
+    animation: admin-soft-pop 0.24s ease-out both;
+}
+
+@keyframes admin-blob-drift {
+    0% {
+        transform: translate3d(0, 0, 0) scale(1);
+        opacity: 0.42;
+    }
+    33% {
+        transform: translate3d(14px, -16px, 0) scale(1.06);
+        opacity: 0.62;
+    }
+    66% {
+        transform: translate3d(-12px, 10px, 0) scale(0.97);
+        opacity: 0.5;
+    }
+    100% {
+        transform: translate3d(0, 0, 0) scale(1);
+        opacity: 0.42;
+    }
+}
+
+@keyframes admin-shimmer {
+    0% {
+        transform: translateX(-130%);
+        opacity: 0;
+    }
+    25% {
+        opacity: 0.32;
+    }
+    100% {
+        transform: translateX(160%);
+        opacity: 0;
+    }
+}
+
+@keyframes admin-icon-wiggle {
+    0%,
+    100% {
+        transform: rotate(0deg) scale(1);
+    }
+    35% {
+        transform: rotate(-7deg) scale(1.06);
+    }
+    70% {
+        transform: rotate(7deg) scale(1.08);
+    }
+}
+
+.admin-blob-motion {
+    animation: admin-blob-drift 9s ease-in-out infinite;
+}
+.admin-blob-motion-slow {
+    animation: admin-blob-drift 13s ease-in-out infinite reverse;
+}
+.admin-blob-motion-fast {
+    animation: admin-blob-drift 7s ease-in-out infinite;
+}
+
+.admin-shimmer {
+    position: relative;
+    overflow: hidden;
+}
+.admin-shimmer::after {
+    content: '';
+    position: absolute;
+    top: -20%;
+    left: 0;
+    width: 48%;
+    height: 140%;
+    transform: translateX(-130%) skewX(-18deg);
+    background: linear-gradient(
+        90deg,
+        transparent 0%,
+        rgba(255, 255, 255, 0.02) 30%,
+        rgba(255, 255, 255, 0.18) 50%,
+        rgba(255, 255, 255, 0.02) 70%,
+        transparent 100%
+    );
+    pointer-events: none;
+    animation: admin-shimmer 3.4s ease-in-out infinite;
+}
+
+.admin-nav-wiggle:hover .material-symbols-outlined {
+    animation: admin-icon-wiggle 0.36s ease-in-out;
+}
+
+/* Admin canvas + motion tuning per theme */
+.admin-main-canvas {
+    background:
+        radial-gradient(900px 420px at 78% -10%, rgba(217, 70, 239, 0.18), transparent 60%),
+        radial-gradient(820px 420px at -8% 62%, rgba(99, 102, 241, 0.14), transparent 64%),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0));
+}
+
+html.dark .admin-main-canvas {
+    background:
+        radial-gradient(900px 420px at 78% -10%, rgba(217, 70, 239, 0.22), transparent 60%),
+        radial-gradient(820px 420px at -8% 62%, rgba(99, 102, 241, 0.2), transparent 64%),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0));
+}
+
+html:not(.dark) .admin-blob-motion,
+html:not(.dark) .admin-blob-motion-slow,
+html:not(.dark) .admin-blob-motion-fast {
+    opacity: 0.78;
+    filter: blur(92px) saturate(1.15);
+}
+
+html:not(.dark) .admin-shimmer::after {
+    background: linear-gradient(
+        90deg,
+        transparent 0%,
+        rgba(99, 102, 241, 0.02) 28%,
+        rgba(139, 92, 246, 0.26) 50%,
+        rgba(99, 102, 241, 0.03) 72%,
+        transparent 100%
+    );
+}
+
 /* Focus states for accessibility */
 .focus-ring:focus-visible {
     outline: none;

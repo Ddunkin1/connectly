@@ -11,6 +11,30 @@ import toast from 'react-hot-toast';
 const inputClass =
     'w-full rounded-xl border border-[var(--theme-border)] bg-[var(--bg-primary)] text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] focus:ring-2 focus:ring-[var(--theme-accent)]/50 focus:border-[var(--theme-accent)] outline-none';
 
+const isValidEmail = (value) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+const isValidUsername = (value) => /^[a-zA-Z0-9_.-]{3,32}$/.test(value);
+
+const getIdentifierState = (value) => {
+    const v = value.trim();
+    if (!v) return { valid: false, helper: 'Use admin email or username' };
+    const valid = v.includes('@') ? isValidEmail(v) : isValidUsername(v);
+    return {
+        valid,
+        helper: valid
+            ? v.includes('@')
+                ? 'Email format looks good'
+                : 'Username format looks good'
+            : 'Enter a valid email or username',
+    };
+};
+
+const getPasswordState = (value) => {
+    const len = value.length;
+    if (!len) return { valid: false, helper: 'Password is required' };
+    if (len < 8) return { valid: false, helper: 'Use at least 8 characters' };
+    return { valid: true, helper: 'Password length looks good' };
+};
+
 /**
  * Dedicated admin portal sign-in (same API as /login; only users with role admin can proceed).
  * Respects global light/dim theme (CSS variables).
@@ -22,12 +46,12 @@ const AdminLogin = () => {
     const twoFactorMutation = useTwoFactorChallenge();
     const logoutMutation = useLogout();
     const applyTheme = useThemeStore((s) => s.applyToDom);
-    const isDark = useThemeStore((s) => s.background === 'dim');
 
     const [showPassword, setShowPassword] = useState(false);
     const [showTwoFactor, setShowTwoFactor] = useState(false);
     const [twoFactorCode, setTwoFactorCode] = useState('');
     const [apiError, setApiError] = useState(null);
+    const [capsLockOn, setCapsLockOn] = useState(false);
 
     useEffect(() => {
         applyTheme();
@@ -36,10 +60,17 @@ const AdminLogin = () => {
     const {
         register,
         handleSubmit,
+        watch,
         formState: { errors },
     } = useForm({
+        mode: 'onChange',
         defaultValues: { email: '', password: '' },
     });
+    const identifier = watch('email') ?? '';
+    const password = watch('password') ?? '';
+    const identifierState = getIdentifierState(identifier);
+    const passwordState = getPasswordState(password);
+    const canSubmit = identifierState.valid && passwordState.valid && !loginMutation.isPending;
 
     const ensureAdminOrRevert = () => {
         const user = useAuthStore.getState().user;
@@ -88,60 +119,19 @@ const AdminLogin = () => {
         }
     };
 
-    const leftPanelClass = isDark
-        ? 'lg:w-1/2 bg-gradient-to-br from-slate-950 via-violet-950/40 to-slate-950 p-10 lg:p-12 flex flex-col justify-between border-b lg:border-b-0 lg:border-r border-[var(--theme-border)]'
-        : 'lg:w-1/2 bg-gradient-to-br from-indigo-50 via-violet-50 to-blue-50 p-10 lg:p-12 flex flex-col justify-between border-b lg:border-b-0 lg:border-r border-slate-100';
-
-    const brandTextClass = isDark ? 'text-[var(--text-primary)]' : 'text-slate-900';
-    const mutedTextClass = isDark ? 'text-[var(--text-secondary)]' : 'text-slate-600';
-    const pitchCardClass = isDark
-        ? 'inline-flex items-center gap-3 rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)]/60 px-4 py-3 backdrop-blur-sm'
-        : 'inline-flex items-center gap-3 rounded-2xl border border-white/80 bg-white/80 px-4 py-3 backdrop-blur shadow-sm';
-
     return (
-        <div className="min-h-screen flex items-center justify-center bg-[var(--bg-primary)] px-4 py-10 text-[var(--text-primary)]">
+        <div className="relative min-h-screen flex items-center justify-center bg-[var(--bg-primary)] px-4 py-10 text-[var(--text-primary)] overflow-hidden">
+            <div className="pointer-events-none absolute -top-24 -left-20 h-72 w-72 rounded-full bg-fuchsia-500/15 blur-[95px]" />
+            <div className="pointer-events-none absolute top-1/3 -right-16 h-72 w-72 rounded-full bg-indigo-500/15 blur-[95px]" />
             <div className="fixed top-4 right-4 z-50">
                 <AdminThemeToggle />
             </div>
 
-            <div className="w-full max-w-5xl rounded-3xl border border-[var(--theme-border)] bg-[var(--theme-surface)] shadow-xl overflow-hidden flex flex-col lg:flex-row min-h-[560px]">
-                {/* Left — brand */}
-                <div className={leftPanelClass}>
-                    <div>
-                        <div className="flex items-center gap-2 mb-10">
-                            <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center shadow-md ring-1 ring-white/10">
-                                <span className="material-symbols-outlined text-white text-2xl">auto_awesome</span>
-                            </div>
-                            <span className={`text-xl font-bold tracking-tight ${brandTextClass}`}>Connectly</span>
-                        </div>
-                        <h1 className={`text-2xl sm:text-3xl font-bold leading-tight max-w-md ${brandTextClass}`}>
-                            Manage your social{' '}
-                            <span className="bg-gradient-to-r from-indigo-500 to-violet-500 bg-clip-text text-transparent">
-                                ecosystem
-                            </span>{' '}
-                            with absolute precision.
-                        </h1>
-                        <p className={`mt-4 text-sm leading-relaxed max-w-md ${mutedTextClass}`}>
-                            Access the high-performance admin portal to orchestrate campaigns, analyze audience metrics,
-                            and scale your brand identity.
-                        </p>
-                    </div>
-                    <div className="mt-8 lg:mt-0">
-                        <div className={pitchCardClass}>
-                            <div className="flex -space-x-2">
-                                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-amber-200 to-orange-300 border-2 border-[var(--theme-surface)]" />
-                                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-emerald-200 to-teal-300 border-2 border-[var(--theme-surface)]" />
-                                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-violet-200 to-purple-300 border-2 border-[var(--theme-surface)]" />
-                            </div>
-                            <p className={`text-xs font-medium ${mutedTextClass}`}>Join 12,000+ curators worldwide.</p>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Right — form */}
-                <div className="lg:w-1/2 p-10 lg:p-12 flex flex-col justify-center bg-[var(--theme-surface)]">
+            <div className="relative z-10 w-full max-w-md rounded-3xl border border-[var(--theme-border)] bg-[var(--theme-surface)]/95 shadow-[0_24px_60px_-24px_rgba(0,0,0,0.75)] overflow-hidden min-h-[560px] admin-fade-up">
+                <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/25 to-transparent" />
+                <div className="p-8 sm:p-10 flex flex-col justify-center h-full">
                     {showTwoFactor ? (
-                        <form onSubmit={onTwoFactorSubmit} className="w-full max-w-md mx-auto">
+                        <form onSubmit={onTwoFactorSubmit} className="w-full">
                             <h2 className="text-xl font-bold text-[var(--text-primary)]">Two-factor authentication</h2>
                             <p className="text-sm text-[var(--text-secondary)] mt-2">
                                 Enter the code from your authenticator app.
@@ -149,15 +139,16 @@ const AdminLogin = () => {
                             <input
                                 type="text"
                                 value={twoFactorCode}
-                                onChange={(e) => setTwoFactorCode(e.target.value)}
+                                onChange={(e) => setTwoFactorCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
                                 className={`mt-6 pl-4 pr-4 py-3 ${inputClass}`}
                                 placeholder="000000"
                                 autoComplete="one-time-code"
+                                maxLength={6}
                             />
                             <button
                                 type="submit"
-                                disabled={twoFactorMutation.isPending}
-                                className="mt-4 w-full rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-semibold py-3.5 hover:opacity-95 disabled:opacity-60"
+                                disabled={twoFactorMutation.isPending || twoFactorCode.length !== 6}
+                                className="mt-4 w-full rounded-xl bg-gradient-to-r from-fuchsia-600 via-violet-600 to-indigo-600 text-white font-semibold py-3.5 hover:opacity-95 disabled:opacity-60 transition-all duration-300 hover:-translate-y-[1px]"
                             >
                                 {twoFactorMutation.isPending ? 'Verifying…' : 'Verify & continue'}
                             </button>
@@ -174,10 +165,10 @@ const AdminLogin = () => {
                             </button>
                         </form>
                     ) : (
-                        <div className="w-full max-w-md mx-auto">
-                            <h2 className="text-2xl font-bold text-[var(--text-primary)]">Welcome Back, Admin</h2>
+                        <div className="w-full">
+                            <h2 className="text-2xl font-extrabold tracking-tight text-[var(--text-primary)]">Admin sign in</h2>
                             <p className="text-sm text-[var(--text-secondary)] mt-2">
-                                Please enter your credentials to access the portal.
+                                Real-time validation is enabled. Enter your admin credentials to continue.
                             </p>
 
                             {apiError && (
@@ -209,6 +200,15 @@ const AdminLogin = () => {
                                     {errors.email && (
                                         <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>
                                     )}
+                                    {!errors.email && (
+                                        <p
+                                            className={`text-xs mt-1 ${
+                                                identifierState.valid ? 'text-emerald-500' : 'text-[var(--text-secondary)]'
+                                            }`}
+                                        >
+                                            {identifierState.helper}
+                                        </p>
+                                    )}
                                 </div>
 
                                 <div>
@@ -232,6 +232,8 @@ const AdminLogin = () => {
                                             autoComplete="current-password"
                                             className={`pl-11 pr-12 py-3 ${inputClass}`}
                                             {...register('password', { required: 'Required' })}
+                                            onKeyUp={(e) => setCapsLockOn(e.getModifierState('CapsLock'))}
+                                            onKeyDown={(e) => setCapsLockOn(e.getModifierState('CapsLock'))}
                                         />
                                         <button
                                             type="button"
@@ -247,20 +249,37 @@ const AdminLogin = () => {
                                     {errors.password && (
                                         <p className="text-red-500 text-xs mt-1">{errors.password.message}</p>
                                     )}
+                                    {!errors.password && (
+                                        <p
+                                            className={`text-xs mt-1 ${
+                                                passwordState.valid ? 'text-emerald-500' : 'text-[var(--text-secondary)]'
+                                            }`}
+                                        >
+                                            {passwordState.helper}
+                                        </p>
+                                    )}
+                                    {capsLockOn && (
+                                        <p className="text-amber-500 text-xs mt-1">Caps Lock is on</p>
+                                    )}
                                 </div>
 
-                                <label className="flex items-center gap-2 cursor-pointer select-none">
-                                    <input
-                                        type="checkbox"
-                                        className="rounded border-[var(--theme-border)] text-[var(--theme-accent)] focus:ring-[var(--theme-accent)]"
-                                    />
-                                    <span className="text-sm text-[var(--text-secondary)]">Stay logged in for 30 days</span>
-                                </label>
+                                <div className="rounded-xl border border-[var(--theme-border)] bg-[var(--bg-primary)]/50 px-3 py-2">
+                                    <p className="text-xs text-[var(--text-secondary)]">
+                                        Status:{' '}
+                                        <span className={identifierState.valid ? 'text-emerald-500' : 'text-[var(--text-secondary)]'}>
+                                            ID
+                                        </span>{' '}
+                                        ·{' '}
+                                        <span className={passwordState.valid ? 'text-emerald-500' : 'text-[var(--text-secondary)]'}>
+                                            Password
+                                        </span>
+                                    </p>
+                                </div>
 
                                 <button
                                     type="submit"
-                                    disabled={loginMutation.isPending}
-                                    className="w-full rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-semibold py-3.5 shadow-lg shadow-indigo-500/25 hover:opacity-95 disabled:opacity-60 flex items-center justify-center gap-2"
+                                    disabled={!canSubmit}
+                                    className="w-full rounded-xl bg-gradient-to-r from-fuchsia-600 via-violet-600 to-indigo-600 text-white font-semibold py-3.5 shadow-lg shadow-violet-500/30 hover:opacity-95 disabled:opacity-60 flex items-center justify-center gap-2 transition-all duration-300 hover:-translate-y-[1px]"
                                 >
                                     {loginMutation.isPending ? 'Signing in…' : 'Sign In to Dashboard'}
                                     {!loginMutation.isPending && (

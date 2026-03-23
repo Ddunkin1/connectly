@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useOnboarding } from '../hooks/useOnboarding';
 import Avatar from '../components/common/Avatar';
 import Button from '../components/common/Button';
-import LoadingSpinner from '../components/common/LoadingSpinner';
+import { SimplePageSkeleton, SkeletonBlock } from '../components/common/skeletons';
 import { useFollow } from '../hooks/useUsers';
 import { useJoinCommunity } from '../hooks/useCommunities';
 
@@ -41,7 +41,7 @@ const Onboarding = () => {
     if (!user) {
         return (
             <div className="max-w-3xl mx-auto py-12">
-                <LoadingSpinner size="lg" />
+                <SimplePageSkeleton rows={6} title={false} />
             </div>
         );
     }
@@ -160,8 +160,16 @@ const Onboarding = () => {
                     </div>
 
                     {suggestedUsersLoading ? (
-                        <div className="flex justify-center py-4">
-                            <LoadingSpinner size="sm" />
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 py-2">
+                            {[1, 2, 3, 4].map((i) => (
+                                <div key={i} className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.02] border border-white/5">
+                                    <SkeletonBlock className="h-10 w-10 rounded-full shrink-0" />
+                                    <div className="flex-1 space-y-2">
+                                        <SkeletonBlock className="h-4 w-32" />
+                                        <SkeletonBlock className="h-3 w-24" />
+                                    </div>
+                                </div>
+                            ))}
                         </div>
                     ) : suggestedUsers.length === 0 ? (
                         <p className="text-xs text-slate-500">
@@ -245,8 +253,10 @@ const Onboarding = () => {
                     </div>
 
                     {communitiesLoading ? (
-                        <div className="flex justify-center py-4">
-                            <LoadingSpinner size="sm" />
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 py-2">
+                            {[1, 2, 3, 4].map((i) => (
+                                <SkeletonBlock key={i} className="h-24 rounded-xl" />
+                            ))}
                         </div>
                     ) : suggestedCommunities.length === 0 ? (
                         <p className="text-xs text-slate-500">

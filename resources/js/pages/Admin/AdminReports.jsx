@@ -252,7 +252,7 @@ const AdminReports = () => {
     }
 
     return (
-        <div className="space-y-8">
+        <div className="space-y-8 admin-fade-up">
             <AdminPageHeader
                 eyebrow="Admin · Content moderation"
                 title="Content reports"
@@ -282,7 +282,7 @@ const AdminReports = () => {
                     loading={statsQuery.isLoading}
                     sublabel="Users · Posts · Profile comments"
                 />
-                <div className="rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 shadow-sm flex flex-col justify-center min-h-[112px]">
+                <div className="rounded-3xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 shadow-[0_10px_30px_-16px_rgba(0,0,0,0.5)] flex flex-col justify-center min-h-[112px] transition-all duration-300 hover:border-[var(--theme-accent)]/25">
                     <p className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wide">
                         Workflow
                     </p>
@@ -293,7 +293,7 @@ const AdminReports = () => {
                 </div>
             </div>
 
-            <div className="rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 sm:p-5 shadow-sm">
+            <div className="rounded-3xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 sm:p-5 shadow-[0_12px_34px_-18px_rgba(0,0,0,0.55)]">
                 <div className="flex flex-col gap-4">
                     <div
                         className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4"

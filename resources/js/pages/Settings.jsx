@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { userAPI, twoFactorAPI, pushAPI } from '../services/api';
 import useAuthStore from '../store/authStore';
-import LoadingSpinner from '../components/common/LoadingSpinner';
+import { SimplePageSkeleton, SkeletonBlock } from '../components/common/skeletons';
 import Button from '../components/common/Button';
 import Avatar from '../components/common/Avatar';
 import { useBlockedUsers, useUnblockUser } from '../hooks/useBlocks';
@@ -256,9 +256,7 @@ const Settings = () => {
         return (
             <div className="max-w-2xl mx-auto py-8">
                 <h1 className="text-2xl font-bold text-[var(--text-primary)] mb-4">Settings</h1>
-                <div className="flex justify-center py-12">
-                    <LoadingSpinner />
-                </div>
+                <SimplePageSkeleton rows={8} title={false} />
             </div>
         );
     }
@@ -481,8 +479,16 @@ const Settings = () => {
                     Users you have blocked cannot see your profile, message you, or see your posts.
                 </p>
                 {blockedLoading ? (
-                    <div className="flex justify-center py-8">
-                        <LoadingSpinner />
+                    <div className="space-y-3 py-4">
+                        {[1, 2, 3].map((i) => (
+                            <div key={i} className="flex items-center gap-3">
+                                <SkeletonBlock className="h-10 w-10 rounded-full" />
+                                <div className="space-y-2 flex-1">
+                                    <SkeletonBlock className="h-4 w-40" />
+                                    <SkeletonBlock className="h-3 w-24" />
+                                </div>
+                            </div>
+                        ))}
                     </div>
                 ) : !blockedData?.blocked_users?.length ? (
                     <p className="text-gray-500 text-sm">You have not blocked any users.</p>

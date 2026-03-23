@@ -84,9 +84,9 @@ const AppTopBar = ({ onMenuToggle, showMenuButton = false }) => {
                     ) : (
                         <Link to="/home" className="flex items-center gap-2">
                             <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                                <span className="material-symbols-outlined text-white text-xl">hub</span>
+                                <span className="text-white font-bold text-lg leading-none">C</span>
                             </div>
-                            <span className="text-xl font-bold tracking-tight text-[var(--text-primary)]">connectly</span>
+                            <span className="text-xl font-bold tracking-tight text-[var(--text-primary)]">Connectly</span>
                         </Link>
                     )}
                 </div>

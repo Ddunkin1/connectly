@@ -13,7 +13,7 @@ import GroupMessageInput from '../components/messages/GroupMessageInput';
 import GroupMembersPanel from '../components/messages/GroupMembersPanel';
 import NewGroupModal from '../components/messages/NewGroupModal';
 import GroupChatHeader from '../components/messages/GroupChatHeader';
-import LoadingSpinner from '../components/common/LoadingSpinner';
+import { SkeletonBlock } from '../components/common/skeletons';
 import Button from '../components/common/Button';
 import useAuthStore from '../store/authStore';
 import toast from 'react-hot-toast';
@@ -226,8 +226,10 @@ const Messages = () => {
                     {showDirectContent && (
                         <>
                             {isLoadingConversation ? (
-                                <div className="flex-1 flex items-center justify-center">
-                                    <LoadingSpinner />
+                                <div className="flex-1 flex flex-col items-center justify-center gap-4 py-12">
+                                    <SkeletonBlock className="h-14 w-14 rounded-full" />
+                                    <SkeletonBlock className="h-4 w-48 max-w-[80%]" />
+                                    <SkeletonBlock className="h-3 w-64 max-w-[90%]" />
                                 </div>
                             ) : displayConversation ? (
                                 <>

@@ -26,9 +26,11 @@ use App\Http\Controllers\Api\SocialAuthController;
 use App\Http\Controllers\Api\TrendingController;
 use App\Http\Controllers\Api\TwoFactorController;
 use App\Http\Controllers\Api\UserController;
+use App\Http\Controllers\Api\BanAppealController;
 use App\Http\Controllers\Api\WarningAppealController;
 use App\Http\Controllers\Api\WarningEventController;
 use App\Http\Controllers\Api\Admin\AdminWarningAppealController;
+use App\Http\Controllers\Api\Admin\AdminBanAppealController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -54,6 +56,7 @@ Route::middleware('throttle:60,1')->group(function () {
     Route::get('/users/{user}/profile-picture', [UserController::class, 'profilePicture']);
     Route::post('/register', [AuthController::class, 'register']);
     Route::post('/login', [AuthController::class, 'login']);
+    Route::post('/ban-appeals', [BanAppealController::class, 'store']);
     Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
     Route::post('/reset-password', [AuthController::class, 'resetPassword']);
     Route::get('/email/verify/{id}/{hash}', [AuthController::class, 'verifyEmail'])
@@ -258,6 +261,9 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function () {
 
         Route::get('/warning-appeals', [AdminWarningAppealController::class, 'index']);
         Route::post('/warning-appeals/{warningAppeal}/respond', [AdminWarningAppealController::class, 'respond']);
+
+        Route::get('/ban-appeals', [AdminBanAppealController::class, 'index']);
+        Route::post('/ban-appeals/{banAppeal}/respond', [AdminBanAppealController::class, 'respond']);
 
         Route::get('/settings', [\App\Http\Controllers\Api\Admin\AdminSettingsController::class, 'index']);
     });

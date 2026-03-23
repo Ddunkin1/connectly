@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { createPortal } from 'react-dom';
 
 const Modal = ({ isOpen, onClose, title, children, size = 'md' }) => {
     useEffect(() => {
@@ -25,26 +26,22 @@ const Modal = ({ isOpen, onClose, title, children, size = 'md' }) => {
         '4xl': 'max-w-7xl',
     };
 
-    return (
-        <div
-            className="fixed inset-0 z-50 overflow-y-auto"
-            role="dialog"
-            aria-modal="true"
-        >
-            <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+    const modalUi = (
+        <div className="fixed inset-0 z-50 overflow-hidden admin-fade-up" role="dialog" aria-modal="true">
+            <div className="flex items-center justify-center h-full p-4 text-center">
                 <div
-                    className="fixed inset-0 z-40 transition-opacity bg-black/70"
+                    className="fixed inset-0 z-40 transition-opacity bg-gradient-to-br from-fuchsia-500/10 via-transparent to-indigo-500/10 backdrop-blur-[1px]"
                     aria-hidden="true"
                     onClick={onClose}
                 />
 
                 <div
-                    className={`relative z-50 inline-block align-bottom bg-[var(--theme-surface)] text-[var(--text-primary)] text-left overflow-hidden rounded-2xl border border-[var(--theme-border)] shadow-post-card transform transition-all sm:my-8 sm:align-middle flex flex-col ${sizes[size]} w-full`}
+                    className={`relative z-50 mx-auto bg-[var(--theme-surface)] text-[var(--text-primary)] text-left overflow-hidden rounded-3xl border border-[var(--theme-border)] shadow-[0_24px_60px_-22px_rgba(0,0,0,0.7)] transform transition-all duration-300 flex flex-col ${sizes[size]} w-full`}
                     style={{ maxHeight: '88vh', color: 'var(--text-primary)' }}
                     onClick={(e) => e.stopPropagation()}
                 >
                     {title && (
-                        <div className="px-5 py-3 border-b border-[var(--theme-border)] shrink-0">
+                        <div className="px-5 py-3 border-b border-[var(--theme-border)] shrink-0 bg-gradient-to-r from-[var(--theme-surface-hover)]/65 to-[var(--theme-accent)]/10">
                             <h3 className="text-base font-semibold text-[var(--text-primary)]">{title}</h3>
                         </div>
                     )}
@@ -58,6 +55,9 @@ const Modal = ({ isOpen, onClose, title, children, size = 'md' }) => {
             </div>
         </div>
     );
+
+    if (typeof document === 'undefined') return null;
+    return createPortal(modalUi, document.body);
 };
 
 export default Modal;

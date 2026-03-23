@@ -46,4 +46,9 @@ class ModerationEvent extends Model
     {
         return $this->hasOne(WarningAppeal::class, 'moderation_event_id');
     }
+
+    public function banAppeal(): HasOne
+    {
+        return $this->hasOne(BanAppeal::class, 'moderation_event_id');
+    }
 }

@@ -1,35 +1,9 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="csrf-token" content="">
-    <title>Connectly</title>
-    <script>
-        (function() {
-            try {
-                var raw = localStorage.getItem('connectly-theme');
-                if (!raw) return;
-                var state = JSON.parse(raw);
-                var s = state?.state ?? state;
-                if (!s) return;
-                var root = document.documentElement;
-                if (s.fontSize && ['sm','md','lg'].includes(s.fontSize)) root.setAttribute('data-font-size', s.fontSize);
-                if (s.accentColor) root.setAttribute('data-accent', s.accentColor);
-                if (s.background) root.setAttribute('data-background', s.background);
-                if (['stitch','dim','dark'].includes(s.background)) root.classList.add('dark');
-                if (s.background === 'dim' || ['stitch','dark'].includes(s.background)) {
-                    document.body?.classList.add('initial-app-dim');
-                }
-            } catch (e) {}
-        })();
-    </script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
-    <!-- Dev: Vite injects CSS; keep inline skeleton styles for first paint -->
-    <style id="initial-skeleton-styles">
+/**
+ * Bootstrap skeleton for #app before React mounts.
+ * Keep in sync with resources/views/app.blade.php (initial skeleton block).
+ */
+
+export const INITIAL_SKELETON_STYLE_TAG = `<style id="initial-skeleton-styles">
         :root {
             --sk-bg: #f5f7f8;
             --sk-surface: #ffffff;
@@ -131,30 +105,9 @@
         @media (max-width: 768px) {
             .initial-skeleton--admin .initial-sk-sidebar { display: none; }
         }
-    </style>
-</head>
-<body>
-    <div id="app">
-        <div id="app-initial-skeleton" class="initial-skeleton initial-skeleton--member" data-initial-variant="member">
-            <div class="initial-skeleton-inner">
-                <header class="initial-sk-top">
-                    <div class="initial-sk-block initial-sk-logo" aria-hidden="true"></div>
-                    <div>
-                        <div class="initial-sk-block initial-sk-title" aria-hidden="true"></div>
-                        <div class="initial-sk-block initial-sk-title2" aria-hidden="true"></div>
-                    </div>
-                    <div class="initial-sk-spacer"></div>
-                    <div class="initial-sk-block initial-sk-pill" aria-hidden="true"></div>
-                </header>
-                <div class="initial-sk-body">
-                    <aside class="initial-sk-sidebar" aria-hidden="true">
-                        <div class="initial-sk-block initial-sk-nav-line"></div>
-                        <div class="initial-sk-block initial-sk-nav-line"></div>
-                        <div class="initial-sk-block initial-sk-nav-line"></div>
-                        <div class="initial-sk-block initial-sk-nav-line"></div>
-                        <div class="initial-sk-block initial-sk-nav-line"></div>
-                    </aside>
-                    <main class="initial-sk-main">
+    </style>`;
+
+const CARDS_HTML = `
                         <div class="initial-sk-block initial-sk-card">
                             <div class="initial-sk-row">
                                 <div class="initial-sk-block initial-sk-avatar"></div>
@@ -182,26 +135,81 @@
                                     <div class="initial-sk-block initial-sk-line short"></div>
                                 </div>
                             </div>
-                        </div>
+                        </div>`;
+
+export function getInitialSkeletonInnerHtml({ initialAdminShell }) {
+    const adminClass = initialAdminShell ? 'initial-skeleton--admin' : 'initial-skeleton--member'
+    const variant = initialAdminShell ? 'admin' : 'member'
+    const statsHtml = initialAdminShell
+        ? `<div class="initial-sk-stats">
+                                <div class="initial-sk-block initial-sk-stat"></div>
+                                <div class="initial-sk-block initial-sk-stat"></div>
+                                <div class="initial-sk-block initial-sk-stat"></div>
+                            </div>`
+        : ''
+    return `<div id="app-initial-skeleton" class="initial-skeleton ${adminClass}" data-initial-variant="${variant}">
+            <div class="initial-skeleton-inner">
+                <header class="initial-sk-top">
+                    <div class="initial-sk-block initial-sk-logo" aria-hidden="true"></div>
+                    <div>
+                        <div class="initial-sk-block initial-sk-title" aria-hidden="true"></div>
+                        <div class="initial-sk-block initial-sk-title2" aria-hidden="true"></div>
+                    </div>
+                    <div class="initial-sk-spacer"></div>
+                    <div class="initial-sk-block initial-sk-pill" aria-hidden="true"></div>
+                </header>
+                <div class="initial-sk-body">
+                    <aside class="initial-sk-sidebar" aria-hidden="true">
+                        <div class="initial-sk-block initial-sk-nav-line"></div>
+                        <div class="initial-sk-block initial-sk-nav-line"></div>
+                        <div class="initial-sk-block initial-sk-nav-line"></div>
+                        <div class="initial-sk-block initial-sk-nav-line"></div>
+                        <div class="initial-sk-block initial-sk-nav-line"></div>
+                    </aside>
+                    <main class="initial-sk-main">
+                        ${statsHtml}
+                        ${CARDS_HTML}
                     </main>
                 </div>
             </div>
-        </div>
-    </div>
-    <script>
+        </div>`
+}
+
+export const INITIAL_THEME_SCRIPT = `<script>
+        (function() {
+            try {
+                var raw = localStorage.getItem('connectly-theme');
+                if (!raw) return;
+                var state = JSON.parse(raw);
+                var s = state?.state ?? state;
+                if (!s) return;
+                var root = document.documentElement;
+                if (s.fontSize && ['sm','md','lg'].includes(s.fontSize)) root.setAttribute('data-font-size', s.fontSize);
+                if (s.accentColor) root.setAttribute('data-accent', s.accentColor);
+                if (s.background) root.setAttribute('data-background', s.background);
+                if (['stitch','dim','dark'].includes(s.background)) root.classList.add('dark');
+                if (s.background === 'dim' || ['stitch','dark'].includes(s.background)) {
+                    document.body?.classList.add('initial-app-dim');
+                }
+            } catch (e) {}
+        })();
+    </script>`
+
+export const INITIAL_VARIANT_SCRIPT = `<script>
         (function() {
             try {
                 var path = window.location.pathname || '';
                 var sk = document.getElementById('app-initial-skeleton');
                 if (!sk) return;
-                var wantAdmin = /^\/admin(\/|$)/.test(path) && path.indexOf('/admin/login') !== 0;
+                var wantAdmin = /^\\/admin(\\/|$)/.test(path) && path.indexOf('/admin/login') !== 0;
                 sk.classList.toggle('initial-skeleton--admin', wantAdmin);
                 sk.classList.toggle('initial-skeleton--member', !wantAdmin);
                 sk.setAttribute('data-initial-variant', wantAdmin ? 'admin' : 'member');
             } catch (e) {}
         })();
-    </script>
-    <script>
+    </script>`
+
+export const INITIAL_STUCK_SCRIPT = `<script>
         window.__reactMountError = null;
         window.addEventListener('error', function(e) {
             if (!window.__reactMountError) {
@@ -226,7 +234,4 @@
                 }
             }, 5000);
         });
-    </script>
-    <script type="module" src="/resources/js/app.jsx"></script>
-</body>
-</html>
+    </script>`

@@ -65,14 +65,14 @@ const AdminUsers = () => {
     }
 
     return (
-        <div className="space-y-8">
+        <div className="space-y-8 admin-fade-up">
             <AdminPageHeader
                 eyebrow="Admin · Users"
                 title="Users & community"
                 description="Search and export. Use View to moderate (suspend, warn, ban) with context."
             />
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-8">
                 <AdminStatCard
                     label="Total users"
                     value={statsData?.total_users?.toLocaleString()}
@@ -90,6 +90,14 @@ const AdminUsers = () => {
                     valueClassName="text-amber-500"
                     sublabel="Requires review"
                 />
+                <AdminStatCard
+                    label="Banned"
+                    value={statsData?.banned?.toLocaleString()}
+                    loading={statsQuery.isLoading}
+                    valueClassName="text-red-500"
+                    sublabel="Cannot sign in"
+                    icon="gavel"
+                />
             </div>
 
             <div className="flex gap-3 mb-6 flex-wrap items-center">
@@ -101,13 +109,13 @@ const AdminUsers = () => {
                         setSearch(e.target.value);
                         setPage(1);
                     }}
-                    className="flex-1 min-w-[200px] px-4 py-2 rounded-xl bg-[var(--theme-surface-hover)] border border-[var(--theme-border)] text-[var(--text-primary)] placeholder-[var(--text-secondary)] focus:ring-2 focus:ring-[var(--theme-accent)]/40 focus:border-[var(--theme-accent)] outline-none"
+                    className="flex-1 min-w-[200px] px-4 py-2.5 rounded-2xl bg-[var(--theme-surface-hover)] border border-[var(--theme-border)] text-[var(--text-primary)] placeholder-[var(--text-secondary)] focus:ring-2 focus:ring-[var(--theme-accent)]/40 focus:border-[var(--theme-accent)] outline-none transition-all duration-300"
                     aria-label="Search users"
                 />
                 <button
                     type="button"
                     onClick={handleExport}
-                    className="px-4 py-2 rounded-xl border border-[var(--theme-border)] text-[var(--text-primary)] hover:bg-[var(--theme-surface-hover)] text-sm font-medium"
+                    className="px-4 py-2.5 rounded-2xl border border-[var(--theme-border)] text-[var(--text-primary)] hover:bg-[var(--theme-surface-hover)] text-sm font-medium transition-all duration-300 hover:-translate-y-[1px]"
                 >
                     Export CSV
                 </button>
@@ -138,7 +146,7 @@ const AdminUsers = () => {
                     </AdminTableHead>
                     <tbody className="divide-y divide-[var(--theme-border)]">
                         {users.map((u) => (
-                            <tr key={u.id} className="hover:bg-[var(--theme-surface-hover)]/50">
+                            <tr key={u.id} className="transition-colors duration-300 hover:bg-[var(--theme-surface-hover)]/55">
                                 <td className="px-4 py-3">
                                     <Link
                                         to={`/profile/${u.username}`}
@@ -190,7 +198,7 @@ const AdminUsers = () => {
                                     <button
                                         type="button"
                                         onClick={() => setViewUserId(u.id)}
-                                        className="px-3 py-1.5 rounded-lg text-sm font-medium border border-[var(--theme-accent)] text-[var(--theme-accent)] bg-[var(--theme-accent)]/10 hover:bg-[var(--theme-accent)]/15"
+                                        className="px-3 py-1.5 rounded-xl text-sm font-medium border border-[var(--theme-accent)] text-[var(--theme-accent)] bg-[var(--theme-accent)]/10 hover:bg-[var(--theme-accent)]/15 transition-all duration-300 hover:-translate-y-[1px]"
                                     >
                                         View
                                     </button>
@@ -207,7 +215,7 @@ const AdminUsers = () => {
                         type="button"
                         onClick={() => setPage((p) => Math.max(1, p - 1))}
                         disabled={page <= 1}
-                        className="px-4 py-2 rounded-xl bg-[var(--theme-surface-hover)] text-[var(--text-primary)] disabled:opacity-50"
+                        className="px-4 py-2 rounded-xl bg-[var(--theme-surface-hover)] text-[var(--text-primary)] disabled:opacity-50 transition-all duration-300 hover:-translate-y-[1px]"
                     >
                         Previous
                     </button>
@@ -218,7 +226,7 @@ const AdminUsers = () => {
                         type="button"
                         onClick={() => setPage((p) => p + 1)}
                         disabled={page >= pagination.last_page}
-                        className="px-4 py-2 rounded-xl bg-[var(--theme-surface-hover)] text-[var(--text-primary)] disabled:opacity-50"
+                        className="px-4 py-2 rounded-xl bg-[var(--theme-surface-hover)] text-[var(--text-primary)] disabled:opacity-50 transition-all duration-300 hover:-translate-y-[1px]"
                     >
                         Next
                     </button>

@@ -280,7 +280,7 @@ const PostCard = ({ post, onDeleted }) => {
                         )}
                         {post.shared_post.media_url && (
                             <div className="mt-2 w-full min-w-0 rounded-xl overflow-hidden bg-black/20">
-                                {post.shared_post.media_type === 'image' ? (
+                                {post.shared_post.media_type !== 'video' ? (
                                     <img
                                         src={post.shared_post.media_url}
                                         alt=""
@@ -303,7 +303,7 @@ const PostCard = ({ post, onDeleted }) => {
             {/* Media first (reference order) — constrained so image fits in card, no cut-off */}
             {!post.shared_post && post.media_url && (
                 <div className="mt-2 mb-1 w-full min-w-0 rounded-xl overflow-hidden bg-[var(--theme-surface)]">
-                    {post.media_type === 'image' ? (
+                    {post.media_type !== 'video' ? (
                         <img
                             src={post.media_url}
                             alt="Post media"

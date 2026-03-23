@@ -31,6 +31,7 @@ class AdminUserController extends Controller
             'total_users' => User::query()->count(),
             'new_this_week' => User::query()->where('created_at', '>=', $weekStart)->count(),
             'suspended' => User::query()->whereNotNull('suspended_at')->count(),
+            'banned' => User::query()->whereNotNull('banned_at')->count(),
         ]);
     }
 
@@ -60,6 +61,11 @@ class AdminUserController extends Controller
 
         if ($role && in_array($role, [User::ROLE_ADMIN, User::ROLE_MODERATOR, User::ROLE_USER], true)) {
             $query->where('role', $role);
+        }
+        // By default, don't list other admins in the "Admin / Users" moderation table.
+        // (Admins can still be queried explicitly by passing `role=admin`.)
+        if (empty($role)) {
+            $query->where('role', '!=', User::ROLE_ADMIN);
         }
 
         $users = $query->orderBy('created_at', 'desc')->paginate($perPage);

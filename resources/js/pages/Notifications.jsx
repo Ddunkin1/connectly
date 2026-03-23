@@ -9,11 +9,12 @@ import {
     useRejectJoinRequestAny,
 } from '../hooks/useCommunities';
 import NotificationItem from '../components/notifications/NotificationItem';
-import LoadingSpinner from '../components/common/LoadingSpinner';
+import { SkeletonBlock } from '../components/common/skeletons';
 import Button from '../components/common/Button';
 import { useQuery } from '@tanstack/react-query';
 import { notificationsAPI } from '../services/api';
 import { Link } from 'react-router-dom';
+import WarningModal from '../components/notifications/WarningModal';
 
 const Notifications = () => {
     const { data, isLoading } = useNotifications();
@@ -36,6 +37,7 @@ const Notifications = () => {
     const unreadCount = data?.unread_count ?? 0;
     const newFollowers = highlightsData?.new_followers ?? [];
     const topPosts = highlightsData?.top_posts ?? [];
+    const [warningModalEventId, setWarningModalEventId] = React.useState(null);
 
     const handleMarkAsRead = (id) => {
         markAsReadMutation.mutate(id);
@@ -60,8 +62,16 @@ const Notifications = () => {
                 </div>
 
                 {isLoading ? (
-                    <div className="flex justify-center py-12">
-                        <LoadingSpinner />
+                    <div className="divide-y divide-[var(--theme-border)]">
+                        {Array.from({ length: 8 }).map((_, i) => (
+                            <div key={i} className="flex gap-3 p-4">
+                                <SkeletonBlock className="h-10 w-10 rounded-full shrink-0" />
+                                <div className="flex-1 space-y-2 min-w-0">
+                                    <SkeletonBlock className="h-4 w-full max-w-sm" />
+                                    <SkeletonBlock className="h-3 w-full max-w-md" />
+                                </div>
+                            </div>
+                        ))}
                     </div>
                 ) : notifications.length === 0 ? (
                     <div className="p-12 text-center">
@@ -77,6 +87,7 @@ const Notifications = () => {
                                 key={notification.id}
                                 notification={notification}
                                 onMarkAsRead={handleMarkAsRead}
+                                onOpenWarning={(eventId) => setWarningModalEventId(eventId)}
                                 onAcceptCommunityInvite={(cid, iid) => acceptInviteMutation.mutate({ communityId: cid, inviteId: iid })}
                                 onDeclineCommunityInvite={(cid, iid) => declineInviteMutation.mutate({ communityId: cid, inviteId: iid })}
                                 onApproveSuggestedInvite={(cid, iid) => approveSuggestedMutation.mutate({ communityId: cid, inviteId: iid })}
@@ -93,8 +104,8 @@ const Notifications = () => {
                 <div className="px-4 py-3 border-b border-[var(--theme-border)] flex items-center justify-between">
                     <h2 className="text-sm font-semibold text-[var(--text-primary)]">Highlights</h2>
                     {highlightsLoading && (
-                        <span className="text-[11px] text-[var(--text-secondary)] flex items-center gap-1">
-                            <LoadingSpinner size="xs" /> Loading
+                        <span className="text-[11px] text-[var(--text-secondary)] flex items-center gap-2">
+                            <SkeletonBlock className="h-3 w-16 rounded" /> Loading
                         </span>
                     )}
                 </div>
@@ -160,6 +171,12 @@ const Notifications = () => {
                     </div>
                 </div>
             </div>
+
+            <WarningModal
+                eventId={warningModalEventId}
+                isOpen={warningModalEventId != null}
+                onClose={() => setWarningModalEventId(null)}
+            />
         </div>
     );
 };

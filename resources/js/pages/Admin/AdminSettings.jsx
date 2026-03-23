@@ -33,7 +33,7 @@ const CopyBtn = ({ value, label = 'Copy' }) => {
 };
 
 const Row = ({ label, value, copyable = false }) => (
-    <div className="flex justify-between gap-4 py-2 border-b border-[var(--theme-border)]/50 last:border-0 items-start">
+    <div className="flex justify-between gap-4 py-2.5 border-b border-[var(--theme-border)]/50 last:border-0 items-start">
         <span className="text-[var(--text-secondary)] shrink-0">{label}</span>
         <div className="flex items-start gap-2 justify-end min-w-0">
             <span className="text-[var(--text-primary)] font-mono text-xs break-all text-right">{value ?? '—'}</span>
@@ -47,7 +47,7 @@ const SettingsSkeleton = () => (
         {[1, 2, 3, 4].map((i) => (
             <div
                 key={i}
-                className="rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-5 space-y-3"
+                className="rounded-3xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-5 space-y-3 shadow-[0_12px_28px_-18px_rgba(0,0,0,0.5)]"
             >
                 <AdminSkeletonBlock className="h-5 w-32" />
                 <AdminSkeletonBlock className="h-4 w-full" />
@@ -106,7 +106,7 @@ const AdminSettings = () => {
     const oauth = data?.oauth ?? {};
 
     return (
-        <div className="space-y-8">
+        <div className="space-y-8 admin-fade-up">
             <AdminPageHeader
                 eyebrow="Admin · System"
                 title="System settings"

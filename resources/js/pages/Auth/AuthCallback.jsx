@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import useAuthStore from '../../store/authStore';
 import { authAPI } from '../../services/api';
-import LoadingSpinner from '../../components/common/LoadingSpinner';
+import { SkeletonBlock } from '../../components/common/skeletons';
 import toast from 'react-hot-toast';
 
 const AuthCallback = () => {
@@ -52,9 +52,10 @@ const AuthCallback = () => {
 
     return (
         <div className="min-h-screen flex items-center justify-center theme-bg-main">
-            <div className="text-center">
-                <LoadingSpinner />
-                <p className="mt-4 text-gray-400">Completing sign in...</p>
+            <div className="text-center flex flex-col items-center gap-4">
+                <SkeletonBlock className="h-12 w-12 rounded-full mx-auto" />
+                <SkeletonBlock className="h-4 w-48 mx-auto" />
+                <p className="text-gray-400 text-sm">Completing sign in...</p>
             </div>
         </div>
     );

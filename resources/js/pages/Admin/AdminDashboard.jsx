@@ -12,7 +12,7 @@ import { AdminStatsRowSkeleton } from '../../components/admin/AdminSkeleton';
 const QuickLink = ({ to, icon, label, description }) => (
     <Link
         to={to}
-        className="group relative flex items-start gap-4 overflow-hidden rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-5 shadow-[0_4px_24px_-8px_rgba(0,0,0,0.35)] transition-all duration-300 hover:-translate-y-0.5 hover:border-[var(--theme-accent)]/35 hover:shadow-[0_12px_40px_-12px_rgba(0,0,0,0.4)]"
+        className="group admin-shimmer relative flex items-start gap-4 overflow-hidden rounded-3xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-5 shadow-[0_10px_32px_-16px_rgba(0,0,0,0.5)] transition-all duration-300 hover:-translate-y-1 hover:border-[var(--theme-accent)]/40 hover:shadow-[0_18px_45px_-16px_rgba(0,0,0,0.55)]"
     >
         <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-[var(--theme-accent)]/25 to-indigo-600/15 text-[var(--theme-accent)] ring-1 ring-[var(--theme-accent)]/20 transition-transform duration-300 group-hover:scale-105">
             <span className="material-symbols-outlined text-2xl">{icon}</span>
@@ -21,14 +21,14 @@ const QuickLink = ({ to, icon, label, description }) => (
             <p className="font-semibold text-[var(--text-primary)] tracking-tight">{label}</p>
             <p className="text-xs text-[var(--text-secondary)] mt-1 leading-relaxed">{description}</p>
         </div>
-        <span className="material-symbols-outlined text-[var(--text-secondary)] text-xl shrink-0 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:text-[var(--theme-accent)]">
+        <span className="material-symbols-outlined text-[var(--text-secondary)] text-xl shrink-0 transition-transform duration-300 group-hover:translate-x-1.5 group-hover:text-[var(--theme-accent)]">
             arrow_forward
         </span>
     </Link>
 );
 
 const ReportRow = ({ label, value }) => (
-    <div className="flex items-center justify-between gap-3 py-2.5 border-b border-[var(--theme-border)] last:border-0">
+    <div className="flex items-center justify-between gap-3 py-2.5 border-b border-[var(--theme-border)]/70 last:border-0">
         <span className="text-sm text-[var(--text-secondary)]">{label}</span>
         <span className="text-sm font-semibold tabular-nums text-[var(--text-primary)]">{value}</span>
     </div>
@@ -79,7 +79,7 @@ const AdminDashboard = () => {
     const pendingReports = rs?.by_status?.pending ?? 0;
 
     return (
-        <div className="space-y-10 pb-8">
+        <div className="space-y-10 pb-8 admin-fade-up">
             <AdminPageHeader
                 eyebrow="Admin · Overview"
                 title="Dashboard"
@@ -87,9 +87,9 @@ const AdminDashboard = () => {
             />
 
             {loading ? (
-                <AdminStatsRowSkeleton count={4} />
+                <AdminStatsRowSkeleton count={5} />
             ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4">
                     <AdminStatCard
                         label="Total users"
                         value={us?.total_users?.toLocaleString()}
@@ -106,6 +106,13 @@ const AdminDashboard = () => {
                         value={us?.suspended?.toLocaleString()}
                         sublabel="Review in Users"
                         icon="block"
+                    />
+                    <AdminStatCard
+                        label="Banned accounts"
+                        value={us?.banned?.toLocaleString()}
+                        sublabel="Cannot sign in"
+                        icon="gavel"
+                        valueClassName="text-red-500"
                     />
                     <AdminStatCard
                         label="Pending reports"

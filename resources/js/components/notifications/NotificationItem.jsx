@@ -13,6 +13,7 @@ const NotificationItem = ({
     onRejectSuggestedInvite,
     onApproveJoinRequest,
     onRejectJoinRequest,
+    onOpenWarning,
 }) => {
     const { id, type, data, read_at, created_at } = notification;
     const isUnread = !read_at;
@@ -27,9 +28,13 @@ const NotificationItem = ({
                 return data.moderation_event_id ? `/warnings/${data.moderation_event_id}` : '/safety';
             case 'warning_appeal_submitted':
                 return data.appeal_id ? `/admin/warning-appeals?appeal=${data.appeal_id}` : '/admin/warning-appeals';
+            case 'ban_appeal_submitted':
+                return data.appeal_id ? `/admin/ban-appeals?appeal=${data.appeal_id}` : '/admin/ban-appeals';
             case 'moderation_content_removed':
             case 'account_suspended':
             case 'account_banned':
+                return '/safety';
+            case 'ban_appeal_answered':
                 return '/safety';
             case 'friend_request':
                 return `/profile/${data.sender_username}`;
@@ -83,6 +88,8 @@ const NotificationItem = ({
         'account_banned',
         'warning_appeal_submitted',
         'warning_appeal_answered',
+        'ban_appeal_submitted',
+        'ban_appeal_answered',
     ].includes(type);
 
     if (isModerationSystem) {
@@ -168,11 +175,25 @@ const NotificationItem = ({
             </div>
         );
 
-        return (
-            <Link to={getLink()} className="block">
-                {moderationContent}
-            </Link>
-        );
+        const moderationEventId = data?.moderation_event_id;
+        const shouldOpenWarningModal =
+            onOpenWarning &&
+            moderationEventId &&
+            (type === 'moderation_warning' || type === 'warning_appeal_answered');
+
+        if (shouldOpenWarningModal) {
+            return (
+                <button
+                    type="button"
+                    className="block w-full text-left bg-transparent border-0 p-0 cursor-pointer"
+                    onClick={() => onOpenWarning(moderationEventId)}
+                >
+                    {moderationContent}
+                </button>
+            );
+        }
+
+        return <Link to={getLink()} className="block">{moderationContent}</Link>;
     }
 
     const hasActions = (type === 'community_invite' && onAcceptCommunityInvite && onDeclineCommunityInvite) ||

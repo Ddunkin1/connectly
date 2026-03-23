@@ -4,7 +4,7 @@ import { useCommunities, useJoinCommunity, useLeaveCommunity, useCreateCommunity
 import useAuthStore from '../store/authStore';
 import Avatar from '../components/common/Avatar';
 import Button from '../components/common/Button';
-import LoadingSpinner from '../components/common/LoadingSpinner';
+import { CommunitySkeleton } from '../components/common/skeletons';
 import Modal from '../components/common/Modal';
 
 const inputBase =
@@ -54,8 +54,8 @@ const Communities = () => {
 
     if (isLoading) {
         return (
-            <div className="max-w-3xl mx-auto py-8 flex items-center justify-center">
-                <LoadingSpinner size="lg" />
+            <div className="max-w-3xl mx-auto py-8">
+                <CommunitySkeleton />
             </div>
         );
     }

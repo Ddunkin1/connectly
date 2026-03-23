@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { trendingAPI, userAPI, communityAPI } from '../services/api';
 import PostCard from '../components/posts/PostCard';
 import Avatar from '../components/common/Avatar';
-import LoadingSpinner from '../components/common/LoadingSpinner';
+import { FeedSkeleton } from '../components/common/skeletons';
 import { Link } from 'react-router-dom';
 
 const SECTION_TITLE = 'text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)]';
@@ -52,8 +52,8 @@ const Explore = () => {
             </header>
 
             {anyLoading && (
-                <div className="flex justify-center py-12">
-                    <LoadingSpinner size="lg" />
+                <div className="py-4">
+                    <FeedSkeleton cards={3} showComposer={false} />
                 </div>
             )}
 

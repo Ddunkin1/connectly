@@ -1,7 +1,7 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { userAPI } from '../services/api';
-import LoadingSpinner from '../components/common/LoadingSpinner';
+import { AnalyticsSkeleton } from '../components/common/skeletons';
 import { Link } from 'react-router-dom';
 
 const Analytics = () => {
@@ -13,11 +13,10 @@ const Analytics = () => {
 
     if (isLoading) {
         return (
-            <div className="max-w-2xl mx-auto py-8">
-                <h1 className="text-2xl font-bold text-white mb-4">Analytics</h1>
-                <div className="flex justify-center py-12">
-                    <LoadingSpinner />
-                </div>
+            <div className="max-w-4xl mx-auto py-8">
+                <h1 className="text-2xl font-bold text-white mb-2">Analytics</h1>
+                <p className="text-gray-400 text-sm mb-6">Track how your content and audience are growing over time.</p>
+                <AnalyticsSkeleton />
             </div>
         );
     }

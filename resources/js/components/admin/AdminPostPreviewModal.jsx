@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import Modal from '../common/Modal';
 import Avatar from '../common/Avatar';
-import LoadingSpinner from '../common/LoadingSpinner';
+import { PostDetailSkeleton } from '../common/skeletons';
 import { postsAPI } from '../../services/api';
 import AdminErrorState from './AdminErrorState';
 import AdminReportUserPanel from './AdminReportUserPanel';
@@ -50,13 +50,13 @@ const AdminPostPreviewModal = ({
         (reportContext.onRemovePost || reportContext.onRequestDismiss);
 
     const modalTitle = showUserPanel ? 'Post & reported user' : 'Post preview';
-    const modalSize = showUserPanel ? '2xl' : 'lg';
+    const modalSize = showUserPanel ? '3xl' : 'lg';
 
     return (
         <Modal isOpen={isOpen} onClose={onClose} title={modalTitle} size={modalSize}>
             {!enabled ? null : isLoading ? (
-                <div className="flex justify-center py-16">
-                    <LoadingSpinner />
+                <div className="py-4 max-w-2xl mx-auto">
+                    <PostDetailSkeleton />
                 </div>
             ) : error ? (
                 <AdminErrorState
@@ -68,7 +68,7 @@ const AdminPostPreviewModal = ({
                 <div
                     className={
                         showUserPanel
-                            ? 'flex flex-col lg:flex-row gap-4 lg:gap-0 min-h-0 lg:items-stretch lg:max-h-[min(72vh,560px)] lg:h-[min(72vh,560px)] lg:overflow-hidden'
+                            ? 'flex flex-col lg:flex-row gap-4 lg:gap-0 min-h-0 lg:items-stretch lg:h-[min(74vh,620px)] lg:max-h-[78vh] lg:overflow-hidden'
                             : 'space-y-4'
                     }
                 >
@@ -156,7 +156,7 @@ const AdminPostPreviewModal = ({
                     </div>
 
                     {showUserPanel && (
-                        <div className="flex flex-col min-h-0 w-full min-w-0 lg:w-[min(100%,380px)] lg:shrink-0 lg:border-l lg:border-[var(--theme-border)] lg:pl-4 lg:overflow-hidden lg:min-h-0">
+                        <div className="flex flex-col min-h-0 w-full min-w-0 lg:w-[min(100%,400px)] lg:shrink-0 lg:border-l lg:border-[var(--theme-border)] lg:pl-4 lg:overflow-hidden lg:min-h-0">
                             {reportContext?.reportId != null && (
                                 <p className="text-xs text-[var(--text-secondary)] mb-2 shrink-0">
                                     Report #{reportContext.reportId} ·{' '}

@@ -121,27 +121,41 @@ class PostService
 
         // Handle file upload if media is provided (Supabase); post still created without media if upload fails
         if (isset($data['media']) && $data['media']) {
-            try {
-                $mediaUrl = $this->supabaseService->uploadFile($data['media'], 'posts');
-                if ($mediaUrl) {
-                    $mimeType = $data['media']->getMimeType();
-                    $mediaType = str_starts_with($mimeType, 'image/') ? 'image' : 'video';
-                } else {
-                    \Log::warning('Post media upload returned no URL; creating post without media.', [
-                        'user_id' => $user->id,
-                        'file_name' => $data['media']->getClientOriginalName(),
-                    ]);
+            $file = $data['media'];
+            $content = trim($data['content'] ?? '');
+
+            // Uploads can be flaky (network/Supabase). Retry a few times before giving up.
+            $uploadAttempts = 3;
+            $lastError = null;
+            for ($attempt = 1; $attempt <= $uploadAttempts; $attempt++) {
+                try {
+                    $mediaUrl = $this->supabaseService->uploadFile($file, 'posts');
+                    if ($mediaUrl) {
+                        $mimeType = $file->getMimeType();
+                        $mediaType = str_starts_with($mimeType, 'image/') ? 'image' : 'video';
+                    }
+                    break;
+                } catch (\Throwable $e) {
+                    $lastError = $e;
+                    if ($attempt < $uploadAttempts) {
+                        // Small backoff before retry
+                        usleep(300000 * $attempt);
+                    }
                 }
-            } catch (\Throwable $e) {
-                $content = trim($data['content'] ?? '');
-                \Log::warning('Post media upload failed; creating post without media.', [
+            }
+
+            if (! $mediaUrl) {
+                \Log::warning('Post media upload failed after retries; creating post without media.', [
                     'user_id' => $user->id,
-                    'file_name' => $data['media']->getClientOriginalName(),
-                    'error' => $e->getMessage(),
+                    'file_name' => $file->getClientOriginalName(),
+                    'error' => $lastError?->getMessage(),
                 ]);
+
+                // If user posted an image-only post (no caption), don't silently create an empty card.
+                // Instead, block and ask to try again (caption is optional).
                 if (empty($content)) {
                     throw ValidationException::withMessages([
-                        'media' => ['Image upload failed (connection timeout to Supabase). Add a caption and try again, or post text only.'],
+                        'media' => ['Image upload failed (connection timeout to Supabase). Please try again.'],
                     ]);
                 }
             }

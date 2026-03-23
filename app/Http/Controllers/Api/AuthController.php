@@ -14,6 +14,8 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
+use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -102,11 +104,35 @@ class AuthController extends Controller
                 ->orderByDesc('id')
                 ->first();
 
+            // Some older bans might have `users.banned_at` set without a corresponding
+            // `moderation_events` row. Ensure we always have a ban event so the
+            // member can submit an in-app appeal.
+            if (! $banEvent && Schema::hasTable('moderation_events')) {
+                $banEvent = ModerationEvent::create([
+                    'user_id' => $user->id,
+                    'admin_id' => null,
+                    'action' => ModerationEvent::ACTION_BAN,
+                    'reason_code' => null,
+                    'message' => null,
+                    'meta' => null,
+                ]);
+            }
+
+            $appealToken = null;
+            if ($banEvent?->id) {
+                $appealToken = Crypt::encryptString(json_encode([
+                    'moderation_event_id' => $banEvent->id,
+                    'user_id' => $user->id,
+                ]));
+            }
+
             return response()->json([
                 'message' => 'This account has been permanently banned.',
                 'code' => 'account_banned',
                 'reason_code' => $banEvent?->reason_code,
                 'ban_message' => $banEvent?->message,
+                'moderation_event_id' => $banEvent?->id,
+                'appeal_token' => $appealToken,
             ], 403);
         }
 

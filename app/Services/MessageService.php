@@ -126,7 +126,9 @@ class MessageService
 
             $oldAttachmentUrl = $message->attachment_url;
             $message->update([
-                'message' => null,
+                // Keep `messages.message` non-null (DB column is NOT NULL).
+                // UI uses `is_deleted` to show a "This message was deleted" placeholder.
+                'message' => '',
                 'attachment_url' => null,
                 'attachment_type' => null,
                 'deleted_by' => $actor->id,

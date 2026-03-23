@@ -11,7 +11,12 @@ import Avatar from '../components/common/Avatar';
 import AuthImage from '../components/common/AuthImage';
 import PostCard from '../components/posts/PostCard';
 import PostInput from '../components/posts/PostInput';
-import LoadingSpinner from '../components/common/LoadingSpinner';
+import {
+    ProfileSkeleton,
+    FeedSkeleton,
+    MediaGridSkeleton,
+    SkeletonBlock,
+} from '../components/common/skeletons';
 import { formatDate } from '../utils/formatDate';
 import { useStories } from '../hooks/useStories';
 import { useProfileComments, useCreateProfileComment, useUpdateProfileComment, useHideProfileComment, useUnhideProfileComment, useDeleteProfileComment } from '../hooks/useProfileComments';
@@ -829,11 +834,7 @@ const Profile = () => {
     }, [imageCaptionModal]);
 
     if (profileLoading) {
-        return (
-            <div className="flex justify-center items-center py-12">
-                <LoadingSpinner size="lg" />
-            </div>
-        );
+        return <ProfileSkeleton />;
     }
 
     if (!profile) {
@@ -1350,9 +1351,7 @@ const Profile = () => {
                                 </div>
                             )}
                             {postsLoading ? (
-                                <div className="flex justify-center py-12">
-                                    <LoadingSpinner />
-                                </div>
+                                <FeedSkeleton cards={3} showComposer={false} />
                             ) : posts.length > 0 ? (
                                 <div className="space-y-6">
                                     {posts.map((post) => (
@@ -1408,9 +1407,7 @@ const Profile = () => {
                                 {(mediaSubTab === 'posts' || !isOwnProfile) && (
                                     <>
                                         {postsLoading ? (
-                                            <div className="flex justify-center py-12">
-                                                <LoadingSpinner />
-                                            </div>
+                                            <MediaGridSkeleton count={6} />
                                         ) : mediaPosts.length > 0 ? (
                                             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                                                 {mediaPosts.map((post) => (
@@ -1442,9 +1439,7 @@ const Profile = () => {
                                 {isOwnProfile && mediaSubTab === 'profile-pictures' && (
                                     <>
                                         {profilePictureHistoryLoading ? (
-                                            <div className="flex justify-center py-12">
-                                                <LoadingSpinner />
-                                            </div>
+                                            <MediaGridSkeleton count={6} />
                                         ) : profile?.latest_profile_picture_post || profilePictureHistoryItems.length > 0 ? (
                                             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                                                 {profile?.latest_profile_picture_post && (
@@ -1487,9 +1482,7 @@ const Profile = () => {
                                 {isOwnProfile && mediaSubTab === 'cover-images' && (
                                     <>
                                         {coverImageHistoryLoading ? (
-                                            <div className="flex justify-center py-12">
-                                                <LoadingSpinner />
-                                            </div>
+                                            <MediaGridSkeleton count={6} aspectClass="aspect-video" />
                                         ) : profile?.latest_cover_image_post || coverImageHistoryItems.length > 0 ? (
                                             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                                                 {profile?.latest_cover_image_post && (
@@ -1537,8 +1530,9 @@ const Profile = () => {
                     {activeTab === 'communities' && (
                         <>
                             {communitiesLoading ? (
-                                <div className="flex justify-center py-12">
-                                    <LoadingSpinner />
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <SkeletonBlock className="h-24 rounded-2xl" />
+                                    <SkeletonBlock className="h-24 rounded-2xl" />
                                 </div>
                             ) : communities.length > 0 ? (
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

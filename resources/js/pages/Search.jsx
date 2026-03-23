@@ -5,7 +5,7 @@ import { trendingAPI } from '../services/api';
 import { useSearch } from '../hooks/useSearch';
 import PostCard from '../components/posts/PostCard';
 import Avatar from '../components/common/Avatar';
-import LoadingSpinner from '../components/common/LoadingSpinner';
+import { FeedSkeleton } from '../components/common/skeletons';
 import { useFollow, useUnfollow } from '../hooks/useUsers';
 import useAuthStore from '../store/authStore';
 
@@ -20,6 +20,11 @@ const Search = () => {
     useEffect(() => {
         setLocalQuery(query);
     }, [query]);
+
+    const [activeTab, setActiveTab] = useState(() => {
+        const t = searchParams.get('type');
+        return t && ['users', 'posts', 'communities', 'hashtags'].includes(t) ? t : 'all';
+    });
 
     const { data, isLoading, isError } = useSearch(query, activeTab, !!query);
 
@@ -44,10 +49,6 @@ const Search = () => {
         { id: 'communities', label: 'Communities' },
         { id: 'hashtags', label: 'Hashtags' },
     ];
-    const [activeTab, setActiveTab] = useState(() => {
-        const t = searchParams.get('type');
-        return t && ['users', 'posts', 'communities', 'hashtags'].includes(t) ? t : 'all';
-    });
 
     const { data: trendingData } = useQuery({
         queryKey: ['trending-hashtags'],
@@ -107,8 +108,8 @@ const Search = () => {
 
     if (isLoading) {
         return (
-            <div className="flex justify-center items-center py-12">
-                <LoadingSpinner size="lg" />
+            <div className="max-w-2xl mx-auto py-4">
+                <FeedSkeleton cards={3} showComposer={false} />
             </div>
         );
     }
