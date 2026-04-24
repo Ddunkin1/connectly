@@ -62,4 +62,9 @@ return [
         'redirect' => env('FACEBOOK_REDIRECT_URI', env('APP_URL') . '/api/auth/facebook/callback'),
     ],
 
+    'agora' => [
+        'app_id'          => env('AGORA_APP_ID'),
+        'app_certificate' => env('AGORA_APP_CERTIFICATE'),
+    ],
+
 ];

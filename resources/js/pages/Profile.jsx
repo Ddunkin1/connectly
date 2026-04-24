@@ -857,12 +857,12 @@ const Profile = () => {
     const extraCount = Math.max(0, (profile.followers_count ?? 0) - followersPreview.length);
 
     return (
-        <div className="w-full max-w-[720px] mx-auto min-w-0 pl-0 pr-6 md:pr-8 py-6">
+        <div className="w-full max-w-[720px] mx-auto min-w-0 px-0 py-4 md:py-6">
             {/* Profile Banner Section */}
             <div className="theme-surface rounded-2xl overflow-visible mb-6 border border-[var(--theme-border)] shadow-post-card relative min-w-0 w-full">
                 {/* Cover Image - img with onError fallback to detect 403/404/502 */}
                 <div 
-                    className="h-64 relative overflow-hidden group"
+                    className="h-44 md:h-64 relative overflow-hidden group"
                     style={{
                         background: COVER_GRADIENT,
                         backgroundSize: 'cover',
@@ -916,7 +916,7 @@ const Profile = () => {
                 </div>
 
                 {/* Profile picture + name in one row – slightly below banner so it doesn’t overlap */}
-                <div className="relative z-10 flex items-center gap-5 px-6 md:px-8 -mt-8 min-w-0">
+                <div className="relative z-10 flex items-center gap-3 md:gap-5 px-4 md:px-8 -mt-6 md:-mt-8 min-w-0">
                     <input
                         ref={profilePicInputRef}
                         type="file"
@@ -934,7 +934,7 @@ const Profile = () => {
                         >
                         {hasActiveStory ? (
                             <div className="story-ring story-ring-thin rounded-full inline-flex">
-                                <div className="w-32 h-32 md:w-40 md:h-40 rounded-full border-4 border-[var(--theme-surface)] p-1 theme-surface bg-[var(--theme-surface)] overflow-hidden">
+                                <div className="w-24 h-24 md:w-36 md:h-36 rounded-full border-4 border-[var(--theme-surface)] p-1 theme-surface bg-[var(--theme-surface)] overflow-hidden">
                                     <Avatar
                                         src={profile.profile_picture}
                                         alt={profile.name}
@@ -944,7 +944,7 @@ const Profile = () => {
                                 </div>
                             </div>
                         ) : (
-                            <div className="w-32 h-32 md:w-40 md:h-40 rounded-full border-4 border-[var(--theme-border)] p-1 theme-surface bg-[var(--theme-surface)] overflow-hidden shadow-inner">
+                            <div className="w-24 h-24 md:w-36 md:h-36 rounded-full border-4 border-[var(--theme-border)] p-1 theme-surface bg-[var(--theme-surface)] overflow-hidden shadow-inner">
                                 <Avatar
                                     src={profile.profile_picture}
                                     alt={profile.name}
@@ -991,7 +991,7 @@ const Profile = () => {
                 </div>
 
                 {/* Profile Info Section - bio, location, actions */}
-                <div className="pt-4 pb-8 px-6 md:px-8 pr-8 md:pr-12 min-w-0">
+                <div className="pt-3 pb-6 px-4 md:px-8 min-w-0">
                     <div className="flex flex-col gap-5">
                         {/* Bio, location, date - full width */}
                         <div className="min-w-0">
@@ -1262,7 +1262,7 @@ const Profile = () => {
                 )}
 
                 {/* Profile Navigation Tabs */}
-                <div className="border-t border-[var(--theme-border)] px-6 md:px-8 pr-8 md:pr-12 pt-0 pb-4 min-w-0">
+                <div className="border-t border-[var(--theme-border)] px-4 md:px-8 pt-0 pb-4 min-w-0">
                     <div className="flex gap-4 md:gap-6 min-w-0 flex-wrap">
                         <button
                             onClick={() => setActiveTab('posts')}

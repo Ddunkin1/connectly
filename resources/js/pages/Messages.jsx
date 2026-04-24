@@ -238,7 +238,7 @@ const Messages = () => {
                             ) : displayConversation ? (
                                 <>
                                     <div className="shrink-0">
-                                        <MessageChatHeader otherUser={displayConversation.other_user} onBack={() => setMobileView('list')} />
+                                        <MessageChatHeader otherUser={displayConversation.other_user} conversationId={displayConversation.id} onBack={() => setMobileView('list')} />
                                     </div>
                                     <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
                                         <MessageThread

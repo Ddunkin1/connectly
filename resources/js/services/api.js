@@ -277,6 +277,13 @@ export const groupMessagesAPI = {
     delete: (messageId) => api.delete(`/group-messages/${messageId}`),
 };
 
+// Video Calls API
+export const callAPI = {
+    generateToken: (conversationId) => api.post('/calls/token', { conversation_id: conversationId }),
+    initiate:      (conversationId) => api.post('/calls/initiate', { conversation_id: conversationId }),
+    end:           (conversationId) => api.post('/calls/end', { conversation_id: conversationId }),
+};
+
 // Stories API
 export const storiesAPI = {
     getList: () => api.get('/stories'),

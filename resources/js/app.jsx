@@ -27,6 +27,7 @@ import useThemeStore from './store/themeStore';
 import ThemeCustomizer from './components/layout/ThemeCustomizer';
 import RealtimeMessagesProvider from './components/realtime/RealtimeMessagesProvider';
 import RealtimePostUpdatesProvider from './components/realtime/RealtimePostUpdatesProvider';
+import RealtimeCallProvider from './components/realtime/RealtimeCallProvider';
 
 // ─── Lazy page imports ────────────────────────────────────────────────────────
 // Member app
@@ -192,6 +193,7 @@ function AppContent() {
     const isMessagesPage = location.pathname.startsWith('/messages');
 
     return (
+        <RealtimeCallProvider>
         <RealtimeMessagesProvider>
         <RealtimePostUpdatesProvider>
         <MainLayout showRightPanel={!isMessagesPage} showLeftPanel={!isMessagesPage}>
@@ -242,6 +244,7 @@ function AppContent() {
         <ToasterShared />
         </RealtimePostUpdatesProvider>
         </RealtimeMessagesProvider>
+        </RealtimeCallProvider>
     );
 }
 

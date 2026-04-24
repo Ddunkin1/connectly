@@ -25,3 +25,8 @@ Broadcast::channel('group-conversation.{groupId}', function ($user, $groupId) {
 Broadcast::channel('post-updates', function ($user) {
     return $user !== null;
 });
+
+// Video call signaling — only the user themselves can auth for their own channel
+Broadcast::channel('user.{id}', function ($user, $id) {
+    return (int) $user->id === (int) $id;
+});

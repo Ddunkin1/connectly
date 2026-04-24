@@ -1,8 +1,32 @@
 import React, { useState } from 'react';
-const MessageChatHeader = ({ otherUser, onBack }) => {
-    const [showMenu, setShowMenu] = useState(false);
+import { callAPI } from '../../services/api';
+import toast from 'react-hot-toast';
+
+const MessageChatHeader = ({ otherUser, conversationId, onBack }) => {
+    const [showMenu, setShowMenu]   = useState(false);
+    const [calling, setCalling]     = useState(false);
 
     if (!otherUser) return null;
+
+    const handleVideoCall = async () => {
+        if (calling || !conversationId) return;
+        setCalling(true);
+        try {
+            const [tokenRes] = await Promise.all([
+                callAPI.generateToken(conversationId),
+                callAPI.initiate(conversationId),
+            ]);
+            const { channel_name, token, app_id, uid } = tokenRes.data;
+            // Signal the global RealtimeCallProvider to open the VideoCall overlay
+            window.dispatchEvent(new CustomEvent('open-video-call', {
+                detail: { channel_name, token, app_id, uid, conversation_id: conversationId },
+            }));
+        } catch {
+            toast.error('Could not start video call. Please try again.');
+        } finally {
+            setCalling(false);
+        }
+    };
 
     return (
         <header className="h-16 px-3 sm:px-6 flex items-center justify-between border-b border-[var(--theme-border)] bg-[var(--theme-bg-main)] shrink-0">
@@ -33,9 +57,22 @@ const MessageChatHeader = ({ otherUser, onBack }) => {
                 <button type="button" className="w-9 h-9 rounded-full flex items-center justify-center text-[var(--text-primary)]/80 hover:bg-[var(--theme-surface-hover)] hover:text-[var(--text-primary)] transition-all" aria-label="Voice call">
                     <span className="material-symbols-outlined text-xl">call</span>
                 </button>
-                <button type="button" className="w-9 h-9 rounded-full flex items-center justify-center text-[var(--text-primary)]/80 hover:bg-[var(--theme-surface-hover)] hover:text-[var(--text-primary)] transition-all" aria-label="Video call">
-                    <span className="material-symbols-outlined text-xl">videocam</span>
+
+                {/* Video call button — initiates Agora call */}
+                <button
+                    type="button"
+                    onClick={handleVideoCall}
+                    disabled={calling || !conversationId}
+                    className="w-9 h-9 rounded-full flex items-center justify-center text-[var(--text-primary)]/80 hover:bg-[var(--theme-surface-hover)] hover:text-[var(--text-primary)] transition-all disabled:opacity-50"
+                    aria-label="Video call"
+                >
+                    {calling ? (
+                        <div className="w-4 h-4 border-2 border-current/40 border-t-current rounded-full animate-spin" />
+                    ) : (
+                        <span className="material-symbols-outlined text-xl">videocam</span>
+                    )}
                 </button>
+
                 <div className="relative">
                     <button type="button" onClick={() => setShowMenu(!showMenu)} className="w-9 h-9 rounded-full flex items-center justify-center text-[var(--text-primary)]/80 hover:bg-[var(--theme-surface-hover)] hover:text-[var(--text-primary)] transition-all" aria-label="Info">
                         <span className="material-symbols-outlined text-xl">info</span>

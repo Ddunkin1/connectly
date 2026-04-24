@@ -50,7 +50,7 @@ class PostService
             // Score = (likes × 3) + (comments × 2) + recency boost + friend bonus
             $query->selectRaw('posts.*,
                 (COALESCE((SELECT COUNT(*) FROM likes WHERE likeable_type = ? AND likeable_id = posts.id), 0) * 3 +
-                 COALESCE((SELECT COUNT(*) FROM comments WHERE post_id = posts.id AND deleted_at IS NULL), 0) * 2 +
+                 COALESCE((SELECT COUNT(*) FROM comments WHERE post_id = posts.id), 0) * 2 +
                  CASE WHEN posts.created_at >= NOW() - INTERVAL 6 HOUR THEN 10
                       WHEN posts.created_at >= NOW() - INTERVAL 24 HOUR THEN 5
                       ELSE 0 END +

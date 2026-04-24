@@ -26,6 +26,7 @@ use App\Http\Controllers\Api\TrendingController;
 use App\Http\Controllers\Api\TwoFactorController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\BanAppealController;
+use App\Http\Controllers\Api\CallController;
 use App\Http\Controllers\Api\WarningAppealController;
 use App\Http\Controllers\Api\WarningEventController;
 use App\Http\Controllers\Api\Admin\AdminWarningAppealController;
@@ -234,6 +235,11 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function () {
     Route::get('/conversations/{conversation}/messages', [MessageController::class, 'index']);
     Route::get('/conversations/{conversation}/media', [MessageController::class, 'media']);
     Route::post('/conversations/{conversation}/read', [MessageController::class, 'markAsRead']);
+
+    // Video calls
+    Route::post('/calls/token',    [CallController::class, 'generateToken']);
+    Route::post('/calls/initiate', [CallController::class, 'initiate']);
+    Route::post('/calls/end',      [CallController::class, 'end']);
 
     // Notifications (read-all must be before {id} to avoid matching "read-all" as id)
     Route::get('/notifications', [NotificationController::class, 'index']);
