@@ -1,12 +1,22 @@
 import React, { useState } from 'react';
-const MessageChatHeader = ({ otherUser }) => {
+const MessageChatHeader = ({ otherUser, onBack }) => {
     const [showMenu, setShowMenu] = useState(false);
 
     if (!otherUser) return null;
 
     return (
-        <header className="h-16 px-6 flex items-center justify-between border-b border-[var(--theme-border)] bg-[var(--theme-bg-main)] shrink-0">
-            <div className="flex items-center gap-3 min-w-0">
+        <header className="h-16 px-3 sm:px-6 flex items-center justify-between border-b border-[var(--theme-border)] bg-[var(--theme-bg-main)] shrink-0">
+            <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                {onBack && (
+                    <button
+                        type="button"
+                        onClick={onBack}
+                        className="sm:hidden w-8 h-8 rounded-full flex items-center justify-center text-[var(--text-primary)]/80 hover:bg-[var(--theme-surface-hover)] shrink-0"
+                        aria-label="Back to conversations"
+                    >
+                        <span className="material-symbols-outlined text-xl">arrow_back</span>
+                    </button>
+                )}
                 <div className="relative shrink-0">
                     <img src={otherUser.profile_picture} alt={otherUser.name} className="w-10 h-10 rounded-full object-cover" />
                     <div className="absolute bottom-0 right-0 w-3 h-3 bg-primary border-2 border-[var(--theme-bg-main)] rounded-full" />

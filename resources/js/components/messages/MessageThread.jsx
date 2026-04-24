@@ -53,6 +53,7 @@ const MessageThread = ({ conversationId, onMediaFromMessages, onPinnedFromMessag
     const [imagePreviewUrl, setImagePreviewUrl] = useState(null);
     const [imageMenuOpen, setImageMenuOpen] = useState(false);
     const [forwardModalOpen, setForwardModalOpen] = useState(false);
+    const [forwardMessageId, setForwardMessageId] = useState(null);
     const menuRef = useRef(null);
     const imageMenuRef = useRef(null);
     const { data: conversationsData } = useConversations();
@@ -299,7 +300,30 @@ const MessageThread = ({ conversationId, onMediaFromMessages, onPinnedFromMessag
 
     const openForwardModal = () => {
         setImageMenuOpen(false);
+        setForwardMessageId(null);
         setForwardModalOpen(true);
+    };
+
+    const openForwardMessageModal = (message) => {
+        setOpenMenuMessageId(null);
+        setForwardMessageId(message.id);
+        setForwardModalOpen(true);
+    };
+
+    const handleForwardMessage = async (conversation) => {
+        const msg = messages.find((m) => m.id === forwardMessageId);
+        if (!msg || !conversation?.other_user?.id) return;
+        setForwardModalOpen(false);
+        setForwardMessageId(null);
+        try {
+            await sendMessageMutation.mutateAsync({
+                receiver_id: conversation.other_user.id,
+                message: msg.message || '',
+            });
+            toast.success(`Forwarded to ${conversation.other_user.name || conversation.other_user.username}`);
+        } catch {
+            toast.error('Failed to forward');
+        }
     };
 
     const handleEditFileChange = (e) => {
@@ -606,7 +630,7 @@ const MessageThread = ({ conversationId, onMediaFromMessages, onPinnedFromMessag
                                                                 </button>
                                                                 <button
                                                                     type="button"
-                                                                    onClick={() => { setOpenMenuMessageId(null); /* TODO: forward */ }}
+                                                                    onClick={() => openForwardMessageModal(message)}
                                                                     className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-[var(--text-primary)] hover:bg-[var(--theme-surface)] transition-colors text-left"
                                                                 >
                                                                     <span className="material-symbols-outlined text-lg text-[var(--text-primary)]/70">forward</span>
@@ -720,7 +744,7 @@ const MessageThread = ({ conversationId, onMediaFromMessages, onPinnedFromMessag
                 </div>
             </Modal>
 
-            <Modal isOpen={forwardModalOpen} onClose={() => setForwardModalOpen(false)} title="Forward to" size="sm">
+            <Modal isOpen={forwardModalOpen} onClose={() => { setForwardModalOpen(false); setForwardMessageId(null); }} title="Forward to" size="sm">
                 <div className="max-h-64 overflow-y-auto space-y-1">
                     {conversations
                         .filter((c) => c.id !== conversationId)
@@ -728,7 +752,7 @@ const MessageThread = ({ conversationId, onMediaFromMessages, onPinnedFromMessag
                             <button
                                 key={c.id}
                                 type="button"
-                                onClick={() => handleForwardImage(c)}
+                                onClick={() => forwardMessageId ? handleForwardMessage(c) : handleForwardImage(c)}
                                 disabled={sendMessageMutation.isPending}
                                 className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-[var(--theme-surface-hover)] transition-colors text-left disabled:opacity-50"
                             >

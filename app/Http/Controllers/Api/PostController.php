@@ -54,7 +54,8 @@ class PostController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
-        $posts = $this->postService->getFeed($request->user(), 15);
+        $sort = in_array($request->query('sort'), ['for_you', 'recent']) ? $request->query('sort') : 'for_you';
+        $posts = $this->postService->getFeed($request->user(), 15, $sort);
 
         // Load recent likers (3 per post) in bulk to avoid N+1
         $postIds = $posts->pluck('id')->toArray();

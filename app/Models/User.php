@@ -51,6 +51,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'website',
         'privacy_settings',
         'notification_preferences',
+        'onboarding_completed',
         'suspended_at',
         'suspended_until',
         'banned_at',
@@ -86,6 +87,7 @@ class User extends Authenticatable implements MustVerifyEmail
             'muted_topics' => 'array',
             'muted_users' => 'array',
             'muted_communities' => 'array',
+            'onboarding_completed' => 'boolean',
         ];
     }
 
@@ -391,14 +393,6 @@ class User extends Authenticatable implements MustVerifyEmail
     public function blockedByUserIds(): array
     {
         return $this->blockedBy()->pluck('blocker_id')->toArray();
-    }
-
-    /**
-     * Get push subscriptions for this user.
-     */
-    public function pushSubscriptions(): \Illuminate\Database\Eloquent\Relations\HasMany
-    {
-        return $this->hasMany(PushSubscription::class);
     }
 
     /**

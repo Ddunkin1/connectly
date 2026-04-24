@@ -20,9 +20,17 @@ class UpdateProfileRequest extends FormRequest
      */
     protected function prepareForValidation(): void
     {
-        $this->merge([
-            'website' => $this->website ?: null,
-        ]);
+        $data = ['website' => $this->website ?: null];
+        if ($this->filled('bio')) {
+            $data['bio'] = strip_tags($this->input('bio'));
+        }
+        if ($this->filled('name')) {
+            $data['name'] = strip_tags($this->input('name'));
+        }
+        if ($this->filled('location')) {
+            $data['location'] = strip_tags($this->input('location'));
+        }
+        $this->merge($data);
     }
 
     /**

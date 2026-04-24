@@ -1,256 +1,193 @@
-import React, { useEffect } from 'react';
+import React, { lazy, Suspense, useEffect } from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'react-hot-toast';
+
+// Layout (always eager — needed immediately)
 import MainLayout from './components/layout/MainLayout';
+import AdminLayout from './components/admin/AdminLayout';
+
+// Auth pages — eager (entry point, no lazy penalty)
 import Login from './pages/Auth/Login';
-import AccountBanned from './pages/Auth/AccountBanned';
 import Register from './pages/Auth/Register';
 import ForgotPassword from './pages/Auth/ForgotPassword';
 import ResetPassword from './pages/Auth/ResetPassword';
 import AuthCallback from './pages/Auth/AuthCallback';
+import AccountBanned from './pages/Auth/AccountBanned';
 import Landing from './pages/Landing';
-import Home from './pages/Home';
-import Profile from './pages/Profile';
-import PostDetail from './pages/PostDetail';
-import Communities from './pages/Communities';
-import CommunityDetail from './pages/CommunityDetail';
-import EditProfileRedirect from './pages/EditProfileRedirect';
-import Search from './pages/Search';
-import Explore from './pages/Explore';
-import Messages from './pages/Messages';
-import Notifications from './pages/Notifications';
-import Bookmarks from './pages/Bookmarks';
-import Analytics from './pages/Analytics';
-import Settings from './pages/Settings';
-import Onboarding from './pages/Onboarding';
-import Connections from './pages/Connections';
-import SafetyCenter from './pages/SafetyCenter';
-import WarningDetail from './pages/WarningDetail';
-import AdminLayout from './components/admin/AdminLayout';
-import AdminLogin from './pages/Admin/AdminLogin';
-import AdminDashboard from './pages/Admin/AdminDashboard';
-import AdminReports from './pages/Admin/AdminReports';
-import AdminUsers from './pages/Admin/AdminUsers';
-import AdminSettings from './pages/Admin/AdminSettings';
-import AdminWarningAppeals from './pages/Admin/AdminWarningAppeals';
-import AdminBanAppeals from './pages/Admin/AdminBanAppeals';
+
+// Error boundary + loading skeleton
+import { ErrorBoundary, SectionErrorBoundary } from './components/ErrorBoundary';
+import PageSkeleton from './components/PageSkeleton';
+
+// Stores + providers (always needed)
 import useAuthStore from './store/authStore';
 import useThemeStore from './store/themeStore';
 import ThemeCustomizer from './components/layout/ThemeCustomizer';
 import RealtimeMessagesProvider from './components/realtime/RealtimeMessagesProvider';
 import RealtimePostUpdatesProvider from './components/realtime/RealtimePostUpdatesProvider';
 
+// ─── Lazy page imports ────────────────────────────────────────────────────────
+// Member app
+const Home            = lazy(() => import('./pages/Home'));
+const Profile         = lazy(() => import('./pages/Profile'));
+const PostDetail      = lazy(() => import('./pages/PostDetail'));
+const Search          = lazy(() => import('./pages/Search'));
+const Explore         = lazy(() => import('./pages/Explore'));
+const Notifications   = lazy(() => import('./pages/Notifications'));
+const Bookmarks       = lazy(() => import('./pages/Bookmarks'));
+const Messages        = lazy(() => import('./pages/Messages'));
+const Communities     = lazy(() => import('./pages/Communities'));
+const CommunityDetail = lazy(() => import('./pages/CommunityDetail'));
+const Connections     = lazy(() => import('./pages/Connections'));
+const Analytics       = lazy(() => import('./pages/Analytics'));
+const Settings        = lazy(() => import('./pages/Settings'));
+const Invites         = lazy(() => import('./pages/Invites'));
+const Onboarding      = lazy(() => import('./pages/Onboarding'));
+const HashtagFeed     = lazy(() => import('./pages/HashtagFeed'));
+const SafetyCenter    = lazy(() => import('./pages/SafetyCenter'));
+const WarningDetail   = lazy(() => import('./pages/WarningDetail'));
+const EditProfileRedirect = lazy(() => import('./pages/EditProfileRedirect'));
+
+// Admin portal (separate chunk)
+const AdminLogin          = lazy(() => import('./pages/Admin/AdminLogin'));
+const AdminDashboard      = lazy(() => import('./pages/Admin/AdminDashboard'));
+const AdminReports        = lazy(() => import('./pages/Admin/AdminReports'));
+const AdminUsers          = lazy(() => import('./pages/Admin/AdminUsers'));
+const AdminSettings       = lazy(() => import('./pages/Admin/AdminSettings'));
+const AdminWarningAppeals = lazy(() => import('./pages/Admin/AdminWarningAppeals'));
+const AdminBanAppeals     = lazy(() => import('./pages/Admin/AdminBanAppeals'));
+
+// ─────────────────────────────────────────────────────────────────────────────
+
 const queryClient = new QueryClient({
     defaultOptions: {
         queries: {
             refetchOnWindowFocus: false,
             retry: 1,
-            staleTime: 5 * 60 * 1000, // 5 minutes
+            staleTime: 5 * 60 * 1000,
         },
     },
 });
 
+const toastStyle = {
+    base:    { background: '#363636', color: '#fff' },
+    success: { duration: 3000, iconTheme: { primary: '#359EFF', secondary: '#fff' } },
+    error:   { duration: 4000, iconTheme: { primary: '#ef4444', secondary: '#fff' } },
+};
+const adminToastStyle = {
+    ...toastStyle,
+    success: { duration: 3000, iconTheme: { primary: '#6366f1', secondary: '#fff' } },
+};
+
+const ToasterShared = ({ style = toastStyle }) => (
+    <Toaster
+        position="top-right"
+        toastOptions={{
+            duration: 3000,
+            style: style.base,
+            success: style.success,
+            error: style.error,
+        }}
+    />
+);
+
+// ─── Route guards ─────────────────────────────────────────────────────────────
 const ProtectedRoute = ({ children }) => {
-    const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
-    
-    if (!isAuthenticated) {
-        return <Navigate to="/login" replace />;
-    }
-    
-    return children;
+    const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+    return isAuthenticated ? children : <Navigate to="/login" replace />;
 };
 
 const PublicRoute = ({ children }) => {
-    const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
-    const user = useAuthStore((state) => state.user);
-
-    if (isAuthenticated) {
-        return <Navigate to={user?.role === 'admin' ? '/admin' : '/home'} replace />;
-    }
-
-    return children;
+    const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+    const user = useAuthStore((s) => s.user);
+    return isAuthenticated
+        ? <Navigate to={user?.role === 'admin' ? '/admin' : '/home'} replace />
+        : children;
 };
 
-/** Admin login: redirect if already signed in as admin; regular users go to app home. */
 const AdminPublicRoute = ({ children }) => {
-    const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
-    const user = useAuthStore((state) => state.user);
-    if (isAuthenticated && user?.role === 'admin') {
-        return <Navigate to="/admin" replace />;
-    }
-    if (isAuthenticated && user && user.role !== 'admin') {
-        return <Navigate to="/home" replace />;
-    }
+    const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+    const user = useAuthStore((s) => s.user);
+    if (isAuthenticated && user?.role === 'admin') return <Navigate to="/admin" replace />;
+    if (isAuthenticated && user?.role !== 'admin') return <Navigate to="/home" replace />;
     return children;
 };
 
-/** Only admins; others go to the member app. Unauthenticated → /admin/login */
 const AdminProtectedRoute = ({ children }) => {
-    const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
-    const user = useAuthStore((state) => state.user);
-    if (!isAuthenticated) {
-        return <Navigate to="/admin/login" replace />;
-    }
-    if (user?.role !== 'admin') {
-        return <Navigate to="/home" replace />;
-    }
+    const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+    const user = useAuthStore((s) => s.user);
+    if (!isAuthenticated) return <Navigate to="/admin/login" replace />;
+    if (user?.role !== 'admin') return <Navigate to="/home" replace />;
     return children;
 };
 
+// ─── App content ──────────────────────────────────────────────────────────────
 function AppContent() {
     const location = useLocation();
     const isCustomizerOpen = useThemeStore((s) => s.isCustomizerOpen);
-    const closeCustomizer = useThemeStore((s) => s.closeCustomizer);
+    const closeCustomizer  = useThemeStore((s) => s.closeCustomizer);
+    const user = useAuthStore((s) => s.user);
 
     useEffect(() => {
         useThemeStore.getState().applyToDom();
     }, []);
+
     const pathNorm = location.pathname.replace(/\/$/, '') || '/';
     const isPublicPage =
-        ['/', '/login', '/register', '/forgot-password', '/auth/callback', '/admin/login', '/account-banned'].includes(
-            pathNorm
-        ) || location.pathname.startsWith('/reset-password');
-    /** Admin portal: all /admin/* except the public admin login page — no MainLayout / user chrome */
+        ['/', '/login', '/register', '/forgot-password', '/auth/callback', '/admin/login', '/account-banned'].includes(pathNorm) ||
+        location.pathname.startsWith('/reset-password');
     const isAdminPortal = pathNorm.startsWith('/admin') && pathNorm !== '/admin/login';
 
-    // IMPORTANT: Hooks must be called unconditionally.
-    // This prevents "Rendered more hooks than during the previous render" when
-    // navigating between public/admin routes and member routes.
-    const user = useAuthStore((state) => state.user);
-
-    // Render public pages (Landing, Login, Register) without layout wrapper
+    // Public pages — no layout wrapper
     if (isPublicPage) {
         return (
             <>
-                <Routes>
-                    <Route path="/" element={<Landing />} />
-                    <Route path="/account-banned" element={<AccountBanned />} />
-                    <Route
-                        path="/login"
-                        element={
-                            <PublicRoute>
-                                <Login />
-                            </PublicRoute>
-                        }
-                    />
-                    <Route
-                        path="/register"
-                        element={
-                            <PublicRoute>
-                                <Register />
-                            </PublicRoute>
-                        }
-                    />
-                    <Route
-                        path="/forgot-password"
-                        element={
-                            <PublicRoute>
-                                <ForgotPassword />
-                            </PublicRoute>
-                        }
-                    />
-                    <Route
-                        path="/reset-password"
-                        element={
-                            <PublicRoute>
-                                <ResetPassword />
-                            </PublicRoute>
-                        }
-                    />
-                    <Route path="/auth/callback" element={<AuthCallback />} />
-                    <Route
-                        path="/admin/login"
-                        element={
-                            <AdminPublicRoute>
-                                <AdminLogin />
-                            </AdminPublicRoute>
-                        }
-                    />
-                    <Route path="*" element={<Navigate to="/" replace />} />
-                </Routes>
-                <Toaster
-                    position="top-right"
-                    toastOptions={{
-                        duration: 3000,
-                        style: {
-                            background: '#363636',
-                            color: '#fff',
-                        },
-                        success: {
-                            duration: 3000,
-                            iconTheme: {
-                                primary: '#8B5CF6',
-                                secondary: '#fff',
-                            },
-                        },
-                        error: {
-                            duration: 4000,
-                            iconTheme: {
-                                primary: '#ef4444',
-                                secondary: '#fff',
-                            },
-                        },
-                    }}
-                />
+                <Suspense fallback={<PageSkeleton />}>
+                    <Routes>
+                        <Route path="/" element={<Landing />} />
+                        <Route path="/account-banned" element={<AccountBanned />} />
+                        <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
+                        <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
+                        <Route path="/forgot-password" element={<PublicRoute><ForgotPassword /></PublicRoute>} />
+                        <Route path="/reset-password" element={<PublicRoute><ResetPassword /></PublicRoute>} />
+                        <Route path="/auth/callback" element={<AuthCallback />} />
+                        <Route path="/admin/login" element={<AdminPublicRoute><AdminLogin /></AdminPublicRoute>} />
+                        <Route path="*" element={<Navigate to="/" replace />} />
+                    </Routes>
+                </Suspense>
+                <ToasterShared />
             </>
         );
     }
 
-    /** Full-screen admin portal — no MainLayout, AppTopBar, or member sidebars */
+    // Admin portal
     if (isAdminPortal) {
         return (
             <>
-                <Routes>
-                    <Route
-                        path="/admin"
-                        element={
-                            <AdminProtectedRoute>
-                                <AdminLayout />
-                            </AdminProtectedRoute>
-                        }
-                    >
-                        <Route index element={<AdminDashboard />} />
-                        <Route path="reports" element={<AdminReports />} />
-                        <Route path="users" element={<AdminUsers />} />
-                        <Route path="warning-appeals" element={<AdminWarningAppeals />} />
-                        <Route path="ban-appeals" element={<AdminBanAppeals />} />
-                        <Route path="settings" element={<AdminSettings />} />
-                    </Route>
-                    <Route path="*" element={<Navigate to="/admin" replace />} />
-                </Routes>
-                <Toaster
-                    position="top-right"
-                    toastOptions={{
-                        duration: 3000,
-                        style: {
-                            background: '#363636',
-                            color: '#fff',
-                        },
-                        success: {
-                            duration: 3000,
-                            iconTheme: {
-                                primary: '#6366f1',
-                                secondary: '#fff',
-                            },
-                        },
-                        error: {
-                            duration: 4000,
-                            iconTheme: {
-                                primary: '#ef4444',
-                                secondary: '#fff',
-                            },
-                        },
-                    }}
-                />
+                <Suspense fallback={<PageSkeleton />}>
+                    <Routes>
+                        <Route
+                            path="/admin"
+                            element={<AdminProtectedRoute><AdminLayout /></AdminProtectedRoute>}
+                        >
+                            <Route index             element={<AdminDashboard />} />
+                            <Route path="reports"    element={<AdminReports />} />
+                            <Route path="users"      element={<AdminUsers />} />
+                            <Route path="warning-appeals" element={<AdminWarningAppeals />} />
+                            <Route path="ban-appeals"     element={<AdminBanAppeals />} />
+                            <Route path="settings"   element={<AdminSettings />} />
+                        </Route>
+                        <Route path="*" element={<Navigate to="/admin" replace />} />
+                    </Routes>
+                </Suspense>
+                <ToasterShared style={adminToastStyle} />
             </>
         );
     }
-    /** Admins use only the admin portal; keep member UI separate */
-    if (user?.role === 'admin') {
-        return <Navigate to="/admin" replace />;
-    }
+
+    if (user?.role === 'admin') return <Navigate to="/admin" replace />;
 
     const isMessagesPage = location.pathname.startsWith('/messages');
 
@@ -258,175 +195,51 @@ function AppContent() {
         <RealtimeMessagesProvider>
         <RealtimePostUpdatesProvider>
         <MainLayout showRightPanel={!isMessagesPage} showLeftPanel={!isMessagesPage}>
-                {isMessagesPage ? (
-                    <div className={`flex-1 flex min-h-0 overflow-hidden ${isMessagesPage ? 'h-[calc(100vh-60px)]' : ''}`}>
+            {isMessagesPage ? (
+                <div className={`flex-1 flex min-h-0 overflow-hidden h-[calc(100vh-60px)]`}>
+                    <Suspense fallback={<PageSkeleton />}>
                         <Routes>
-                            <Route path="/messages/:username?" element={<ProtectedRoute><Messages /></ProtectedRoute>} />
+                            <Route
+                                path="/messages/:username?"
+                                element={<ProtectedRoute><Messages /></ProtectedRoute>}
+                            />
                         </Routes>
-                    </div>
-                ) : (
+                    </Suspense>
+                </div>
+            ) : (
                 <div className="flex-1 overflow-y-auto custom-scrollbar min-w-0 flex justify-center bg-[var(--bg-primary)]">
-                    <div className="min-w-0 flex flex-col w-full max-w-5xl pt-8 px-6 pb-6">
-                        <Routes>
-                        <Route
-                            path="/home"
-                            element={
-                                <ProtectedRoute>
-                                    <Home />
-                                </ProtectedRoute>
-                            }
-                        />
-                        <Route
-                            path="/onboarding"
-                            element={
-                                <ProtectedRoute>
-                                    <Onboarding />
-                                </ProtectedRoute>
-                            }
-                        />
-                        <Route
-                            path="/profile/:username"
-                            element={
-                                <ProtectedRoute>
-                                    <Profile />
-                                </ProtectedRoute>
-                            }
-                        />
-                        <Route
-                            path="/post/:id"
-                            element={
-                                <ProtectedRoute>
-                                    <PostDetail />
-                                </ProtectedRoute>
-                            }
-                        />
-                        <Route
-                            path="/communities"
-                            element={
-                                <ProtectedRoute>
-                                    <Communities />
-                                </ProtectedRoute>
-                            }
-                        />
-                        <Route
-                            path="/communities/:id"
-                            element={
-                                <ProtectedRoute>
-                                    <CommunityDetail />
-                                </ProtectedRoute>
-                            }
-                        />
-                        <Route
-                            path="/edit-profile"
-                            element={
-                                <ProtectedRoute>
-                                    <EditProfileRedirect />
-                                </ProtectedRoute>
-                            }
-                        />
-                        <Route
-                            path="/search"
-                            element={
-                                <ProtectedRoute>
-                                    <Search />
-                                </ProtectedRoute>
-                            }
-                        />
-                        <Route
-                            path="/explore"
-                            element={
-                                <ProtectedRoute>
-                                    <Explore />
-                                </ProtectedRoute>
-                            }
-                        />
-                        <Route
-                            path="/notifications"
-                            element={
-                                <ProtectedRoute>
-                                    <Notifications />
-                                </ProtectedRoute>
-                            }
-                        />
-                        <Route
-                            path="/bookmarks"
-                            element={
-                                <ProtectedRoute>
-                                    <Bookmarks />
-                                </ProtectedRoute>
-                            }
-                        />
-                        <Route
-                            path="/analytics"
-                            element={
-                                <ProtectedRoute>
-                                    <Analytics />
-                                </ProtectedRoute>
-                            }
-                        />
-                        <Route
-                            path="/connections"
-                            element={
-                                <ProtectedRoute>
-                                    <Connections />
-                                </ProtectedRoute>
-                            }
-                        />
-                        <Route
-                            path="/settings"
-                            element={
-                                <ProtectedRoute>
-                                    <Settings />
-                                </ProtectedRoute>
-                            }
-                        />
-                        <Route
-                            path="/safety"
-                            element={
-                                <ProtectedRoute>
-                                    <SafetyCenter />
-                                </ProtectedRoute>
-                            }
-                        />
-                        <Route
-                            path="/warnings/:eventId"
-                            element={
-                                <ProtectedRoute>
-                                    <WarningDetail />
-                                </ProtectedRoute>
-                            }
-                        />
-                        <Route path="*" element={<Navigate to="/home" replace />} />
-                        </Routes>
+                    <div className="min-w-0 flex flex-col w-full max-w-5xl pt-4 md:pt-8 px-3 md:px-6 pb-20 md:pb-6">
+                        <SectionErrorBoundary>
+                            <Suspense fallback={<PageSkeleton />}>
+                                <Routes>
+                                    <Route path="/home"              element={<ProtectedRoute><Home /></ProtectedRoute>} />
+                                    <Route path="/onboarding"        element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
+                                    <Route path="/profile/:username" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+                                    <Route path="/post/:id"          element={<ProtectedRoute><PostDetail /></ProtectedRoute>} />
+                                    <Route path="/communities"       element={<ProtectedRoute><Communities /></ProtectedRoute>} />
+                                    <Route path="/communities/:id"   element={<ProtectedRoute><CommunityDetail /></ProtectedRoute>} />
+                                    <Route path="/edit-profile"      element={<ProtectedRoute><EditProfileRedirect /></ProtectedRoute>} />
+                                    <Route path="/search"            element={<ProtectedRoute><Search /></ProtectedRoute>} />
+                                    <Route path="/explore"           element={<ProtectedRoute><Explore /></ProtectedRoute>} />
+                                    <Route path="/notifications"     element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
+                                    <Route path="/bookmarks"         element={<ProtectedRoute><Bookmarks /></ProtectedRoute>} />
+                                    <Route path="/analytics"         element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
+                                    <Route path="/connections"       element={<ProtectedRoute><Connections /></ProtectedRoute>} />
+                                    <Route path="/settings"          element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+                                    <Route path="/invites"           element={<ProtectedRoute><Invites /></ProtectedRoute>} />
+                                    <Route path="/hashtag/:tag"      element={<ProtectedRoute><HashtagFeed /></ProtectedRoute>} />
+                                    <Route path="/safety"            element={<ProtectedRoute><SafetyCenter /></ProtectedRoute>} />
+                                    <Route path="/warnings/:eventId" element={<ProtectedRoute><WarningDetail /></ProtectedRoute>} />
+                                    <Route path="*" element={<Navigate to="/home" replace />} />
+                                </Routes>
+                            </Suspense>
+                        </SectionErrorBoundary>
                     </div>
                 </div>
-                )}
+            )}
         </MainLayout>
         <ThemeCustomizer isOpen={isCustomizerOpen} onClose={closeCustomizer} />
-        <Toaster
-                position="top-right"
-                toastOptions={{
-                    duration: 3000,
-                    style: {
-                        background: '#363636',
-                        color: '#fff',
-                    },
-                    success: {
-                        duration: 3000,
-                        iconTheme: {
-                            primary: '#359EFF',
-                            secondary: '#fff',
-                        },
-                    },
-                    error: {
-                        duration: 4000,
-                        iconTheme: {
-                            primary: '#ef4444',
-                            secondary: '#fff',
-                        },
-                    },
-                }}
-            />
+        <ToasterShared />
         </RealtimePostUpdatesProvider>
         </RealtimeMessagesProvider>
     );
@@ -442,42 +255,10 @@ function App() {
     );
 }
 
-// Error boundary for debugging
-class ErrorBoundary extends React.Component {
-    constructor(props) {
-        super(props);
-        this.state = { hasError: false, error: null };
-    }
-    
-    static getDerivedStateFromError(error) {
-        return { hasError: true, error };
-    }
-    
-    componentDidCatch(error, errorInfo) {
-        console.error('React Error:', error, errorInfo);
-    }
-    
-    render() {
-        if (this.state.hasError) {
-            return (
-                <div style={{ padding: '20px', fontFamily: 'sans-serif' }}>
-                    <h1>Something went wrong</h1>
-                    <pre>{this.state.error?.toString()}</pre>
-                    <button onClick={() => window.location.reload()}>Reload Page</button>
-                </div>
-            );
-        }
-        return this.props.children;
-    }
-}
-
-/**
- * Mount the React app. Called from main.jsx after successful import.
- */
 export function mountApp() {
     const rootElement = document.getElementById('app');
     if (!rootElement) {
-        document.body.innerHTML = '<div style="padding: 20px;"><h1>Error: Root element #app not found!</h1></div>';
+        document.body.innerHTML = '<div style="padding:20px"><h1>Error: Root element #app not found!</h1></div>';
         return;
     }
     try {
@@ -492,6 +273,6 @@ export function mountApp() {
         document.documentElement.setAttribute('data-react-mounted', 'true');
     } catch (error) {
         console.error('React render error:', error);
-        rootElement.innerHTML = `<div style="padding: 20px; font-family: sans-serif;"><h1>React Render Error</h1><pre style="background: #f5f5f5; padding: 10px;">${error.toString()}</pre></div>`;
+        rootElement.innerHTML = `<div style="padding:20px;font-family:sans-serif"><h1>React Render Error</h1><pre style="background:#f5f5f5;padding:10px">${error.toString()}</pre></div>`;
     }
 }

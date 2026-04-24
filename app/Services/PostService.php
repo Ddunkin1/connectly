@@ -16,34 +16,59 @@ class PostService
     public function __construct(
         private HashtagService $hashtagService,
         private SupabaseService $supabaseService,
-        private MentionService $mentionService
+        private MentionService $mentionService,
+        private VideoTranscodeService $videoTranscodeService
     ) {
     }
 
     /**
      * Get feed posts for a user (posts from followed users).
+     *
+     * @param string $sort 'for_you' (engagement-scored) or 'recent' (chronological)
      */
-    public function getFeed(User $user, int $perPage = 15): LengthAwarePaginator
+    public function getFeed(User $user, int $perPage = 15, string $sort = 'for_you'): LengthAwarePaginator
     {
         $followingIds = $user->following()->pluck('following_id')->toArray();
         $followingIds[] = $user->id; // Include user's own posts
 
         $blockedIds = array_merge($user->blockedUserIds(), $user->blockedByUserIds());
 
-        return Post::with(['user', 'hashtags', 'likes', 'sharedPost.user', 'poll.options'])
+        $query = Post::with(['user', 'hashtags', 'likes', 'sharedPost.user', 'poll.options'])
             ->whereIn('user_id', $followingIds)
             ->whereNotIn('user_id', $blockedIds)
             ->where('is_archived', false)
-            ->where(function ($query) use ($user) {
-                $query->where('visibility', 'public')
+            ->where(function ($q) use ($user) {
+                $q->where('visibility', 'public')
                     ->orWhere('visibility', 'followers')
-                    ->orWhere(function ($q) use ($user) {
-                        $q->where('visibility', 'private')
+                    ->orWhere(function ($q2) use ($user) {
+                        $q2->where('visibility', 'private')
                             ->where('user_id', $user->id);
                     });
-            })
-            ->orderBy('created_at', 'desc')
-            ->paginate($perPage);
+            });
+
+        if ($sort === 'for_you') {
+            // Score = (likes × 3) + (comments × 2) + recency boost + friend bonus
+            $query->selectRaw('posts.*,
+                (COALESCE((SELECT COUNT(*) FROM likes WHERE likeable_type = ? AND likeable_id = posts.id), 0) * 3 +
+                 COALESCE((SELECT COUNT(*) FROM comments WHERE post_id = posts.id AND deleted_at IS NULL), 0) * 2 +
+                 CASE WHEN posts.created_at >= NOW() - INTERVAL 6 HOUR THEN 10
+                      WHEN posts.created_at >= NOW() - INTERVAL 24 HOUR THEN 5
+                      ELSE 0 END +
+                 CASE WHEN EXISTS (
+                     SELECT 1 FROM friend_requests
+                     WHERE status = ? AND (
+                         (sender_id = ? AND receiver_id = posts.user_id) OR
+                         (receiver_id = ? AND sender_id = posts.user_id)
+                     )
+                 ) THEN 5 ELSE 0 END) AS feed_score',
+                ['App\\Models\\Post', 'accepted', $user->id, $user->id])
+                ->orderByDesc('feed_score')
+                ->orderByDesc('posts.created_at');
+        } else {
+            $query->orderByDesc('created_at');
+        }
+
+        return $query->paginate($perPage);
     }
 
     /**
@@ -123,16 +148,30 @@ class PostService
         if (isset($data['media']) && $data['media']) {
             $file = $data['media'];
             $content = trim($data['content'] ?? '');
+            $mimeType = $file->getMimeType();
+            $isVideo = str_starts_with($mimeType, 'video/');
+
+            // Transcode video to H.264/AAC MP4 for cross-browser playback
+            $transcodedPath = null;
+            if ($isVideo && $this->videoTranscodeService->isAvailable()) {
+                $transcodedPath = $this->videoTranscodeService->transcode($file->getRealPath());
+                if (!$transcodedPath) {
+                    \Log::warning('Video transcoding failed; uploading original file.', ['user_id' => $user->id]);
+                }
+            }
 
             // Uploads can be flaky (network/Supabase). Retry a few times before giving up.
             $uploadAttempts = 3;
             $lastError = null;
             for ($attempt = 1; $attempt <= $uploadAttempts; $attempt++) {
                 try {
-                    $mediaUrl = $this->supabaseService->uploadFile($file, 'posts');
+                    if ($transcodedPath) {
+                        $mediaUrl = $this->supabaseService->uploadFromPath($transcodedPath, 'video/mp4', 'posts');
+                    } else {
+                        $mediaUrl = $this->supabaseService->uploadFile($file, 'posts');
+                    }
                     if ($mediaUrl) {
-                        $mimeType = $file->getMimeType();
-                        $mediaType = str_starts_with($mimeType, 'image/') ? 'image' : 'video';
+                        $mediaType = $isVideo ? 'video' : 'image';
                     }
                     break;
                 } catch (\Throwable $e) {
@@ -144,6 +183,11 @@ class PostService
                 }
             }
 
+            // Clean up transcoded temp file regardless of upload success
+            if ($transcodedPath && is_file($transcodedPath)) {
+                @unlink($transcodedPath);
+            }
+
             if (! $mediaUrl) {
                 \Log::warning('Post media upload failed after retries; creating post without media.', [
                     'user_id' => $user->id,
@@ -151,11 +195,10 @@ class PostService
                     'error' => $lastError?->getMessage(),
                 ]);
 
-                // If user posted an image-only post (no caption), don't silently create an empty card.
-                // Instead, block and ask to try again (caption is optional).
+                // If user posted a media-only post (no caption), don't silently create an empty card.
                 if (empty($content)) {
                     throw ValidationException::withMessages([
-                        'media' => ['Image upload failed (connection timeout to Supabase). Please try again.'],
+                        'media' => ['Media upload failed (connection timeout to Supabase). Please try again.'],
                     ]);
                 }
             }

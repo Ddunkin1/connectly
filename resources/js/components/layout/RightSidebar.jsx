@@ -56,7 +56,7 @@ const RightSidebar = () => {
                         ].map((trend) => (
                             <Link
                                 key={trend.name}
-                                to={`/search?q=%23${trend.name.replace('#', '')}&type=hashtags`}
+                                to={`/hashtag/${trend.name.replace('#', '')}`}
                                 className="block w-full text-left group py-1"
                             >
                                 <p className="text-[11px] uppercase tracking-wide text-[var(--text-secondary)]">{trend.category}</p>

@@ -172,7 +172,7 @@ const Explore = () => {
                                     {hashtags.map((h) => (
                                         <Link
                                             key={h.id}
-                                            to={`/search?q=%23${encodeURIComponent(h.name)}&type=hashtags`}
+                                            to={`/hashtag/${encodeURIComponent(h.name)}`}
                                             className="px-3 py-1.5 rounded-full bg-[var(--theme-surface-hover)] text-xs text-[var(--text-primary)] hover:bg-[var(--theme-border)]/50 transition-colors"
                                         >
                                             #{h.name}

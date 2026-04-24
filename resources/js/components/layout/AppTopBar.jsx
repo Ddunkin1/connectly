@@ -10,17 +10,17 @@ import { useQuery } from '@tanstack/react-query';
 import { searchAPI } from '../../services/api';
 import CreatePostModal from '../modal/createPostModal';
 
-const AppTopBar = ({ onMenuToggle, showMenuButton = false }) => {
+const AppTopBar = ({ onMenuToggle, showMenuButton = false, mobileMenuOpen = false }) => {
     const navigate = useNavigate();
     const user = useAuthStore((s) => s.user);
     const openThemeCustomizer = useThemeStore((s) => s.openCustomizer);
     const { data: unreadNotifications } = useUnreadNotificationsCount();
     const { data: conversationsData } = useConversations();
-    const [searchQuery, setSearchQuery] = useState('');
+    const [searchQuery, setSearchQuery]         = useState('');
     const [showSuggestions, setShowSuggestions] = useState(false);
     const [showProfileMenu, setShowProfileMenu] = useState(false);
     const [isCreatePostOpen, setIsCreatePostOpen] = useState(false);
-    const menuRef = useRef(null);
+    const menuRef        = useRef(null);
     const suggestionsRef = useRef(null);
     const logoutMutation = useLogout();
 
@@ -37,18 +37,16 @@ const AppTopBar = ({ onMenuToggle, showMenuButton = false }) => {
         enabled: searchQuery.trim().length > 1,
     });
 
-    const suggestionUsers = suggestionsData?.users ?? [];
-    const suggestionHashtags = suggestionsData?.hashtags ?? [];
+    const suggestionUsers       = suggestionsData?.users       ?? [];
+    const suggestionHashtags    = suggestionsData?.hashtags    ?? [];
     const suggestionCommunities = suggestionsData?.communities ?? [];
 
     useEffect(() => {
         const handleClickOutside = (e) => {
-            if (menuRef.current && !menuRef.current.contains(e.target)) {
+            if (menuRef.current && !menuRef.current.contains(e.target))
                 setShowProfileMenu(false);
-            }
-            if (suggestionsRef.current && !suggestionsRef.current.contains(e.target)) {
+            if (suggestionsRef.current && !suggestionsRef.current.contains(e.target))
                 setShowSuggestions(false);
-            }
         };
         document.addEventListener('click', handleClickOutside);
         return () => document.removeEventListener('click', handleClickOutside);
@@ -68,139 +66,148 @@ const AppTopBar = ({ onMenuToggle, showMenuButton = false }) => {
     };
 
     return (
-        <header className="fixed top-0 left-0 right-0 h-[60px] z-40 flex items-center px-4 lg:px-6 glass-effect border-b border-white/10">
-            <div className="flex items-center w-full max-w-6xl mx-auto gap-4">
-                {/* Left: Hamburger (mobile) or Logo */}
-                <div className="flex items-center w-[240px] shrink-0">
+        <header className="fixed top-0 left-0 right-0 h-[60px] z-40 flex items-center px-3 sm:px-4 lg:px-6 glass-effect border-b border-white/10">
+            <div className="flex items-center w-full max-w-6xl mx-auto gap-2 sm:gap-4">
+
+                {/* ── Left: hamburger (mobile) or logo (tablet+) ── */}
+                <div className="flex items-center shrink-0 sm:w-[200px] md:w-[240px]">
                     {showMenuButton ? (
                         <button
                             type="button"
                             onClick={onMenuToggle}
-                            className="p-2 rounded-xl hover:bg-white/5 text-slate-300 lg:hidden"
-                            aria-label="Open menu"
+                            className="p-2 rounded-xl hover:bg-white/5 text-slate-300"
+                            aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
+                            aria-expanded={mobileMenuOpen}
                         >
-                            <span className="material-symbols-outlined">menu</span>
+                            <span className="material-symbols-outlined">
+                                {mobileMenuOpen ? 'close' : 'menu'}
+                            </span>
                         </button>
                     ) : (
                         <Link to="/home" className="flex items-center gap-2">
-                            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center shadow-md shadow-blue-500/30">
+                            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center shadow-md shadow-blue-500/30 shrink-0">
                                 <span className="text-white font-bold text-lg leading-none">C</span>
                             </div>
-                            <span className="text-xl font-bold tracking-tight text-[var(--text-primary)]">Connectly</span>
+                            <span className="hidden sm:block text-xl font-bold tracking-tight text-[var(--text-primary)]">
+                                Connectly
+                            </span>
+                        </Link>
+                    )}
+
+                    {/* Logo shown next to hamburger on mobile */}
+                    {showMenuButton && (
+                        <Link to="/home" className="ml-2 flex items-center gap-1.5">
+                            <div className="w-7 h-7 bg-primary rounded-md flex items-center justify-center shadow-sm shadow-blue-500/30 shrink-0">
+                                <span className="text-white font-bold text-sm leading-none">C</span>
+                            </div>
+                            <span className="text-base font-bold tracking-tight text-[var(--text-primary)]">
+                                Connectly
+                            </span>
                         </Link>
                     )}
                 </div>
 
-                {/* Center: Search bar - takes remaining space and centers the input */}
-                <div className="flex-1 flex justify-center items-center min-w-0">
+                {/* ── Center: search bar — hidden on mobile, visible sm+ ── */}
+                <div className="hidden sm:flex flex-1 justify-center items-center min-w-0">
                     <div ref={suggestionsRef} className="relative w-full max-w-xl">
-                    <form onSubmit={handleSearch}>
-                        <div className="relative">
-                            <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-xl">search</span>
-                            <input
-                                type="text"
-                                value={searchQuery}
-                                onChange={(e) => {
-                                    setSearchQuery(e.target.value);
-                                    setShowSuggestions(true);
-                                }}
-                                onFocus={() => {
-                                    if (searchQuery.trim().length > 1) setShowSuggestions(true);
-                                }}
-                                placeholder="Search creators, communities, and topics..."
-                                className="w-full bg-white/5 border border-white/10 rounded-2xl py-2.5 pl-12 pr-4 focus:ring-2 focus:ring-primary/50 focus:outline-none text-sm text-white placeholder:text-slate-500 transition-standard"
-                            />
-                        </div>
-                    </form>
-                    {showSuggestions && (suggestionUsers.length > 0 || suggestionHashtags.length > 0 || suggestionCommunities.length > 0) && (
-                        <div className="absolute left-0 right-0 top-full mt-2 z-[100] rounded-2xl bg-[var(--theme-surface)] border border-[var(--theme-border)] shadow-xl overflow-hidden max-h-80 overflow-y-auto">
-                            {suggestionUsers.length > 0 && (
-                                <div className="border-b border-white/5">
-                                    <p className="px-4 pt-3 pb-1 text-[11px] uppercase tracking-[0.2em] text-slate-500">
-                                        Users
-                                    </p>
-                                    {suggestionUsers.map((u) => (
-                                        <Link
-                                            key={u.id}
-                                            to={`/profile/${u.username}`}
-                                            className="flex items-center gap-2 px-4 py-2.5 hover:bg-white/5"
-                                            onClick={() => setShowSuggestions(false)}
-                                        >
-                                            <Avatar
-                                                src={u.profile_picture}
-                                                alt={u.name}
-                                                size="sm"
-                                                className="w-7 h-7 rounded-full"
-                                            />
-                                            <div className="min-w-0">
-                                                <p className="text-xs font-medium text-slate-100 truncate">
-                                                    {u.name}
-                                                </p>
-                                                <p className="text-[11px] text-slate-500 truncate">
-                                                    @{u.username}
-                                                </p>
-                                            </div>
-                                        </Link>
-                                    ))}
-                                </div>
-                            )}
-                            {suggestionHashtags.length > 0 && (
-                                <div className="border-b border-white/5">
-                                    <p className="px-4 pt-3 pb-1 text-[11px] uppercase tracking-[0.2em] text-slate-500">
-                                        Hashtags
-                                    </p>
-                                    {suggestionHashtags.map((h) => (
-                                        <Link
-                                            key={h.id}
-                                            to={`/search?q=%23${encodeURIComponent(h.name)}&type=hashtags`}
-                                            className="flex items-center gap-2 px-4 py-2.5 hover:bg-white/5 text-xs text-slate-100"
-                                            onClick={() => setShowSuggestions(false)}
-                                        >
-                                            <span className="text-primary">#{h.name}</span>
-                                        </Link>
-                                    ))}
-                                </div>
-                            )}
-                            {suggestionCommunities.length > 0 && (
-                                <div>
-                                    <p className="px-4 pt-3 pb-1 text-[11px] uppercase tracking-[0.2em] text-slate-500">
-                                        Communities
-                                    </p>
-                                    {suggestionCommunities.map((c) => (
-                                        <Link
-                                            key={c.id}
-                                            to={`/communities/${c.id}`}
-                                            className="flex items-center gap-2 px-4 py-2.5 hover:bg-white/5 text-xs text-slate-100"
-                                            onClick={() => setShowSuggestions(false)}
-                                        >
-                                            <span className="material-symbols-outlined text-[18px] text-slate-300">
-                                                group
-                                            </span>
-                                            <span className="truncate">{c.name}</span>
-                                        </Link>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-                    )}
+                        <form onSubmit={handleSearch}>
+                            <div className="relative">
+                                <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-xl pointer-events-none">
+                                    search
+                                </span>
+                                <input
+                                    type="text"
+                                    value={searchQuery}
+                                    onChange={(e) => {
+                                        setSearchQuery(e.target.value);
+                                        setShowSuggestions(true);
+                                    }}
+                                    onFocus={() => {
+                                        if (searchQuery.trim().length > 1) setShowSuggestions(true);
+                                    }}
+                                    placeholder="Search creators, communities, topics..."
+                                    className="w-full bg-white/5 border border-white/10 rounded-2xl py-2.5 pl-12 pr-4 focus:ring-2 focus:ring-primary/50 focus:outline-none text-sm text-white placeholder:text-slate-500 transition-standard"
+                                />
+                            </div>
+                        </form>
+                        {showSuggestions &&
+                            (suggestionUsers.length > 0 ||
+                                suggestionHashtags.length > 0 ||
+                                suggestionCommunities.length > 0) && (
+                            <div className="absolute left-0 right-0 top-full mt-2 z-[100] rounded-2xl bg-[var(--theme-surface)] border border-[var(--theme-border)] shadow-xl overflow-hidden max-h-80 overflow-y-auto">
+                                {suggestionUsers.length > 0 && (
+                                    <div className="border-b border-white/5">
+                                        <p className="px-4 pt-3 pb-1 text-[11px] uppercase tracking-[0.2em] text-slate-500">
+                                            Users
+                                        </p>
+                                        {suggestionUsers.map((u) => (
+                                            <Link
+                                                key={u.id}
+                                                to={`/profile/${u.username}`}
+                                                className="flex items-center gap-2 px-4 py-2.5 hover:bg-white/5"
+                                                onClick={() => setShowSuggestions(false)}
+                                            >
+                                                <Avatar src={u.profile_picture} alt={u.name} size="sm" className="w-7 h-7 rounded-full" />
+                                                <div className="min-w-0">
+                                                    <p className="text-xs font-medium text-slate-100 truncate">{u.name}</p>
+                                                    <p className="text-[11px] text-slate-500 truncate">@{u.username}</p>
+                                                </div>
+                                            </Link>
+                                        ))}
+                                    </div>
+                                )}
+                                {suggestionHashtags.length > 0 && (
+                                    <div className="border-b border-white/5">
+                                        <p className="px-4 pt-3 pb-1 text-[11px] uppercase tracking-[0.2em] text-slate-500">
+                                            Hashtags
+                                        </p>
+                                        {suggestionHashtags.map((h) => (
+                                            <Link
+                                                key={h.id}
+                                                to={`/hashtag/${encodeURIComponent(h.name)}`}
+                                                className="flex items-center gap-2 px-4 py-2.5 hover:bg-white/5 text-xs text-slate-100"
+                                                onClick={() => setShowSuggestions(false)}
+                                            >
+                                                <span className="text-primary">#{h.name}</span>
+                                            </Link>
+                                        ))}
+                                    </div>
+                                )}
+                                {suggestionCommunities.length > 0 && (
+                                    <div>
+                                        <p className="px-4 pt-3 pb-1 text-[11px] uppercase tracking-[0.2em] text-slate-500">
+                                            Communities
+                                        </p>
+                                        {suggestionCommunities.map((c) => (
+                                            <Link
+                                                key={c.id}
+                                                to={`/communities/${c.id}`}
+                                                className="flex items-center gap-2 px-4 py-2.5 hover:bg-white/5 text-xs text-slate-100"
+                                                onClick={() => setShowSuggestions(false)}
+                                            >
+                                                <span className="material-symbols-outlined text-[18px] text-slate-300">group</span>
+                                                <span className="truncate">{c.name}</span>
+                                            </Link>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        )}
                     </div>
                 </div>
 
-                {/* Right: High-frequency actions and profile */}
-                <div className="flex items-center gap-4 w-[240px] shrink-0 justify-end">
-                    {/* Notifications shortcut */}
+                {/* ── Right: action icons + profile ── */}
+                <div className="flex items-center gap-1 sm:gap-3 shrink-0 sm:w-[200px] md:w-[240px] justify-end">
+
+                    {/* Search icon — mobile only, links to /search page */}
                     <Link
-                        to="/notifications"
-                        className="relative p-2 rounded-xl hover:bg-white/10 text-slate-300 transition-colors"
-                        aria-label="Notifications"
+                        to="/search"
+                        className="sm:hidden relative p-2 rounded-xl hover:bg-white/10 text-slate-300 transition-colors"
+                        aria-label="Search"
                     >
-                        <span className="material-symbols-outlined">notifications</span>
-                        {notificationsBadge > 0 && (
-                            <span className="absolute -top-0.5 -right-0.5 bg-red-500 text-white text-[10px] rounded-full w-4 h-4 flex items-center justify-center">
-                                {notificationsBadge > 9 ? '9+' : notificationsBadge}
-                            </span>
-                        )}
+                        <span className="material-symbols-outlined text-[22px]">search</span>
                     </Link>
+
                     {/* Create post */}
                     <button
                         type="button"
@@ -208,30 +215,48 @@ const AppTopBar = ({ onMenuToggle, showMenuButton = false }) => {
                         className="p-2 rounded-xl hover:bg-white/10 text-slate-300 cursor-pointer transition-colors"
                         aria-label="Create post"
                     >
-                        <span className="material-symbols-outlined">add</span>
+                        <span className="material-symbols-outlined text-[22px]">add_circle</span>
                     </button>
-                    {/* Messages shortcut */}
+
+                    {/* Notifications — hidden on mobile (bottom nav has it) */}
+                    <Link
+                        to="/notifications"
+                        className="hidden sm:flex relative p-2 rounded-xl hover:bg-white/10 text-slate-300 transition-colors"
+                        aria-label="Notifications"
+                    >
+                        <span className="material-symbols-outlined text-[22px]">notifications</span>
+                        {notificationsBadge > 0 && (
+                            <span className="absolute -top-0.5 -right-0.5 bg-red-500 text-white text-[10px] rounded-full w-4 h-4 flex items-center justify-center">
+                                {notificationsBadge > 9 ? '9+' : notificationsBadge}
+                            </span>
+                        )}
+                    </Link>
+
+                    {/* Messages — hidden on mobile (bottom nav has it) */}
                     <Link
                         to="/messages"
-                        className="relative p-2 rounded-xl hover:bg-white/10 text-slate-300 transition-colors"
+                        className="hidden sm:flex relative p-2 rounded-xl hover:bg-white/10 text-slate-300 transition-colors"
                         aria-label="Messages"
                     >
-                        <span className="material-symbols-outlined">mail</span>
+                        <span className="material-symbols-outlined text-[22px]">mail</span>
                         {messagesBadge > 0 && (
                             <span className="absolute -top-0.5 -right-0.5 bg-red-500 text-white text-[10px] rounded-full w-4 h-4 flex items-center justify-center">
                                 {messagesBadge > 9 ? '9+' : messagesBadge}
                             </span>
                         )}
                     </Link>
-                    {/* Theme toggle */}
+
+                    {/* Theme toggle — hidden on mobile */}
                     <button
                         type="button"
                         onClick={openThemeCustomizer}
-                        className="p-2 rounded-xl hover:bg-white/5 text-slate-300"
+                        className="hidden sm:flex p-2 rounded-xl hover:bg-white/5 text-slate-300"
                         aria-label="Theme"
                     >
-                        <span className="material-symbols-outlined">dark_mode</span>
+                        <span className="material-symbols-outlined text-[22px]">dark_mode</span>
                     </button>
+
+                    {/* Profile avatar + dropdown */}
                     {user && (
                         <div className="relative" ref={menuRef}>
                             <button
@@ -241,7 +266,12 @@ const AppTopBar = ({ onMenuToggle, showMenuButton = false }) => {
                                 aria-label="Profile menu"
                                 aria-expanded={showProfileMenu}
                             >
-                                <Avatar src={user.profile_picture} alt={user.name} size="sm" className="w-9 h-9 rounded-xl object-cover" />
+                                <Avatar
+                                    src={user.profile_picture}
+                                    alt={user.name}
+                                    size="sm"
+                                    className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl object-cover"
+                                />
                             </button>
                             {showProfileMenu && (
                                 <div className="absolute right-0 mt-2 w-48 py-2 rounded-xl theme-surface border border-[var(--theme-border)] shadow-xl z-50">
@@ -264,6 +294,15 @@ const AppTopBar = ({ onMenuToggle, showMenuButton = false }) => {
                                         <span className="material-symbols-outlined text-lg">settings</span>
                                         Settings
                                     </Link>
+                                    {/* Theme toggle in dropdown on mobile */}
+                                    <button
+                                        type="button"
+                                        onClick={() => { setShowProfileMenu(false); openThemeCustomizer(); }}
+                                        className="sm:hidden flex items-center gap-2 w-full px-4 py-2.5 text-sm text-[var(--text-primary)] hover:bg-[var(--theme-surface-hover)] text-left"
+                                    >
+                                        <span className="material-symbols-outlined text-lg">dark_mode</span>
+                                        Theme
+                                    </button>
                                     <button
                                         type="button"
                                         onClick={handleLogout}
@@ -279,6 +318,7 @@ const AppTopBar = ({ onMenuToggle, showMenuButton = false }) => {
                     )}
                 </div>
             </div>
+
             <CreatePostModal
                 isOpen={isCreatePostOpen}
                 onClose={() => setIsCreatePostOpen(false)}

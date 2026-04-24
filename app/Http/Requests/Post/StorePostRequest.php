@@ -48,6 +48,13 @@ class StorePostRequest extends FormRequest
         ];
     }
 
+    protected function prepareForValidation(): void
+    {
+        if ($this->filled('content')) {
+            $this->merge(['content' => strip_tags($this->input('content'))]);
+        }
+    }
+
     /**
      * Configure the validator instance.
      *

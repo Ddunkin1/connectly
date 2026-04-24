@@ -108,6 +108,7 @@ export const userAPI = {
     updateNotificationPreferences: (data) => api.put('/user/notification-preferences', data),
     getAnalytics: () => api.get('/user/analytics'),
     exportData: () => api.get('/user/export-data'),
+    completeOnboarding: () => api.post('/user/onboarding-complete'),
     deleteAccount: (data) => api.delete('/user/account', { data }),
 };
 
@@ -115,6 +116,7 @@ export const userAPI = {
 export const trendingAPI = {
     getHashtags: (params = {}) => api.get('/trending/hashtags', { params }),
     getPosts: (params = {}) => api.get('/trending/posts', { params }),
+    getHashtagPosts: (tag, page = 1) => api.get('/trending/hashtag-posts', { params: { tag, page } }),
 };
 
 // Bookmarks API
@@ -126,7 +128,7 @@ export const bookmarksAPI = {
 
 // Posts API
 export const postsAPI = {
-    getFeed: (page = 1) => api.get('/posts', { params: { page } }),
+    getFeed: (page = 1, sort = 'for_you') => api.get('/posts', { params: { page, sort } }),
     getSuggestedPosts: () => api.get('/posts/suggested'),
     getPost: (postId) => api.get(`/posts/${postId}`),
     createPost: (data) => api.post('/posts', data),
@@ -284,12 +286,6 @@ export const storiesAPI = {
     },
     getOne: (storyId) => api.get(`/stories/${storyId}`),
     view: (storyId) => api.post(`/stories/${storyId}/view`),
-};
-
-// Push Subscriptions API
-export const pushAPI = {
-    subscribe: (subscription) => api.post('/user/push-subscription', subscription),
-    unsubscribe: (endpoint) => api.delete('/user/push-subscription', { data: { endpoint } }),
 };
 
 // Notifications API

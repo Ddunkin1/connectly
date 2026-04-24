@@ -11,10 +11,10 @@ export const useSuggestedPosts = () => {
     });
 };
 
-export const useFeed = () => {
+export const useFeed = (sort = 'for_you') => {
     return useInfiniteQuery({
-        queryKey: ['posts', 'feed'],
-        queryFn: ({ pageParam = 1 }) => postsAPI.getFeed(pageParam),
+        queryKey: ['posts', 'feed', sort],
+        queryFn: ({ pageParam = 1 }) => postsAPI.getFeed(pageParam, sort),
         getNextPageParam: (lastPage) => {
             const { pagination } = lastPage.data;
             return pagination.current_page < pagination.last_page

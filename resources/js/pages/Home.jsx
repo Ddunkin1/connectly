@@ -1,12 +1,25 @@
-import React, { useRef, useCallback, useEffect } from 'react';
+import React, { useRef, useCallback, useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useFeed, useSuggestedPosts } from '../hooks/usePosts';
 import PostInput from '../components/posts/PostInput';
 import PostCard from '../components/posts/PostCard';
 import { FeedSkeleton, SkeletonBlock } from '../components/common/skeletons';
 import OnboardingChecklistCard from '../components/onboarding/OnboardingChecklistCard';
 
+const FEED_SORT_KEY = 'connectly_feed_sort';
+
 const Home = () => {
     const postInputRef = useRef(null);
+    const [sort, setSort] = useState(() => {
+        const saved = localStorage.getItem(FEED_SORT_KEY);
+        return saved === 'recent' ? 'recent' : 'for_you';
+    });
+
+    const handleSortChange = (newSort) => {
+        setSort(newSort);
+        localStorage.setItem(FEED_SORT_KEY, newSort);
+    };
+
     const {
         data,
         fetchNextPage,
@@ -14,7 +27,7 @@ const Home = () => {
         isFetchingNextPage,
         isLoading,
         isError,
-    } = useFeed();
+    } = useFeed(sort);
     const { data: suggestedPosts = [] } = useSuggestedPosts();
 
     useEffect(() => {
@@ -70,6 +83,32 @@ const Home = () => {
                         <OnboardingChecklistCard />
                     </div>
 
+                    {/* Feed sort toggle */}
+                    <div className="flex items-center gap-1 p-1 bg-white/5 rounded-xl w-fit">
+                        <button
+                            type="button"
+                            onClick={() => handleSortChange('for_you')}
+                            className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                                sort === 'for_you'
+                                    ? 'bg-primary text-white shadow-sm'
+                                    : 'text-slate-400 hover:text-slate-200'
+                            }`}
+                        >
+                            For You
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => handleSortChange('recent')}
+                            className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                                sort === 'recent'
+                                    ? 'bg-primary text-white shadow-sm'
+                                    : 'text-slate-400 hover:text-slate-200'
+                            }`}
+                        >
+                            Recent
+                        </button>
+                    </div>
+
                     {/* Post composer */}
                     <div ref={postInputRef}>
                         <PostInput />
@@ -78,10 +117,28 @@ const Home = () => {
                     {/* Feed - single column list */}
                     <div className="space-y-5">
                         {posts.length === 0 ? (
-                            <div className="text-center py-12 glass-effect rounded-2xl">
-                                <p className="text-sm text-slate-500">
-                                    No posts yet. Start following people to see their posts!
+                            <div className="text-center py-14 glass-effect rounded-2xl">
+                                <span className="material-symbols-outlined text-5xl text-slate-600 mb-4 block">feed</span>
+                                <p className="text-base font-medium text-slate-300 mb-1">Your feed is empty</p>
+                                <p className="text-sm text-slate-500 max-w-xs mx-auto mb-6">
+                                    Follow people or join communities to see posts here.
                                 </p>
+                                <div className="flex items-center justify-center gap-3">
+                                    <Link
+                                        to="/search"
+                                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary/10 text-primary text-sm font-medium hover:bg-primary/20 transition-colors"
+                                    >
+                                        <span className="material-symbols-outlined text-[18px]">person_search</span>
+                                        Find people
+                                    </Link>
+                                    <Link
+                                        to="/explore"
+                                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border border-white/10 text-slate-300 text-sm font-medium hover:bg-white/5 transition-colors"
+                                    >
+                                        <span className="material-symbols-outlined text-[18px]">explore</span>
+                                        Explore
+                                    </Link>
+                                </div>
                             </div>
                         ) : (
                             posts.map((post, index) => {

@@ -18,7 +18,6 @@ use App\Http\Controllers\Api\MessageController;
 use App\Http\Controllers\Api\PollVoteController;
 use App\Http\Controllers\Api\PostController;
 use App\Http\Controllers\Api\ProfileCommentController;
-use App\Http\Controllers\Api\PushSubscriptionController;
 use App\Http\Controllers\Api\ReportController;
 use App\Http\Controllers\Api\SearchController;
 use App\Http\Controllers\Api\StoryController;
@@ -47,21 +46,23 @@ use Illuminate\Support\Facades\Route;
 // OAuth routes (no auth required)
 Route::get('/auth/google', [SocialAuthController::class, 'redirectToGoogle']);
 Route::get('/auth/google/callback', [SocialAuthController::class, 'handleGoogleCallback']);
-Route::get('/auth/facebook', [SocialAuthController::class, 'redirectToFacebook']);
-Route::get('/auth/facebook/callback', [SocialAuthController::class, 'handleFacebookCallback']);
 
 // Public routes (with rate limiting)
 Route::middleware('throttle:60,1')->group(function () {
     Route::get('/users/{user}/cover-image', [UserController::class, 'coverImage']);
     Route::get('/users/{user}/profile-picture', [UserController::class, 'profilePicture']);
-    Route::post('/register', [AuthController::class, 'register']);
-    Route::post('/login', [AuthController::class, 'login']);
     Route::post('/ban-appeals', [BanAppealController::class, 'store']);
-    Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
-    Route::post('/reset-password', [AuthController::class, 'resetPassword']);
     Route::get('/email/verify/{id}/{hash}', [AuthController::class, 'verifyEmail'])
         ->middleware('signed')
         ->name('api.verification.verify');
+});
+
+// Auth routes (stricter rate limiting - 5 per minute)
+Route::middleware('throttle:5,1')->group(function () {
+    Route::post('/register', [AuthController::class, 'register']);
+    Route::post('/login', [AuthController::class, 'login']);
+    Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
+    Route::post('/reset-password', [AuthController::class, 'resetPassword']);
 });
 
 // Broadcast auth (Bearer token, no CSRF) - must be in API for SPA
@@ -95,10 +96,9 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function () {
     Route::get('/users/suggested', [UserController::class, 'suggested']);
     Route::get('/user/notification-preferences', [UserController::class, 'notificationPreferences']);
     Route::put('/user/notification-preferences', [UserController::class, 'updateNotificationPreferences']);
-    Route::post('/user/push-subscription', [PushSubscriptionController::class, 'store']);
-    Route::delete('/user/push-subscription', [PushSubscriptionController::class, 'destroy']);
     Route::get('/user/analytics', [AnalyticsController::class, 'index']);
     Route::get('/user/export-data', [UserController::class, 'exportData']);
+    Route::post('/user/onboarding-complete', [UserController::class, 'completeOnboarding']);
     Route::delete('/user/account', [UserController::class, 'deleteAccount']);
 
     // Posts
@@ -171,6 +171,7 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function () {
     // Trending
     Route::get('/trending/hashtags', [TrendingController::class, 'hashtags']);
     Route::get('/trending/posts', [TrendingController::class, 'posts']);
+    Route::get('/trending/hashtag-posts', [TrendingController::class, 'hashtagPosts']);
 
     // Reports
     Route::post('/reports', [ReportController::class, 'store']);

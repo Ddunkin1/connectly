@@ -82,6 +82,10 @@ class UserResource extends JsonResource
             'location' => $this->location,
             'website' => $this->website,
             'privacy_settings' => $this->privacy_settings,
+            'onboarding_completed' => $this->when(
+                $request->user()?->id === $this->id || $this->shouldExposeRoleForLoginOrRegisterResponse($request),
+                (bool) ($this->onboarding_completed ?? false)
+            ),
             'followers_count' => $this->whenCounted('followers'),
             'following_count' => $this->whenCounted('following'),
             'posts_count' => $this->whenCounted('posts'),

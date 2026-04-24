@@ -113,7 +113,7 @@ const PostCard = ({ post, onDeleted }) => {
     };
 
     return (
-        <article className="bg-[var(--theme-surface)] overflow-hidden group mb-4 last:mb-0 p-5 rounded-2xl border border-[var(--theme-border)] shadow-post-card min-w-0 w-full">
+        <article className="bg-[var(--theme-surface)] overflow-visible group mb-4 last:mb-0 p-5 rounded-2xl border border-[var(--theme-border)] shadow-post-card min-w-0 w-full">
             {/* Post Header - Stitch: avatar ring-2 ring-primary/20, 1 HOUR AGO, public icon */}
             <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center space-x-3">
@@ -196,7 +196,11 @@ const PostCard = ({ post, onDeleted }) => {
                                         type="button"
                                         onClick={() => handleVisibilityChange('public')}
                                         disabled={updateMutation.isPending}
-                                        className={`w-full px-4 py-2 text-left text-sm flex items-center gap-2 cursor-pointer ${(post.visibility || 'public') === 'public' ? 'text-[var(--theme-accent)]' : 'text-gray-300 hover:bg-white/10'}`}
+                                        className={`w-full px-4 py-2 text-left text-sm flex items-center gap-2 cursor-pointer hover:bg-white/10 ${
+                                            (post.visibility || 'public') === 'public'
+                                                ? 'text-[var(--theme-accent)] bg-[var(--theme-accent)]/10'
+                                                : 'text-gray-300'
+                                        }`}
                                     >
                                         <UilGlobe size={18} color="currentColor" />
                                         Public
@@ -206,7 +210,11 @@ const PostCard = ({ post, onDeleted }) => {
                                         type="button"
                                         onClick={() => handleVisibilityChange('followers')}
                                         disabled={updateMutation.isPending}
-                                        className={`w-full px-4 py-2 text-left text-sm flex items-center gap-2 cursor-pointer ${post.visibility === 'followers' ? 'text-[var(--theme-accent)]' : 'text-gray-300 hover:bg-white/10'}`}
+                                        className={`w-full px-4 py-2 text-left text-sm flex items-center gap-2 cursor-pointer hover:bg-white/10 ${
+                                            post.visibility === 'followers'
+                                                ? 'text-[var(--theme-accent)] bg-[var(--theme-accent)]/10'
+                                                : 'text-gray-300'
+                                        }`}
                                     >
                                         <UilUsersAlt size={18} color="currentColor" />
                                         Friends only
@@ -216,7 +224,11 @@ const PostCard = ({ post, onDeleted }) => {
                                         type="button"
                                         onClick={() => handleVisibilityChange('private')}
                                         disabled={updateMutation.isPending}
-                                        className={`w-full px-4 py-2 text-left text-sm flex items-center gap-2 cursor-pointer ${post.visibility === 'private' ? 'text-[var(--theme-accent)]' : 'text-gray-300 hover:bg-white/10'}`}
+                                        className={`w-full px-4 py-2 text-left text-sm flex items-center gap-2 cursor-pointer hover:bg-white/10 ${
+                                            post.visibility === 'private'
+                                                ? 'text-[var(--theme-accent)] bg-[var(--theme-accent)]/10'
+                                                : 'text-gray-300'
+                                        }`}
                                     >
                                         <UilLock size={18} color="currentColor" />
                                         Private

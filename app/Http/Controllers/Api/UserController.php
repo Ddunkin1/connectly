@@ -694,6 +694,16 @@ class UserController extends Controller
     /**
      * Delete user account (GDPR/CCPA).
      */
+    /**
+     * Mark the authenticated user's onboarding as complete.
+     */
+    public function completeOnboarding(Request $request): JsonResponse
+    {
+        $request->user()->update(['onboarding_completed' => true]);
+
+        return response()->json(['message' => 'Onboarding complete']);
+    }
+
     public function deleteAccount(Request $request): JsonResponse
     {
         $request->validate([

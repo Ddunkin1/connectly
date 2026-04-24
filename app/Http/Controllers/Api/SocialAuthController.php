@@ -30,22 +30,6 @@ class SocialAuthController extends Controller
     }
 
     /**
-     * Redirect to Facebook OAuth.
-     */
-    public function redirectToFacebook(): RedirectResponse
-    {
-        return Socialite::driver('facebook')->stateless()->redirect();
-    }
-
-    /**
-     * Handle Facebook OAuth callback.
-     */
-    public function handleFacebookCallback(Request $request): RedirectResponse
-    {
-        return $this->handleProviderCallback('facebook');
-    }
-
-    /**
      * Handle OAuth provider callback and redirect to frontend with token.
      */
     private function handleProviderCallback(string $provider): RedirectResponse

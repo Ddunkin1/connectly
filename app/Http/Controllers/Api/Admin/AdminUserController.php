@@ -232,6 +232,28 @@ class AdminUserController extends Controller
         $lastPostAt = $user->posts()->max('created_at');
         $lastActive = $lastPostAt !== null ? \Carbon\Carbon::parse($lastPostAt) : $user->updated_at;
 
+        // Bargraph-friendly analytics: posts created per day (last 7 days)
+        $days = 7;
+        $start = now()->subDays($days - 1)->startOfDay();
+        $end = now()->endOfDay();
+        $rawCounts = Post::query()
+            ->where('user_id', $user->id)
+            ->where('is_archived', false)
+            ->whereBetween('created_at', [$start, $end])
+            ->selectRaw('DATE(created_at) as day, COUNT(*) as count')
+            ->groupBy('day')
+            ->pluck('count', 'day');
+
+        $postsPerDay = [];
+        for ($i = 0; $i < $days; $i++) {
+            $d = $start->copy()->addDays($i);
+            $key = $d->toDateString();
+            $postsPerDay[] = [
+                'date' => $key,
+                'count' => (int) ($rawCounts[$key] ?? 0),
+            ];
+        }
+
         $violations = collect();
         if (Schema::hasTable('moderation_events')) {
             $violations = ModerationEvent::query()
@@ -273,6 +295,7 @@ class AdminUserController extends Controller
                 'followers_count' => $user->followers_count,
                 'following_count' => $user->following_count,
                 'last_active_at' => $lastActive?->toIso8601String(),
+                'posts_per_day' => $postsPerDay,
             ],
             'violations' => $violations,
             'reports' => $this->reportsAgainstUser($user),

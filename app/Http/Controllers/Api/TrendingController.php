@@ -14,6 +14,48 @@ use Illuminate\Support\Facades\DB;
 class TrendingController extends Controller
 {
     /**
+     * Get posts for a specific hashtag (paginated).
+     */
+    public function hashtagPosts(Request $request): JsonResponse
+    {
+        $tag = trim((string) $request->input('tag', ''));
+
+        if ($tag === '') {
+            return response()->json(['message' => 'tag parameter is required'], 422);
+        }
+
+        $hashtag = Hashtag::where('name', $tag)
+            ->orWhere('slug', \Illuminate\Support\Str::slug($tag))
+            ->first();
+
+        if (!$hashtag) {
+            return response()->json(['posts' => [], 'hashtag' => null, 'total' => 0]);
+        }
+
+        $user = $request->user();
+        $blockedIds = $user
+            ? array_merge($user->blockedUserIds(), $user->blockedByUserIds())
+            : [];
+
+        $posts = $hashtag->posts()
+            ->with(['user', 'hashtags', 'sharedPost.user', 'poll.options'])
+            ->withCount(['likes', 'allComments'])
+            ->when(!empty($blockedIds), fn ($q) => $q->whereNotIn('user_id', $blockedIds))
+            ->where('visibility', 'public')
+            ->where('is_archived', false)
+            ->orderByDesc('posts.created_at')
+            ->paginate(15);
+
+        return response()->json([
+            'hashtag' => ['id' => $hashtag->id, 'name' => $hashtag->name],
+            'posts'   => PostResource::collection($posts->items()),
+            'total'   => $posts->total(),
+            'page'    => $posts->currentPage(),
+            'last_page' => $posts->lastPage(),
+        ]);
+    }
+
+    /**
      * Get trending hashtags (by post count in last 48 hours).
      */
     public function hashtags(Request $request): JsonResponse

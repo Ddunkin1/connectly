@@ -36,6 +36,13 @@ function formatAgo(iso) {
     return `${days} day${days === 1 ? '' : 's'} ago`;
 }
 
+function formatDayLabel(dateStr) {
+    if (!dateStr) return '';
+    // dateStr is expected as YYYY-MM-DD; parse in local time safely
+    const d = new Date(`${dateStr}T12:00:00`);
+    return d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+}
+
 const selectClass =
     'w-full appearance-none rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] text-[var(--text-primary)] text-sm py-2.5 pl-3 pr-10 [&::-ms-expand]:hidden';
 
@@ -399,6 +406,43 @@ export default function AdminReportUserPanel({
                                             </span>
                                         </div>
                                     </div>
+
+                                    {Array.isArray(activity.posts_per_day) && activity.posts_per_day.length > 0 && (
+                                        <div className="mt-4 rounded-xl bg-[var(--theme-surface)] border border-[var(--theme-border)] p-4">
+                                            <div className="flex items-center justify-between gap-3 mb-3">
+                                                <p className="text-sm font-semibold text-[var(--text-primary)]">Posts / day (last 7 days)</p>
+                                                <p className="text-xs text-[var(--text-secondary)]">
+                                                    {activity.posts_per_day.reduce((s, x) => s + (x.count ?? 0), 0)} total
+                                                </p>
+                                            </div>
+
+                                            {(() => {
+                                                const rows = activity.posts_per_day ?? [];
+                                                const max = Math.max(...rows.map((r) => r.count ?? 0), 1);
+                                                return (
+                                                    <div className="flex items-end gap-2 h-28">
+                                                        {rows.map((r) => {
+                                                            const count = r.count ?? 0;
+                                                            const heightPct = Math.round((count / max) * 100);
+                                                            const height = `${Math.max(8, heightPct)}%`;
+                                                            return (
+                                                                <div key={r.date} className="flex-1 flex flex-col items-center justify-end min-w-0">
+                                                                    <div
+                                                                        className="w-full rounded-md bg-[var(--theme-accent)]/55 border border-[var(--theme-border)]/70"
+                                                                        style={{ height }}
+                                                                        title={`${r.date}: ${count} post${count === 1 ? '' : 's'}`}
+                                                                    />
+                                                                    <span className="mt-2 text-[10px] text-[var(--text-secondary)] truncate">
+                                                                        {formatDayLabel(r.date).replace(/,/g, '')}
+                                                                    </span>
+                                                                </div>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                );
+                                            })()}
+                                        </div>
+                                    )}
                                 </div>
                             )}
                         </div>

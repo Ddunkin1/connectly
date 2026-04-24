@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-const GroupChatHeader = ({ group, onInviteClick }) => {
+const GroupChatHeader = ({ group, onInviteClick, onBack }) => {
     const [showMenu, setShowMenu] = useState(false);
 
     if (!group) return null;
@@ -8,8 +8,18 @@ const GroupChatHeader = ({ group, onInviteClick }) => {
     const memberCount = group.members?.length ?? 0;
 
     return (
-        <header className="h-16 px-5 flex items-center justify-between border-b border-[var(--theme-border)] bg-[var(--theme-bg-main)]">
-            <div className="flex items-center gap-3">
+        <header className="h-16 px-3 sm:px-5 flex items-center justify-between border-b border-[var(--theme-border)] bg-[var(--theme-bg-main)]">
+            <div className="flex items-center gap-2 sm:gap-3">
+                {onBack && (
+                    <button
+                        type="button"
+                        onClick={onBack}
+                        className="sm:hidden w-8 h-8 rounded-full flex items-center justify-center text-[var(--text-primary)]/80 hover:bg-[var(--theme-surface-hover)] shrink-0"
+                        aria-label="Back to groups"
+                    >
+                        <span className="material-symbols-outlined text-xl">arrow_back</span>
+                    </button>
+                )}
                 <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-lg shrink-0">
                     {group.name?.charAt(0)?.toUpperCase() || 'G'}
                 </div>

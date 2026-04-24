@@ -1,6 +1,9 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useMutation } from '@tanstack/react-query';
 import { useOnboarding } from '../hooks/useOnboarding';
+import { userAPI } from '../services/api';
+import useAuthStore from '../store/authStore';
 import Avatar from '../components/common/Avatar';
 import Button from '../components/common/Button';
 import { SimplePageSkeleton, SkeletonBlock } from '../components/common/skeletons';
@@ -9,6 +12,20 @@ import { useJoinCommunity } from '../hooks/useCommunities';
 
 const Onboarding = () => {
     const navigate = useNavigate();
+    const authUser = useAuthStore((s) => s.user);
+
+    // Skip onboarding if already completed
+    useEffect(() => {
+        if (authUser?.onboarding_completed) {
+            navigate('/home', { replace: true });
+        }
+    }, [authUser?.onboarding_completed, navigate]);
+
+    const completeOnboardingMutation = useMutation({
+        mutationFn: () => userAPI.completeOnboarding(),
+        onSettled: () => navigate('/home', { replace: true }),
+    });
+
     const {
         user,
         suggestedUsers,
@@ -31,11 +48,11 @@ const Onboarding = () => {
         communitiesData?.communities?.filter((community) => community.is_member === false) ?? [];
 
     const handleSkip = () => {
-        navigate('/home', { replace: true });
+        completeOnboardingMutation.mutate();
     };
 
     const handleContinue = () => {
-        navigate('/home', { replace: true });
+        completeOnboardingMutation.mutate();
     };
 
     if (!user) {

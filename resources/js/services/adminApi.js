@@ -16,6 +16,14 @@ export const adminAPI = {
             params: { ...params, export: 'csv' },
             responseType: 'blob',
         });
+        const contentType = res.headers?.['content-type'] ?? '';
+        if (!contentType.includes('text/csv')) {
+            // Backend returned an error response — decode and throw it
+            const text = await res.data.text();
+            let message = 'Export failed';
+            try { message = JSON.parse(text)?.message ?? message; } catch { /* noop */ }
+            throw new Error(message);
+        }
         const blob = new Blob([res.data], { type: 'text/csv;charset=utf-8' });
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');

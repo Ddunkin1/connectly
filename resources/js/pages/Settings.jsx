@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { userAPI, twoFactorAPI, pushAPI } from '../services/api';
+import { userAPI, twoFactorAPI } from '../services/api';
 import useAuthStore from '../store/authStore';
 import { SimplePageSkeleton, SkeletonBlock } from '../components/common/skeletons';
 import Button from '../components/common/Button';
@@ -15,8 +15,6 @@ const DEFAULT_PREFS = {
     mentions: true,
     messages: true,
 };
-
-const PUSH_STORAGE_KEY = 'connectly_push_endpoint';
 
 const LABELS = {
     likes: 'Likes on your posts',
@@ -83,8 +81,6 @@ const Settings = () => {
     const [showRecoveryCodes, setShowRecoveryCodes] = useState(false);
     const [recoveryCodes, setRecoveryCodes] = useState([]);
     const [disablePassword, setDisablePassword] = useState('');
-    const [pushEndpoint, setPushEndpoint] = useState(() => localStorage.getItem(PUSH_STORAGE_KEY) || '');
-    const [pushPermission, setPushPermission] = useState(() => (typeof Notification !== 'undefined' ? Notification.permission : 'denied'));
 
     const setup2FAMutation = useMutation({
         mutationFn: () => twoFactorAPI.setup(),
@@ -125,29 +121,6 @@ const Settings = () => {
             toast.success('Notification settings saved');
         },
         onError: () => toast.error('Failed to save settings'),
-    });
-
-    const subscribePushMutation = useMutation({
-        mutationFn: ({ subscription }) => pushAPI.subscribe(subscription),
-        onSuccess: (_, vars) => {
-            if (vars?.endpoint) {
-                localStorage.setItem(PUSH_STORAGE_KEY, vars.endpoint);
-                setPushEndpoint(vars.endpoint);
-            }
-            setPushPermission(Notification.permission);
-            toast.success('Push notifications enabled');
-        },
-        onError: (e) => toast.error(e?.response?.data?.message || 'Failed to enable push'),
-    });
-
-    const unsubscribePushMutation = useMutation({
-        mutationFn: (endpoint) => pushAPI.unsubscribe(endpoint),
-        onSuccess: () => {
-            localStorage.removeItem(PUSH_STORAGE_KEY);
-            setPushEndpoint('');
-            toast.success('Push notifications disabled');
-        },
-        onError: (e) => toast.error(e?.response?.data?.message || 'Failed to disable push'),
     });
 
     useEffect(() => {
@@ -198,58 +171,6 @@ const Settings = () => {
             muted_users: mutedUsers,
             muted_communities: mutedCommunities,
         });
-    };
-
-    const handleEnablePush = async () => {
-        if (typeof Notification === 'undefined') {
-            toast.error('Push notifications are not supported in this browser');
-            return;
-        }
-        if (Notification.permission === 'denied') {
-            toast.error('Push notifications are blocked. Please allow them in your browser settings.');
-            return;
-        }
-        if (Notification.permission === 'default') {
-            const perm = await Notification.requestPermission();
-            setPushPermission(perm);
-            if (perm !== 'granted') {
-                toast.error('Permission denied');
-                return;
-            }
-        }
-        if (!('serviceWorker' in navigator)) {
-            toast.error('Service worker is required for push notifications');
-            return;
-        }
-        const vapidKey = import.meta.env.VITE_VAPID_PUBLIC_KEY;
-        if (!vapidKey) {
-            toast.error('Push notifications are not configured. Contact support.');
-            return;
-        }
-        try {
-            const reg = await navigator.serviceWorker.register('/push-sw.js', { scope: '/' });
-            await navigator.serviceWorker.ready;
-            const key = vapidKey.replace(/-/g, '+').replace(/_/g, '/');
-            const keyBytes = Uint8Array.from(atob(key), (c) => c.charCodeAt(0));
-            const sub = await reg.pushManager.subscribe({
-                userVisibleOnly: true,
-                applicationServerKey: keyBytes,
-            });
-            const endpoint = sub.endpoint;
-            const p256dh = btoa(String.fromCharCode(...new Uint8Array(sub.getKey('p256dh'))));
-            const auth = btoa(String.fromCharCode(...new Uint8Array(sub.getKey('auth'))));
-            subscribePushMutation.mutate({
-                subscription: { endpoint, keys: { p256dh, auth } },
-                endpoint,
-            });
-        } catch (err) {
-            toast.error(err?.message || 'Failed to subscribe to push');
-        }
-    };
-
-    const handleDisablePush = () => {
-        if (!pushEndpoint) return;
-        unsubscribePushMutation.mutate(pushEndpoint);
     };
 
     if (isLoading) {
@@ -340,44 +261,6 @@ const Settings = () => {
                                 </button>
                             </span>
                         ))}
-                    </div>
-                )}
-            </section>
-
-            <section className="theme-surface rounded-xl p-6 mb-6">
-                <h2 className="text-lg font-semibold text-[var(--text-primary)] mb-4">
-                    Push notifications
-                </h2>
-                <p className="text-sm text-[var(--text-secondary)] mb-6">
-                    Receive notifications in your browser when you're not on the site.
-                </p>
-                {typeof Notification === 'undefined' ? (
-                    <p className="text-[var(--text-secondary)] text-sm">
-                        Push notifications are not supported in this browser.
-                    </p>
-                ) : (
-                    <div className="space-y-4">
-                        <p className="text-sm text-[var(--text-secondary)]">
-                            Status: {pushEndpoint ? 'Enabled' : pushPermission === 'granted' ? 'Permission granted (click Enable to finish)' : pushPermission === 'denied' ? 'Blocked' : 'Not enabled'}
-                        </p>
-                        <div className="flex gap-2">
-                            {pushEndpoint ? (
-                                <Button
-                                    variant="outline"
-                                    onClick={handleDisablePush}
-                                    disabled={unsubscribePushMutation.isPending}
-                                >
-                                    {unsubscribePushMutation.isPending ? 'Disabling...' : 'Disable push notifications'}
-                                </Button>
-                            ) : (
-                                <Button
-                                    onClick={handleEnablePush}
-                                    disabled={subscribePushMutation.isPending}
-                                >
-                                    {subscribePushMutation.isPending ? 'Enabling...' : 'Enable push notifications'}
-                                </Button>
-                            )}
-                        </div>
                     </div>
                 )}
             </section>

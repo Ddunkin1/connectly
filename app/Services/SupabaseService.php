@@ -113,6 +113,54 @@ class SupabaseService
     }
 
     /**
+     * Upload a raw file (by path) to Supabase Storage. Used for transcoded video temp files.
+     *
+     * @param string $filePath Absolute path to the file
+     * @param string $mimeType MIME type of the file
+     * @param string $folder   Storage folder
+     * @return string|null Public URL of the uploaded file
+     */
+    public function uploadFromPath(string $filePath, string $mimeType, string $folder = 'uploads'): ?string
+    {
+        try {
+            $extension = pathinfo($filePath, PATHINFO_EXTENSION) ?: 'mp4';
+            $fileName = time() . '_' . uniqid() . '.' . $extension;
+            $path = $folder . '/' . $fileName;
+
+            $fileContents = file_get_contents($filePath);
+            if ($fileContents === false) {
+                Log::error('SupabaseService: could not read transcoded file', ['path' => $filePath]);
+                throw new \RuntimeException('Could not read transcoded video file.');
+            }
+
+            $response = Http::connectTimeout(60)
+                ->timeout(180)
+                ->withHeaders([
+                    'apikey' => $this->activeKey,
+                    'Authorization' => 'Bearer ' . $this->activeKey,
+                    'Content-Type' => $mimeType,
+                ])->withBody($fileContents, $mimeType)
+                ->put("{$this->supabaseUrl}/storage/v1/object/{$this->bucket}/{$path}");
+
+            if ($response->successful()) {
+                return "{$this->supabaseUrl}/storage/v1/object/public/{$this->bucket}/{$path}";
+            }
+
+            Log::error('Supabase uploadFromPath failed', [
+                'status' => $response->status(),
+                'path' => $path,
+                'body' => $response->body(),
+            ]);
+            throw new \RuntimeException('Supabase upload failed (' . $response->status() . '): ' . $response->body());
+        } catch (\RuntimeException $e) {
+            throw $e;
+        } catch (\Exception $e) {
+            Log::error('SupabaseService uploadFromPath error: ' . $e->getMessage());
+            throw new \RuntimeException('Supabase upload failed: ' . $e->getMessage());
+        }
+    }
+
+    /**
      * Create a bucket in Supabase Storage (requires service_role key).
      *
      * @param string $bucketName

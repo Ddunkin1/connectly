@@ -14,6 +14,13 @@ class UpdatePostRequest extends FormRequest
         return $this->user()->id === $this->route('post')->user_id;
     }
 
+    protected function prepareForValidation(): void
+    {
+        if ($this->filled('content')) {
+            $this->merge(['content' => strip_tags($this->input('content'))]);
+        }
+    }
+
     /**
      * Get the validation rules that apply to the request.
      *

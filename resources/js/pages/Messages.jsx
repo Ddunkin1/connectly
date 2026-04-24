@@ -24,6 +24,7 @@ const Messages = () => {
     const navigate = useNavigate();
     const user = useAuthStore((state) => state.user);
     const [activeTab, setActiveTab] = useState('direct');
+    const [mobileView, setMobileView] = useState('list');
     const [selectedConversation, setSelectedConversation] = useState(null);
     const [selectedGroup, setSelectedGroup] = useState(null);
     const [newGroupModalOpen, setNewGroupModalOpen] = useState(false);
@@ -51,6 +52,7 @@ const Messages = () => {
     useEffect(() => {
         if (username && conversationByUsernameData?.conversation) {
             setSelectedConversation(conversationByUsernameData.conversation);
+            setMobileView('chat');
         }
     }, [username, conversationByUsernameData]);
 
@@ -74,6 +76,7 @@ const Messages = () => {
     const handleSelectConversation = (conversation) => {
         setSelectedConversation(conversation);
         setSelectedGroup(null);
+        setMobileView('chat');
         if (conversation.other_user?.username) {
             navigate(`/messages/${conversation.other_user.username}`, { replace: true });
         }
@@ -82,6 +85,7 @@ const Messages = () => {
     const handleSelectGroup = (group) => {
         setSelectedGroup(group);
         setSelectedConversation(null);
+        setMobileView('chat');
         navigate('/messages', { replace: true });
     };
 
@@ -126,8 +130,8 @@ const Messages = () => {
                 onCreated={handleGroupCreated}
             />
             <div className="flex flex-1 min-h-0 overflow-hidden">
-                {/* Left panel - conversation list (~1/4 width, Connectly style) */}
-                <section className="w-[280px] shrink-0 border-r border-[var(--theme-border)] flex flex-col bg-[var(--theme-bg-main)]">
+                {/* Left panel - conversation list — full-width on mobile when mobileView=list, fixed width on sm+ */}
+                <section className={`${mobileView === 'list' ? 'flex' : 'hidden'} sm:flex w-full sm:w-[280px] shrink-0 border-r border-[var(--theme-border)] flex-col bg-[var(--theme-bg-main)]`}>
                     <div className="p-4 border-b border-[var(--theme-border)]">
                         <h2 className="text-lg font-semibold text-[var(--text-primary)] mb-4">Messages</h2>
                         <div className="relative">
@@ -221,8 +225,8 @@ const Messages = () => {
                     )}
                 </section>
 
-                {/* Center - chat (~1/2 width) */}
-                <main className="flex-1 flex flex-col min-h-0 min-w-0 overflow-hidden bg-[var(--theme-bg-main)]">
+                {/* Center - chat — full-width on mobile when mobileView=chat, flex-1 on sm+ */}
+                <main className={`${mobileView === 'chat' ? 'flex' : 'hidden'} sm:flex flex-1 flex-col min-h-0 min-w-0 overflow-hidden bg-[var(--theme-bg-main)]`}>
                     {showDirectContent && (
                         <>
                             {isLoadingConversation ? (
@@ -234,7 +238,7 @@ const Messages = () => {
                             ) : displayConversation ? (
                                 <>
                                     <div className="shrink-0">
-                                        <MessageChatHeader otherUser={displayConversation.other_user} />
+                                        <MessageChatHeader otherUser={displayConversation.other_user} onBack={() => setMobileView('list')} />
                                     </div>
                                     <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
                                         <MessageThread
@@ -266,7 +270,7 @@ const Messages = () => {
                             {selectedGroup ? (
                                 <>
                                     <div className="shrink-0">
-                                        <GroupChatHeader group={selectedGroup} onInviteClick={() => setGroupAddModalOpen(true)} />
+                                        <GroupChatHeader group={selectedGroup} onInviteClick={() => setGroupAddModalOpen(true)} onBack={() => setMobileView('list')} />
                                     </div>
                                     <div className="flex-1 min-h-0 flex flex-col overflow-hidden bg-[var(--theme-bg-main)]">
                                         <GroupMessageThread groupId={selectedGroup.id} />
@@ -287,10 +291,10 @@ const Messages = () => {
                     )}
                 </main>
 
-                {/* Right panel - contact details (~1/4 width, Connectly style) */}
+                {/* Right panel - contact details — hidden on mobile */}
                 {showDirectContent && displayConversation && (
                     <>
-                        <section className="w-[280px] shrink-0 border-l border-[var(--theme-border)] flex flex-col bg-[var(--theme-bg-main)] overflow-hidden">
+                        <section className="hidden lg:flex w-[280px] shrink-0 border-l border-[var(--theme-border)] flex-col bg-[var(--theme-bg-main)] overflow-hidden">
                             <MessageUserPanel
                                 otherUser={displayConversation.other_user}
                                 mediaItems={conversationMedia}
@@ -306,11 +310,13 @@ const Messages = () => {
                     </>
                 )}
                 {showGroupContent && selectedGroup && (
-                    <GroupMembersPanel
-                        groupId={selectedGroup.id}
-                        openAddModal={groupAddModalOpen}
-                        onCloseAddModal={() => setGroupAddModalOpen(false)}
-                    />
+                    <div className="hidden lg:flex">
+                        <GroupMembersPanel
+                            groupId={selectedGroup.id}
+                            openAddModal={groupAddModalOpen}
+                            onCloseAddModal={() => setGroupAddModalOpen(false)}
+                        />
+                    </div>
                 )}
             </div>
         </div>

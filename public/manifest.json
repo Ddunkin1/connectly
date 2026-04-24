@@ -1,0 +1,31 @@
+{
+    "name": "Connectly",
+    "short_name": "Connectly",
+    "description": "Connectly — your school social network",
+    "start_url": "/home",
+    "display": "standalone",
+    "background_color": "#0a0a0b",
+    "theme_color": "#359EFF",
+    "orientation": "portrait-primary",
+    "icons": [
+        {
+            "src": "/favicon.ico",
+            "sizes": "48x48",
+            "type": "image/x-icon"
+        },
+        {
+            "src": "/favicon.ico",
+            "sizes": "192x192",
+            "type": "image/x-icon",
+            "purpose": "any maskable"
+        },
+        {
+            "src": "/favicon.ico",
+            "sizes": "512x512",
+            "type": "image/x-icon",
+            "purpose": "any maskable"
+        }
+    ],
+    "categories": ["social", "education"],
+    "scope": "/"
+}
