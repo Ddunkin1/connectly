@@ -19,21 +19,9 @@ export default defineConfig({
         rollupOptions: {
             output: {
                 manualChunks: (id) => {
-                    // Vendor: React core
-                    if (id.includes('node_modules/react') || id.includes('node_modules/react-dom')) {
-                        return 'vendor-react';
-                    }
-                    // Vendor: Router
-                    if (id.includes('node_modules/react-router')) {
-                        return 'vendor-router';
-                    }
-                    // Vendor: TanStack Query
-                    if (id.includes('node_modules/@tanstack')) {
-                        return 'vendor-query';
-                    }
-                    // Vendor: misc (pusher, echo, axios, zustand, etc.)
+                    // All node_modules in one vendor chunk to avoid circular dependencies
                     if (id.includes('node_modules')) {
-                        return 'vendor-misc';
+                        return 'vendor';
                     }
                     // Admin chunk — lazy-loaded admin pages
                     if (id.includes('/pages/Admin/')) {
