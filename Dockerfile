@@ -26,7 +26,7 @@ ENV VITE_REVERB_APP_KEY=$VITE_REVERB_APP_KEY \
     VITE_REVERB_SCHEME=$VITE_REVERB_SCHEME \
     VITE_APP_URL=$VITE_APP_URL
 
-RUN npm run build
+RUN npx vite build
 
 # ============================================================
 # Stage 2 - Install PHP/Composer dependencies
