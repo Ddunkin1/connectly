@@ -94,7 +94,16 @@ export default function VideoCall({ roomUrl, conversationId, onEnd }) {
                 .on('left-meeting',        () => finish(true))
                 .on('error',               (e) => console.error('[Daily]', e));
 
-            await call.join({ url: roomUrl });
+            try {
+                await call.join({ url: roomUrl });
+            } catch (e) {
+                const msg = e?.errorMsg ?? e?.message ?? 'Unknown error';
+                console.error('[Daily] join failed:', msg);
+                if (msg === 'account-missing-payment-method') {
+                    alert('Video calls are temporarily unavailable. The account owner needs to add a payment method at dashboard.daily.co/billing.');
+                }
+                finish(false);
+            }
         };
         document.head.appendChild(script);
         return () => { finish(false); script.remove(); };
