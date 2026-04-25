@@ -41,7 +41,9 @@ export default function VideoCall({ appId, token, channelName, uid, conversation
             if (doneRef.current) return;
 
             const AgoraRTC = window.AgoraRTC;
-            AgoraRTC.setLogLevel(4); // silent in production
+            AgoraRTC.setLogLevel(1);
+
+            console.log('[Agora] joining with:', { appId, channelName, uid, tokenLength: token?.length });
 
             const client = AgoraRTC.createClient({ mode: 'rtc', codec: 'vp8' });
             clientRef.current = client;
