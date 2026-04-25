@@ -53,10 +53,7 @@ export default function IncomingCall({ caller, conversationId, onAccept, onDecli
         try {
             const res = await callAPI.generateToken(conversationId);
             onAccept({
-                channel_name:    res.data.channel_name,
-                token:           res.data.token,
-                app_id:          res.data.app_id,
-                uid:             res.data.uid,
+                room_name:       res.data.room_name,
                 conversation_id: conversationId,
             });
         } catch {

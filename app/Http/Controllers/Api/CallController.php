@@ -6,7 +6,6 @@ use App\Events\CallEnded;
 use App\Events\CallInitiated;
 use App\Http\Controllers\Controller;
 use App\Models\Conversation;
-use App\Services\AgoraToken;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -25,20 +24,8 @@ class CallController extends Controller
 
         $conversation = $this->findAuthorizedConversation($request->conversation_id);
 
-        $appId          = config('services.agora.app_id');
-        $appCertificate = config('services.agora.app_certificate');
-        $channelName    = 'call_conversation_' . $conversation->id;
-        $uid            = Auth::id();
-
-        $token = $appId && $appCertificate
-            ? AgoraToken::buildRtcToken($appId, $appCertificate, $channelName, $uid)
-            : 'no-certificate'; // Dev fallback when certificate is not set
-
         return response()->json([
-            'channel_name' => $channelName,
-            'token'        => $token,
-            'app_id'       => $appId,
-            'uid'          => $uid,
+            'room_name' => 'connectly-call-' . $conversation->id,
         ]);
     }
 

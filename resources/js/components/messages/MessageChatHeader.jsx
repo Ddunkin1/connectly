@@ -16,10 +16,9 @@ const MessageChatHeader = ({ otherUser, conversationId, onBack }) => {
                 callAPI.generateToken(conversationId),
                 callAPI.initiate(conversationId),
             ]);
-            const { channel_name, token, app_id, uid } = tokenRes.data;
-            // Signal the global RealtimeCallProvider to open the VideoCall overlay
+            const { room_name } = tokenRes.data;
             window.dispatchEvent(new CustomEvent('open-video-call', {
-                detail: { channel_name, token, app_id, uid, conversation_id: conversationId },
+                detail: { room_name, conversation_id: conversationId },
             }));
         } catch {
             toast.error('Could not start video call. Please try again.');
