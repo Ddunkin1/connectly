@@ -61,8 +61,10 @@ export default function RealtimeCallProvider({ children }) {
                 const res = await callAPI.generateToken(payload.conversation_id);
                 setCallingCall(null);
                 setActiveCall({
-                    room_url:        res.data.room_url,
-                    room_name:       res.data.room_name,
+                    app_id:          res.data.app_id,
+                    token:           res.data.token,
+                    channel_name:    res.data.channel_name,
+                    uid:             res.data.uid,
                     conversation_id: payload.conversation_id,
                 });
             } catch {}
@@ -128,7 +130,10 @@ export default function RealtimeCallProvider({ children }) {
 
             {activeCall && (
                 <VideoCall
-                    roomUrl={activeCall.room_url}
+                    appId={activeCall.app_id}
+                    token={activeCall.token}
+                    channelName={activeCall.channel_name}
+                    uid={activeCall.uid}
                     conversationId={activeCall.conversation_id}
                     onEnd={handleCallEnd}
                 />

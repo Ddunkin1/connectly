@@ -9,16 +9,16 @@ use App\Events\MessageSent;
 use App\Http\Controllers\Controller;
 use App\Models\Conversation;
 use App\Models\Message;
+use App\Services\AgoraToken;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Http;
 
 class CallController extends Controller
 {
     /**
-     * Create (or reuse) a Daily.co room and return the URL.
+     * Generate an Agora RTC token for the caller/callee to join a channel.
      *
      * POST /api/calls/token
      * Body: { conversation_id }
@@ -28,31 +28,20 @@ class CallController extends Controller
         $request->validate(['conversation_id' => ['required', 'integer', 'exists:conversations,id']]);
 
         $conversation = $this->findAuthorizedConversation($request->conversation_id);
+        $user         = Auth::user();
 
-        $roomName  = 'connectly-call-' . $conversation->id;
-        $subdomain = config('services.daily.subdomain', 'connectly');
-        $apiKey    = config('services.daily.api_key');
+        $appId       = config('services.agora.app_id');
+        $certificate = config('services.agora.app_certificate');
+        $channel     = 'connectly-call-' . $conversation->id;
+        $uid         = $user->id;
 
-        $response = Http::withToken($apiKey)
-            ->post('https://api.daily.co/v1/rooms', [
-                'name'       => $roomName,
-                'properties' => [
-                    'enable_prejoin_ui' => true,
-                    'exp'               => time() + 3600,
-                ],
-            ]);
-
-        // 400 "already exists" or 409 = room already exists — perfectly fine
-        $alreadyExists = !$response->successful()
-            && str_contains($response->body(), 'already exists');
-
-        if (!$response->successful() && !$alreadyExists) {
-            return response()->json(['error' => 'Could not create Daily.co room'], 500);
-        }
+        $token = AgoraToken::buildRtcToken($appId, $certificate, $channel, $uid);
 
         return response()->json([
-            'room_url'  => "https://{$subdomain}.daily.co/{$roomName}",
-            'room_name' => $roomName,
+            'app_id'       => $appId,
+            'token'        => $token,
+            'channel_name' => $channel,
+            'uid'          => $uid,
         ]);
     }
 

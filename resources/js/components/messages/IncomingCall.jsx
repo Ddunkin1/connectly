@@ -56,8 +56,10 @@ export default function IncomingCall({ caller, conversationId, onAccept, onDecli
                 callAPI.accept(conversationId),
             ]);
             onAccept({
-                room_url:        tokenRes.data.room_url,
-                room_name:       tokenRes.data.room_name,
+                app_id:          tokenRes.data.app_id,
+                token:           tokenRes.data.token,
+                channel_name:    tokenRes.data.channel_name,
+                uid:             tokenRes.data.uid,
                 conversation_id: conversationId,
             });
         } catch {

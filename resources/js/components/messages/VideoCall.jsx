@@ -1,18 +1,17 @@
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { callAPI } from '../../services/api';
 
-export default function VideoCall({ roomUrl, conversationId, onEnd }) {
-    const callRef       = useRef(null);
+export default function VideoCall({ appId, token, channelName, uid, conversationId, onEnd }) {
+    const clientRef     = useRef(null);
     const doneRef       = useRef(false);
     const startedRef    = useRef(null);
     const localVidRef   = useRef(null);
     const remoteVidRef  = useRef(null);
-    const remoteAudRef  = useRef(null);
 
-    const [micOn,         setMicOn]         = useState(true);
-    const [camOn,         setCamOn]         = useState(true);
-    const [remoteJoined,  setRemoteJoined]  = useState(false);
-    const [localReady,    setLocalReady]    = useState(false);
+    const [micOn,        setMicOn]        = useState(true);
+    const [camOn,        setCamOn]        = useState(true);
+    const [remoteJoined, setRemoteJoined] = useState(false);
+    const [localReady,   setLocalReady]   = useState(false);
 
     async function finish(fromUser = false) {
         if (doneRef.current) return;
@@ -20,120 +19,96 @@ export default function VideoCall({ roomUrl, conversationId, onEnd }) {
         const duration = startedRef.current
             ? Math.floor((Date.now() - startedRef.current) / 1000)
             : 0;
-        try { callRef.current?.destroy(); } catch {}
-        callRef.current = null;
+        try {
+            const client = clientRef.current;
+            if (client) {
+                client._localTracks?.forEach(t => { t.stop(); t.close(); });
+                await client.leave();
+            }
+        } catch {}
+        clientRef.current = null;
         if (fromUser) {
             try { await callAPI.end(conversationId, 'ended', duration); } catch {}
         }
         onEnd();
     }
 
-    const syncTracks = useCallback(() => {
-        const call = callRef.current;
-        if (!call) return;
-
-        const participants = call.participants();
-
-        // ── Local ──────────────────────────────────────────────────────────
-        const local = participants.local;
-        if (local?.tracks?.video?.persistentTrack && localVidRef.current) {
-            const t = local.tracks.video.persistentTrack;
-            if (t.readyState === 'live') {
-                localVidRef.current.srcObject = new MediaStream([t]);
-                setLocalReady(true);
-            }
-        }
-
-        // ── Remote ─────────────────────────────────────────────────────────
-        const remotes = Object.values(participants).filter(p => !p.local);
-        if (remotes.length === 0) {
-            setRemoteJoined(false);
-            return;
-        }
-        const remote = remotes[0];
-        const tracks = [];
-        const vTrack = remote?.tracks?.video?.persistentTrack;
-        const aTrack = remote?.tracks?.audio?.persistentTrack;
-        if (vTrack?.readyState === 'live') tracks.push(vTrack);
-        if (aTrack?.readyState === 'live') {
-            tracks.push(aTrack);
-            if (remoteAudRef.current) {
-                remoteAudRef.current.srcObject = new MediaStream([aTrack]);
-                remoteAudRef.current.play().catch(() => {});
-            }
-        }
-        if (tracks.length && remoteVidRef.current) {
-            remoteVidRef.current.srcObject = new MediaStream(
-                tracks.filter(t => t.kind === 'video')
-            );
-            remoteVidRef.current.play().catch(() => {});
-            setRemoteJoined(true);
-        }
-    }, []);
-
     useEffect(() => {
-        const script  = document.createElement('script');
-        script.src    = 'https://unpkg.com/@daily-co/daily-js';
-        script.async  = true;
-        script.onload = async () => {
+        const script   = document.createElement('script');
+        script.src     = 'https://unpkg.com/agora-rtc-sdk-ng@4/AgoraRTC_N-production.js';
+        script.async   = true;
+        script.onload  = async () => {
             if (doneRef.current) return;
 
-            const call = window.DailyIframe.createCallObject({
-                audioSource: true,
-                videoSource: true,
-            });
-            callRef.current = call;
+            const AgoraRTC = window.AgoraRTC;
+            AgoraRTC.setLogLevel(4); // silent in production
 
-            call
-                .on('joined-meeting',      () => { startedRef.current = Date.now(); syncTracks(); })
-                .on('participant-joined',  syncTracks)
-                .on('participant-updated', syncTracks)
-                .on('track-started',       syncTracks)
-                .on('track-stopped',       syncTracks)
-                .on('participant-left',    () => { setRemoteJoined(false); syncTracks(); })
-                .on('left-meeting',        () => finish(true))
-                .on('error',               (e) => console.error('[Daily]', e));
+            const client = AgoraRTC.createClient({ mode: 'rtc', codec: 'vp8' });
+            clientRef.current = client;
 
-            try {
-                await call.join({ url: roomUrl });
-            } catch (e) {
-                const msg = e?.errorMsg ?? e?.message ?? 'Unknown error';
-                console.error('[Daily] join failed:', msg);
-                if (msg === 'account-missing-payment-method') {
-                    alert('Video calls are temporarily unavailable. The account owner needs to add a payment method at dashboard.daily.co/billing.');
+            // Remote user joined — subscribe to their tracks
+            client.on('user-published', async (remoteUser, mediaType) => {
+                await client.subscribe(remoteUser, mediaType);
+
+                if (mediaType === 'video' && remoteVidRef.current) {
+                    remoteUser.videoTrack.play(remoteVidRef.current);
+                    setRemoteJoined(true);
+                    if (!startedRef.current) startedRef.current = Date.now();
                 }
-                finish(false);
+                if (mediaType === 'audio') {
+                    remoteUser.audioTrack.play();
+                }
+            });
+
+            client.on('user-unpublished', (remoteUser, mediaType) => {
+                if (mediaType === 'video') setRemoteJoined(false);
+            });
+
+            client.on('user-left', () => setRemoteJoined(false));
+
+            // Join channel
+            await client.join(appId, channelName, token, uid);
+
+            // Create and publish local tracks
+            const [audioTrack, videoTrack] = await AgoraRTC.createMicrophoneAndCameraTracks();
+            client._localTracks = [audioTrack, videoTrack];
+
+            if (localVidRef.current) {
+                videoTrack.play(localVidRef.current);
+                setLocalReady(true);
             }
+            await client.publish([audioTrack, videoTrack]);
         };
+
+        script.onerror = () => finish(false);
         document.head.appendChild(script);
+
         return () => { finish(false); script.remove(); };
     }, []);
 
-    function toggleMic() {
+    async function toggleMic() {
+        const tracks = clientRef.current?._localTracks;
+        const audio  = tracks?.find(t => t.trackMediaType === 'audio');
+        if (!audio) return;
         const next = !micOn;
-        callRef.current?.setLocalAudio(next);
+        await audio.setEnabled(next);
         setMicOn(next);
     }
 
-    function toggleCam() {
+    async function toggleCam() {
+        const tracks = clientRef.current?._localTracks;
+        const video  = tracks?.find(t => t.trackMediaType === 'video');
+        if (!video) return;
         const next = !camOn;
-        callRef.current?.setLocalVideo(next);
+        await video.setEnabled(next);
         setCamOn(next);
     }
 
     return (
         <div className="fixed inset-0 z-[999] bg-black flex flex-col select-none">
-            {/* Hidden audio element for remote audio */}
-            <audio ref={remoteAudRef} autoPlay playsInline className="hidden" />
-
             {/* ── Remote video (full screen) ── */}
             <div className="relative flex-1 overflow-hidden">
-                <video
-                    ref={remoteVidRef}
-                    autoPlay
-                    playsInline
-                    className="w-full h-full object-cover"
-                />
+                <div ref={remoteVidRef} className="w-full h-full" />
 
                 {/* Waiting overlay */}
                 {!remoteJoined && (
@@ -145,13 +120,10 @@ export default function VideoCall({ roomUrl, conversationId, onEnd }) {
 
                 {/* ── Local video (corner PiP) ── */}
                 <div className="absolute top-4 right-4 w-28 h-40 sm:w-36 sm:h-48 rounded-2xl overflow-hidden border border-white/20 shadow-2xl bg-gray-900">
-                    <video
+                    <div
                         ref={localVidRef}
-                        autoPlay
-                        playsInline
-                        muted
                         style={{ transform: 'scaleX(-1)' }}
-                        className="w-full h-full object-cover"
+                        className="w-full h-full"
                     />
                     {!camOn && (
                         <div className="absolute inset-0 bg-gray-800 flex items-center justify-center">
