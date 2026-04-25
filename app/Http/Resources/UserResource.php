@@ -72,6 +72,8 @@ class UserResource extends JsonResource
                 $request->user()?->id === $this->id || $request->user()?->isAdmin(),
                 $this->email
             ),
+            'is_online' => $this->last_seen_at && $this->last_seen_at->diffInMinutes(now()) < 3,
+            'last_seen_at' => $this->last_seen_at,
             'bio' => $this->bio,
             'profile_picture' => $this->formatProfilePictureUrl($request),
             'profile_picture_caption' => $this->profile_picture_caption,

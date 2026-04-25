@@ -108,6 +108,7 @@ export const userAPI = {
     updateNotificationPreferences: (data) => api.put('/user/notification-preferences', data),
     getAnalytics: () => api.get('/user/analytics'),
     exportData: () => api.get('/user/export-data'),
+    heartbeat: () => api.post('/user/heartbeat'),
     completeOnboarding: () => api.post('/user/onboarding-complete'),
     deleteAccount: (data) => api.delete('/user/account', { data }),
 };
@@ -279,9 +280,11 @@ export const groupMessagesAPI = {
 
 // Video Calls API
 export const callAPI = {
-    generateToken: (conversationId) => api.post('/calls/token', { conversation_id: conversationId }),
+    generateToken: (conversationId) => api.post('/calls/token',   { conversation_id: conversationId }),
     initiate:      (conversationId) => api.post('/calls/initiate', { conversation_id: conversationId }),
-    end:           (conversationId) => api.post('/calls/end', { conversation_id: conversationId }),
+    accept:        (conversationId) => api.post('/calls/accept',   { conversation_id: conversationId }),
+    end:           (conversationId, status = 'ended', duration = 0) =>
+                      api.post('/calls/end', { conversation_id: conversationId, status, duration }),
 };
 
 // Stories API

@@ -5,13 +5,21 @@ export default function VideoCall({ roomUrl, conversationId, onEnd }) {
     const containerRef = useRef(null);
     const callRef      = useRef(null);
     const doneRef      = useRef(false);
+    const startedRef   = useRef(null); // timestamp when Daily.co joined
 
-    async function finish() {
+    // fromUser=true  → user left themselves → save call record
+    // fromUser=false → externally unmounted (CallEnded received) → skip saving
+    async function finish(fromUser = false) {
         if (doneRef.current) return;
         doneRef.current = true;
+        const duration = startedRef.current
+            ? Math.floor((Date.now() - startedRef.current) / 1000)
+            : 0;
         try { callRef.current?.destroy(); } catch {}
         callRef.current = null;
-        try { await callAPI.end(conversationId); } catch {}
+        if (fromUser) {
+            try { await callAPI.end(conversationId, 'ended', duration); } catch {}
+        }
         onEnd();
     }
 
@@ -31,13 +39,13 @@ export default function VideoCall({ roomUrl, conversationId, onEnd }) {
                 },
             });
             callRef.current
-                .on('left-meeting', finish)
-                .on('error',        finish);
+                .on('joined-meeting', () => { startedRef.current = Date.now(); })
+                .on('left-meeting',   () => finish(true));
             await callRef.current.join({ url: roomUrl });
         };
         document.head.appendChild(script);
 
-        return () => { finish(); script.remove(); };
+        return () => { finish(false); script.remove(); };
     }, []);
 
     return <div ref={containerRef} className="fixed inset-0 z-[999]" />;

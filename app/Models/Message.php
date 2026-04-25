@@ -24,6 +24,7 @@ class Message extends Model
         'deleted_by',
         'is_pinned',
         'pinned_at',
+        'type',
     ];
 
     protected function casts(): array

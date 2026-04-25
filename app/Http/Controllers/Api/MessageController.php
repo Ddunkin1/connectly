@@ -134,6 +134,11 @@ class MessageController extends Controller
 
         $this->messageService->markAsRead($conversation, $request->user());
 
+        broadcast(new \App\Events\MessagesRead(
+            conversationId: $conversation->id,
+            readerId: $request->user()->id,
+        ))->toOthers();
+
         return response()->json([
             'message' => 'Messages marked as read',
         ]);

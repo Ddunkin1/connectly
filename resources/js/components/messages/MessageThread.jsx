@@ -140,9 +140,9 @@ const MessageThread = ({ conversationId, onMediaFromMessages, onPinnedFromMessag
         channel.listen('.MessageSent', (payload) => {
             const newMessage = payload?.message;
             if (!newMessage) return;
-            // Skip if from current user (added optimistically from send response)
+            // Skip regular messages from current user (added optimistically) — but always show call records
             const currentUser = useAuthStore.getState().user;
-            if (newMessage.sender?.id === currentUser?.id) return;
+            if (newMessage.sender?.id === currentUser?.id && newMessage.type !== 'call') return;
 
             queryClient.setQueryData(['messages', conversationId], (old) => {
                 if (!old?.pages?.length) {
@@ -178,10 +178,32 @@ const MessageThread = ({ conversationId, onMediaFromMessages, onPinnedFromMessag
             queryClient.invalidateQueries({ queryKey: ['conversations'] });
         });
 
+        // Mark all own sent messages as read when the other person reads them
+        channel.listen('.MessagesRead', (payload) => {
+            const currentUser = useAuthStore.getState().user;
+            if (payload?.readerId === currentUser?.id) return; // we read them, not them
+            queryClient.setQueryData(['messages', conversationId], (old) => {
+                if (!old?.pages?.length) return old;
+                return {
+                    ...old,
+                    pages: old.pages.map((page) => ({
+                        ...page,
+                        data: {
+                            ...page.data,
+                            messages: (page.data?.messages ?? []).map((m) =>
+                                m.sender?.id === currentUser?.id ? { ...m, is_read: true } : m
+                            ),
+                        },
+                    })),
+                };
+            });
+        });
+
         return () => {
             channel.stopListening('.MessageSent');
             channel.stopListening('.MessageUpdated');
             channel.stopListening('.MessageDeleted');
+            channel.stopListening('.MessagesRead');
             echo.leave(`conversation.${conversationId}`);
         };
     }, [conversationId, queryClient]);
@@ -471,6 +493,48 @@ const MessageThread = ({ conversationId, onMediaFromMessages, onPinnedFromMessag
                     const isEditing = editingMessageId === message.id;
                     const menuOpen = openMenuMessageId === message.id;
                     const isPinned = !!message.is_pinned;
+
+                    // ── Call system messages ──────────────────────────────────
+                    if (message.type === 'call') {
+                        const raw         = message.message ?? '';
+                        const parts       = raw.split(':');
+                        const kind        = parts[0]; // 'call_missed' | 'call_ended'
+                        const isMissed    = kind === 'call_missed';
+                        const duration    = isMissed ? 0 : parseInt(parts[1] ?? '0', 10);
+                        const initiatorId = parseInt(parts[isMissed ? 1 : 2] ?? '0', 10);
+                        const iWasCaller  = initiatorId === user?.id;
+                        const mins        = Math.floor(duration / 60);
+                        const secs        = duration % 60;
+                        const durationText = duration > 0
+                            ? ` · ${mins > 0 ? `${mins}m ` : ''}${secs}s`
+                            : '';
+
+                        let label, icon;
+                        if (isMissed) {
+                            label = iWasCaller ? 'You called' : 'Missed call';
+                            icon  = iWasCaller ? 'call_made' : 'missed_video_call';
+                        } else {
+                            label = `Call ended${durationText}`;
+                            icon  = 'videocam';
+                        }
+
+                        return (
+                            <div key={message.id} className="flex justify-center my-1">
+                                <div className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs font-medium
+                                    ${isMissed
+                                        ? (iWasCaller ? 'bg-[var(--theme-surface)] text-[var(--text-primary)]/60' : 'bg-red-500/10 text-red-400')
+                                        : 'bg-green-500/10 text-green-400'}`}
+                                >
+                                    <span className="material-symbols-outlined text-base">{icon}</span>
+                                    {label}
+                                    <span className="opacity-50 ml-1">
+                                        {new Date(message.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                    </span>
+                                </div>
+                            </div>
+                        );
+                    }
+
                     return (
                         <div
                             key={message.id}
@@ -595,7 +659,15 @@ const MessageThread = ({ conversationId, onMediaFromMessages, onPinnedFromMessag
                                                 {message.edited_at && !isDeleted ? ' · edited' : ''}
                                                 {isPinned && !isDeleted ? ' · Pinned' : ''}
                                             </span>
-                                            {isOwnMessage && <span className="material-symbols-outlined text-[14px]" aria-hidden>done_all</span>}
+                                            {isOwnMessage && (
+                                                <span
+                                                    className={`material-symbols-outlined text-[14px] transition-colors ${message.is_read ? 'text-[var(--theme-accent)]' : 'text-[var(--text-primary)]/40'}`}
+                                                    title={message.is_read ? 'Seen' : 'Delivered'}
+                                                    aria-hidden
+                                                >
+                                                    {message.is_read ? 'done_all' : 'done'}
+                                                </span>
+                                            )}
                                             {isOwnMessage && !isDeleted && (
                                                 <div className="relative" ref={menuOpen ? menuRef : null}>
                                                     <button

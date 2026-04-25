@@ -704,6 +704,13 @@ class UserController extends Controller
         return response()->json(['message' => 'Onboarding complete']);
     }
 
+    public function heartbeat(Request $request): JsonResponse
+    {
+        $request->user()->update(['last_seen_at' => now()]);
+
+        return response()->json(['ok' => true]);
+    }
+
     public function deleteAccount(Request $request): JsonResponse
     {
         $request->validate([

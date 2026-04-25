@@ -51,10 +51,13 @@ export default function IncomingCall({ caller, conversationId, onAccept, onDecli
         stopRing();
         setAccepting(true);
         try {
-            const res = await callAPI.generateToken(conversationId);
+            const [tokenRes] = await Promise.all([
+                callAPI.generateToken(conversationId),
+                callAPI.accept(conversationId),
+            ]);
             onAccept({
-                room_url:        res.data.room_url,
-                room_name:       res.data.room_name,
+                room_url:        tokenRes.data.room_url,
+                room_name:       tokenRes.data.room_name,
                 conversation_id: conversationId,
             });
         } catch {
@@ -67,16 +70,18 @@ export default function IncomingCall({ caller, conversationId, onAccept, onDecli
         clearTimeout(timerRef.current);
         stopRing();
         setDeclining(true);
+        const endSound = new Audio('/sounds/endcall.wav');
+        endSound.volume = 0.5;
+        endSound.play().catch(() => {});
         try {
-            await callAPI.end(conversationId);
+            await callAPI.end(conversationId, 'missed');
         } catch { /* ignore */ }
         onDecline();
     }
 
     return (
         <>
-            {/* Ringing audio — a short sine-wave data URI used as a simple ring tone */}
-            <audio ref={audioRef} src="data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAA..." preload="none" />
+            <audio ref={audioRef} src="/sounds/ringing.wav" preload="auto" />
 
             <div className="fixed inset-0 z-[998] flex items-start justify-center pt-8 sm:pt-16 px-4">
                 {/* Backdrop */}

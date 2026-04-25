@@ -55,6 +55,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'suspended_at',
         'suspended_until',
         'banned_at',
+        'last_seen_at',
     ];
 
     /**
@@ -77,6 +78,7 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         return [
             'email_verified_at' => 'datetime',
+            'last_seen_at' => 'datetime',
             'suspended_at' => 'datetime',
             'suspended_until' => 'datetime',
             'banned_at' => 'datetime',

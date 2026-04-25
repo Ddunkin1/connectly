@@ -112,6 +112,7 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function () {
     Route::get('/user/analytics', [AnalyticsController::class, 'index']);
     Route::get('/user/export-data', [UserController::class, 'exportData']);
     Route::post('/user/onboarding-complete', [UserController::class, 'completeOnboarding']);
+    Route::post('/user/heartbeat', [UserController::class, 'heartbeat']);
     Route::delete('/user/account', [UserController::class, 'deleteAccount']);
 
     // Posts
@@ -251,6 +252,7 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function () {
     // Video calls
     Route::post('/calls/token',    [CallController::class, 'generateToken']);
     Route::post('/calls/initiate', [CallController::class, 'initiate']);
+    Route::post('/calls/accept',   [CallController::class, 'accept']);
     Route::post('/calls/end',      [CallController::class, 'end']);
 
     // Notifications (read-all must be before {id} to avoid matching "read-all" as id)

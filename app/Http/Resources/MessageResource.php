@@ -24,6 +24,7 @@ class MessageResource extends JsonResource
             'sender' => new UserResource($this->whenLoaded('sender')),
             'receiver' => new UserResource($this->whenLoaded('receiver')),
             'message' => $this->message,
+            'type' => $this->type,
             'attachment_url' => $isDeleted ? null : $this->attachment_url,
             'attachment_type' => $isDeleted ? null : $this->attachment_type,
             'is_read' => $this->is_read,

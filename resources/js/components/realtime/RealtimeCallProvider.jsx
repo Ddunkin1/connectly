@@ -1,39 +1,32 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { getEcho } from '../../echo';
 import useAuthStore from '../../store/authStore';
+import { callAPI } from '../../services/api';
+import { useHeartbeat } from '../../hooks/useHeartbeat';
+import CallingScreen from '../messages/CallingScreen';
 import IncomingCall from '../messages/IncomingCall';
 import VideoCall from '../messages/VideoCall';
 
-/**
- * Global provider that:
- *  - Subscribes to the authenticated user's private call-signaling channel
- *  - Shows an IncomingCall overlay when someone calls
- *  - Shows the VideoCall overlay when the user accepts (or initiates) a call
- *
- * Mounts once near the app root so calls work regardless of which page is open.
- */
 export default function RealtimeCallProvider({ children }) {
     const user = useAuthStore((s) => s.user);
+    useHeartbeat();
 
-    // Incoming call from someone else
-    const [incomingCall, setIncomingCall] = useState(null);
-    // Active call (both initiator and acceptor end up here)
-    const [activeCall, setActiveCall]     = useState(null);
+    const [callingCall,  setCallingCall]  = useState(null); // caller waiting for answer
+    const [incomingCall, setIncomingCall] = useState(null); // callee sees this
+    const [activeCall,   setActiveCall]   = useState(null); // both sides in call
 
-    // Exposed via custom event so MessageChatHeader can trigger a call
-    const openCall = useCallback((callData) => {
-        setIncomingCall(null);
-        setActiveCall(callData);
+    // Listen for 'start-calling' dispatched by MessageChatHeader
+    useEffect(() => {
+        const handler = (e) => {
+            setIncomingCall(null);
+            setActiveCall(null);
+            setCallingCall(e.detail);
+        };
+        window.addEventListener('start-calling', handler);
+        return () => window.removeEventListener('start-calling', handler);
     }, []);
 
-    // Listen for the custom 'open-video-call' event dispatched by MessageChatHeader
-    useEffect(() => {
-        const handler = (e) => openCall(e.detail);
-        window.addEventListener('open-video-call', handler);
-        return () => window.removeEventListener('open-video-call', handler);
-    }, [openCall]);
-
-    // Subscribe to the Reverb/Pusher call-signaling channel
+    // Subscribe to Reverb call-signaling channel
     useEffect(() => {
         if (!user?.id) return;
 
@@ -44,35 +37,52 @@ export default function RealtimeCallProvider({ children }) {
         const channel     = echo.private(channelName);
 
         channel.listen('.CallInitiated', (payload) => {
-            // Don't show incoming call if we're already in a call
             setActiveCall((current) => {
                 if (current) return current;
-                setIncomingCall({
-                    caller: {
-                        id:     payload.caller_id,
-                        name:   payload.caller_name,
-                        avatar: payload.caller_avatar,
-                    },
-                    channelName:    payload.channel_name,
-                    conversationId: payload.conversation_id,
+                setCallingCall((calling) => {
+                    if (calling) return calling;
+                    setIncomingCall({
+                        caller: {
+                            id:     payload.caller_id,
+                            name:   payload.caller_name,
+                            avatar: payload.caller_avatar,
+                        },
+                        channelName:    payload.channel_name,
+                        conversationId: payload.conversation_id,
+                    });
+                    return calling;
                 });
                 return current;
             });
         });
 
+        channel.listen('.CallAccepted', async (payload) => {
+            try {
+                const res = await callAPI.generateToken(payload.conversation_id);
+                setCallingCall(null);
+                setActiveCall({
+                    room_url:        res.data.room_url,
+                    room_name:       res.data.room_name,
+                    conversation_id: payload.conversation_id,
+                });
+            } catch {}
+        });
+
         channel.listen('.CallEnded', (payload) => {
-            // Dismiss incoming call if it matches
             setIncomingCall((inc) =>
                 inc?.conversationId === payload.conversation_id ? null : inc
             );
-            // End active call if it matches
             setActiveCall((act) =>
                 act?.conversation_id === payload.conversation_id ? null : act
+            );
+            setCallingCall((calling) =>
+                calling?.conversation_id === payload.conversation_id ? null : calling
             );
         });
 
         return () => {
             channel.stopListening('.CallInitiated');
+            channel.stopListening('.CallAccepted');
             channel.stopListening('.CallEnded');
             echo.leave(channelName);
         };
@@ -87,6 +97,10 @@ export default function RealtimeCallProvider({ children }) {
         setIncomingCall(null);
     }, []);
 
+    const handleCallingCancel = useCallback(() => {
+        setCallingCall(null);
+    }, []);
+
     const handleCallEnd = useCallback(() => {
         setActiveCall(null);
     }, []);
@@ -95,7 +109,15 @@ export default function RealtimeCallProvider({ children }) {
         <>
             {children}
 
-            {incomingCall && !activeCall && (
+            {callingCall && !activeCall && (
+                <CallingScreen
+                    callee={callingCall.callee}
+                    conversationId={callingCall.conversation_id}
+                    onCancel={handleCallingCancel}
+                />
+            )}
+
+            {incomingCall && !activeCall && !callingCall && (
                 <IncomingCall
                     caller={incomingCall.caller}
                     conversationId={incomingCall.conversationId}

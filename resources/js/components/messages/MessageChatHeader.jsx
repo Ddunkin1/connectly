@@ -12,13 +12,17 @@ const MessageChatHeader = ({ otherUser, conversationId, onBack }) => {
         if (calling || !conversationId) return;
         setCalling(true);
         try {
-            const [tokenRes] = await Promise.all([
-                callAPI.generateToken(conversationId),
-                callAPI.initiate(conversationId),
-            ]);
-            const { room_url, room_name } = tokenRes.data;
-            window.dispatchEvent(new CustomEvent('open-video-call', {
-                detail: { room_url, room_name, conversation_id: conversationId },
+            await callAPI.initiate(conversationId);
+            window.dispatchEvent(new CustomEvent('start-calling', {
+                detail: {
+                    conversation_id: conversationId,
+                    callee: {
+                        id:       otherUser.id,
+                        name:     otherUser.name,
+                        avatar:   otherUser.profile_picture,
+                        isOnline: !!otherUser.is_online,
+                    },
+                },
             }));
         } catch {
             toast.error('Could not start video call. Please try again.');
@@ -42,14 +46,18 @@ const MessageChatHeader = ({ otherUser, conversationId, onBack }) => {
                 )}
                 <div className="relative shrink-0">
                     <img src={otherUser.profile_picture} alt={otherUser.name} className="w-10 h-10 rounded-full object-cover" />
-                    <div className="absolute bottom-0 right-0 w-3 h-3 bg-primary border-2 border-[var(--theme-bg-main)] rounded-full" />
+                    <div className={`absolute bottom-0 right-0 w-3 h-3 border-2 border-[var(--theme-bg-main)] rounded-full ${otherUser.is_online ? 'bg-green-500' : 'bg-gray-400'}`} />
                 </div>
                 <div className="min-w-0">
                     <h2 className="font-semibold text-sm text-[var(--text-primary)] truncate">{otherUser.name}</h2>
-                    <p className="text-[10px] text-primary font-medium flex items-center gap-1">
-                        <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse shrink-0" />
-                        Online
-                    </p>
+                    {otherUser.is_online ? (
+                        <p className="text-[10px] text-green-500 font-medium flex items-center gap-1">
+                            <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse shrink-0" />
+                            Online
+                        </p>
+                    ) : (
+                        <p className="text-[10px] text-[var(--text-secondary)]">Offline</p>
+                    )}
                 </div>
             </div>
             <div className="flex items-center gap-2 shrink-0">
