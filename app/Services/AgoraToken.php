@@ -3,21 +3,24 @@
 namespace App\Services;
 
 /**
- * Agora AccessToken v006 builder (no external package required).
+ * Agora AccessToken2 (v007) builder.
  *
- * Algorithm matches the official Agora PHP sample:
+ * Matches the official Agora PHP sample:
  * https://github.com/AgoraIO/Tools/tree/master/DynamicKey/AgoraDynamicKey/php
  */
 class AgoraToken
 {
-    // Privilege keys used in the token
-    private const PRIV_JOIN_CHANNEL         = 1;
-    private const PRIV_PUBLISH_AUDIO_STREAM = 2;
-    private const PRIV_PUBLISH_VIDEO_STREAM = 3;
-    private const PRIV_PUBLISH_DATA_STREAM  = 4;
+    private const VERSION = '007';
+
+    private const SERVICE_RTC = 1;
+
+    private const PRIV_JOIN_CHANNEL    = 1;
+    private const PRIV_PUBLISH_AUDIO   = 2;
+    private const PRIV_PUBLISH_VIDEO   = 3;
+    private const PRIV_PUBLISH_DATA    = 4;
 
     /**
-     * Build an RTC token for a publisher (can join + publish audio/video).
+     * Build an RTC token for a publisher (join + publish audio/video/data).
      *
      * @param  string  $appId          Agora App ID
      * @param  string  $appCertificate Agora App Certificate
@@ -32,28 +35,42 @@ class AgoraToken
         int    $uid,
         int    $expiresIn = 3600
     ): string {
-        $salt      = random_int(1, 99_999_999);
-        $expireTs  = time() + $expiresIn;
-        $uidStr    = $uid === 0 ? '' : (string) $uid;
+        $issueTs = time();
+        $salt    = random_int(1, 99_999_999);
+        $expire  = $issueTs + $expiresIn;
+        $uidStr  = $uid === 0 ? '' : (string) $uid;
 
+        // Agora AccessToken2 signing key: daily-rotating double HMAC
+        $signingTs  = $issueTs - ($issueTs % 86400) + 86400;
+        $signingKey = hash_hmac('sha256', (string) $issueTs,  $appCertificate, true);
+        $signingKey = hash_hmac('sha256', (string) $signingTs, $signingKey,     true);
+
+        // Pack the RTC service block
         $privileges = [
-            self::PRIV_JOIN_CHANNEL         => $expireTs,
-            self::PRIV_PUBLISH_AUDIO_STREAM => $expireTs,
-            self::PRIV_PUBLISH_VIDEO_STREAM => $expireTs,
-            self::PRIV_PUBLISH_DATA_STREAM  => $expireTs,
+            self::PRIV_JOIN_CHANNEL  => $expire,
+            self::PRIV_PUBLISH_AUDIO => $expire,
+            self::PRIV_PUBLISH_VIDEO => $expire,
+            self::PRIV_PUBLISH_DATA  => $expire,
         ];
 
-        $rawMsg    = self::packMessage($salt, $expireTs, $privileges);
-        $sigInput  = $appId . $channelName . $uidStr . $rawMsg;
-        $signature = hash_hmac('sha256', $sigInput, $appCertificate, true);
+        $service = self::packUint16(self::SERVICE_RTC)
+                 . self::packString($channelName)
+                 . self::packString($uidStr)
+                 . self::packMapUint32($privileges);
 
-        $crcChannel = self::unsignedCrc32($channelName);
-        $crcUid     = self::unsignedCrc32($uidStr);
+        // Full message body that gets signed
+        $msg = self::packUint32($expire)
+             . self::packUint32($issueTs)
+             . self::packUint32($salt)
+             . self::packUint16(1)   // number of services
+             . $service;
 
-        $content    = self::packContent($signature, $crcChannel, $crcUid, $rawMsg);
+        $signature = hash_hmac('sha256', $msg, $signingKey, true);
+
+        $content    = self::packString($signature) . $msg;
         $compressed = zlib_encode($content, ZLIB_ENCODING_DEFLATE, 9);
 
-        return '006' . $appId . base64_encode($compressed);
+        return self::VERSION . $appId . base64_encode($compressed);
     }
 
     // ── Packing helpers ──────────────────────────────────────────────────────
@@ -82,26 +99,5 @@ class AgoraToken
             $out .= self::packUint32($value);
         }
         return $out;
-    }
-
-    private static function packMessage(int $salt, int $ts, array $privileges): string
-    {
-        return self::packUint32($salt)
-             . self::packUint32($ts)
-             . self::packMapUint32($privileges);
-    }
-
-    private static function packContent(string $sig, int $crcChannel, int $crcUid, string $rawMsg): string
-    {
-        return self::packString($sig)
-             . self::packUint32($crcChannel)
-             . self::packUint32($crcUid)
-             . self::packString($rawMsg);
-    }
-
-    private static function unsignedCrc32(string $s): int
-    {
-        // crc32() in PHP returns a signed 32-bit int; mask to unsigned
-        return crc32($s) & 0xFFFFFFFF;
     }
 }
