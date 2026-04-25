@@ -10,6 +10,7 @@ RUN npm ci
 COPY vite.config.js ./
 COPY resources ./resources
 COPY public ./public
+COPY scripts ./scripts
 
 # Reverb / broadcast vars must be baked into the JS bundle at build time.
 # Pass them as Docker build args in Railway → Variables → Build Variables.
