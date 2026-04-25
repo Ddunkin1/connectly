@@ -861,8 +861,8 @@ const Profile = () => {
             {/* Profile Banner Section */}
             <div className="theme-surface rounded-2xl overflow-visible mb-6 border border-[var(--theme-border)] shadow-post-card relative min-w-0 w-full">
                 {/* Cover Image - img with onError fallback to detect 403/404/502 */}
-                <div 
-                    className="h-44 md:h-64 relative overflow-hidden group"
+                <div
+                    className="h-44 md:h-64 relative overflow-hidden rounded-t-2xl group"
                     style={{
                         background: COVER_GRADIENT,
                         backgroundSize: 'cover',

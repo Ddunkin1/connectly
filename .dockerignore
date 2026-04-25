@@ -1,19 +1,41 @@
-/node_modules
+# Dependencies (rebuilt inside Docker)
+node_modules
+/vendor
+
+# Local dev artifacts
 /public/hot
 /public/build
 /storage/*.key
-/vendor
+npm-debug.log
+
+# Secrets (Railway injects these at runtime)
 .env
 .env.backup
 .env.production
+
+# Git
 .git
 .gitignore
+
+# Docker config itself
 .dockerignore
 Dockerfile
+
+# Docs / tests (not needed in production image)
 *.md
 tests
 phpunit.xml
 .phpunit.result.cache
-node_modules
-npm-debug.log
+
+# OS junk
 .DS_Store
+.DS_Store?
+Thumbs.db
+
+# Local dev tools
+nuclei-templates-main
+dlf
+dist
+docs
+tools
+scripts

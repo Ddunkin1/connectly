@@ -44,6 +44,18 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
+// Serve locally-stored media (fallback when Supabase is unreachable)
+Route::get('/local-media/{filename}', function (string $filename) {
+    if (!preg_match('/^[\w.\-]+$/', $filename)) {
+        abort(404);
+    }
+    $path = storage_path('app/public/posts/' . $filename);
+    if (!file_exists($path)) {
+        abort(404);
+    }
+    return response()->file($path);
+})->where('filename', '[\w.\-]+');
+
 // OAuth routes (no auth required)
 Route::get('/auth/google', [SocialAuthController::class, 'redirectToGoogle']);
 Route::get('/auth/google/callback', [SocialAuthController::class, 'handleGoogleCallback']);

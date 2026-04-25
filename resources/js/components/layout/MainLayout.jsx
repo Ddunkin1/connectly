@@ -5,7 +5,7 @@ import RightSidebar from './RightSidebar';
 import MobileBottomNav from './MobileBottomNav';
 
 const BREAKPOINT_TABLET  = 768;
-const BREAKPOINT_DESKTOP = 1200;
+const BREAKPOINT_DESKTOP = 1024;
 
 /**
  * MainLayout — TopBar + LeftSidebar + Main Content + (optional) RightSidebar.
@@ -66,7 +66,7 @@ const MainLayout = ({ children, showRightPanel = true, showLeftPanel = true }) =
                 <>
                     {/* Scrim */}
                     <div
-                        className={`fixed inset-0 top-[60px] bg-black/60 z-20 transition-opacity duration-300 ${
+                        className={`fixed inset-0 top-16 bg-black/60 z-20 transition-opacity duration-300 ${
                             mobileMenuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
                         }`}
                         aria-hidden="true"
@@ -74,7 +74,7 @@ const MainLayout = ({ children, showRightPanel = true, showLeftPanel = true }) =
                     />
                     {/* Drawer */}
                     <div
-                        className={`fixed left-0 top-[60px] h-[calc(100vh-60px)] z-30 transition-transform duration-300 ease-in-out ${
+                        className={`fixed left-0 top-16 h-[calc(100vh-4rem)] z-30 transition-transform duration-300 ease-in-out ${
                             mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
                         }`}
                     >
@@ -84,8 +84,8 @@ const MainLayout = ({ children, showRightPanel = true, showLeftPanel = true }) =
             )}
 
             {/* ── Three-column shell ── */}
-            <div className="pt-[60px] h-[calc(100vh-60px)] overflow-hidden flex justify-center">
-                <div className="flex w-full max-w-6xl h-full gap-0 md:gap-6 md:px-4">
+            <div className="mt-16 h-[calc(100vh-4rem)] overflow-hidden flex justify-center">
+                <div className="flex w-full max-w-[1200px] h-full gap-0 md:gap-4 md:px-2">
 
                     {/* Desktop / tablet sidebar (normal flex item) */}
                     {showLeftPanel && !isMobile && (
@@ -94,14 +94,14 @@ const MainLayout = ({ children, showRightPanel = true, showLeftPanel = true }) =
 
                     {/* Main content */}
                     <main className="flex-1 flex flex-col min-h-0 min-w-0 h-full overflow-x-hidden">
-                        <div className="flex-1 bg-[var(--bg-secondary)] min-h-0 flex flex-col overflow-x-hidden min-w-0">
+                        <div className="flex-1 min-h-0 flex flex-col overflow-x-hidden min-w-0">
                             {children}
                         </div>
                     </main>
 
                     {/* Right sidebar — desktop only */}
                     {showRight && (
-                        <div className="hidden xl:block w-[260px] shrink-0 h-full">
+                        <div className="hidden lg:block w-[300px] shrink-0 h-full">
                             <RightSidebar />
                         </div>
                     )}

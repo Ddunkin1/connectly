@@ -5,6 +5,7 @@ import PostInput from '../components/posts/PostInput';
 import PostCard from '../components/posts/PostCard';
 import { FeedSkeleton, SkeletonBlock } from '../components/common/skeletons';
 import OnboardingChecklistCard from '../components/onboarding/OnboardingChecklistCard';
+import StoriesRow from '../components/feed/StoriesRow';
 
 const FEED_SORT_KEY = 'connectly_feed_sort';
 
@@ -73,11 +74,14 @@ const Home = () => {
         }) || [];
 
     return (
-        <div className="w-full space-y-6">
+        <div className="max-w-[680px] mx-auto w-full space-y-6">
             {/* Main content + right column */}
             <div className="flex gap-8 xl:gap-10 items-start">
                 {/* Center column */}
                 <div className="flex-1 min-w-0 space-y-6">
+                    {/* Stories */}
+                    <StoriesRow />
+
                     {/* Onboarding */}
                     <div className="space-y-4">
                         <OnboardingChecklistCard />

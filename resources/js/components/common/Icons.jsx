@@ -33,4 +33,9 @@ export {
     UilLock,
     UilEye,
     UilShieldCheck,
+    UilUserArrows,
+    UilBuilding,
+    UilBars,
+    UilTimes as UilClose,
+    UilBell as UilBellOutline,
 } from '@iconscout/react-unicons';

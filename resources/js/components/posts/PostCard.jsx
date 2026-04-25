@@ -113,17 +113,17 @@ const PostCard = ({ post, onDeleted }) => {
     };
 
     return (
-        <article className="bg-[var(--theme-surface)] overflow-visible group mb-4 last:mb-0 p-5 rounded-2xl border border-[var(--theme-border)] shadow-post-card min-w-0 w-full">
+        <article className="bg-white dark:bg-[var(--theme-surface)] overflow-visible group mb-3 last:mb-0 p-5 rounded-2xl shadow-sm shadow-black/[0.06] border border-black/[0.07] dark:border-white/[0.06] min-w-0 w-full">
             {/* Post Header - Stitch: avatar ring-2 ring-primary/20, 1 HOUR AGO, public icon */}
             <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center space-x-3">
                     <Link to={`/profile/${post.user?.username}`} className="shrink-0">
-                        <Avatar src={post.user?.profile_picture} alt={post.user?.name} className="w-10 h-10 rounded-full ring-2 ring-primary/20" />
+                        <Avatar src={post.user?.profile_picture} alt={post.user?.name} className="w-10 h-10 rounded-full" />
                     </Link>
                     <div>
                         <Link
                             to={`/profile/${post.user?.username}`}
-                            className="font-bold text-sm text-[var(--text-primary)] hover:text-primary block"
+                            className="font-semibold text-sm text-[var(--text-primary)] hover:text-[var(--theme-accent)] block"
                         >
                             {post.shared_post ? post.user?.username : post.user?.name}
                         </Link>
@@ -133,7 +133,7 @@ const PostCard = ({ post, onDeleted }) => {
                         {post.post_type === 'cover_image_update' && (
                             <p className="text-xs text-[var(--text-secondary)]">Updated their cover image</p>
                         )}
-                        <div className="flex items-center gap-1.5 text-xs text-slate-500">
+                        <div className="flex items-center gap-1.5 text-xs text-[var(--text-secondary)]">
                             <span>{formatDateUppercase(post.created_at)}</span>
                             <span>•</span>
                             <span
@@ -153,10 +153,10 @@ const PostCard = ({ post, onDeleted }) => {
                                 e.preventDefault();
                                 setMoreOpen((open) => !open);
                             }}
-                            className="p-2 hover:bg-white/5 rounded-xl transition-colors"
+                            className="p-2 hover:bg-[var(--theme-surface-hover)] rounded-xl transition-colors"
                             aria-label="More options"
                         >
-                            <span className="material-symbols-outlined text-slate-400">more_horiz</span>
+                            <span className="material-symbols-outlined text-[var(--text-secondary)]">more_horiz</span>
                         </button>
                         {moreOpen && (
                             <>
@@ -165,7 +165,7 @@ const PostCard = ({ post, onDeleted }) => {
                                     aria-hidden="true"
                                     onClick={() => setMoreOpen(false)}
                                 />
-                                <div className="absolute right-0 top-full mt-1 z-20 py-1 w-52 theme-surface rounded-lg border border-[var(--theme-border)] shadow-xl">
+                                <div className="absolute right-0 top-full mt-1 z-20 py-1 w-52 bg-white dark:bg-[var(--theme-surface)] rounded-xl border border-[var(--theme-border)] shadow-lg">
                                     {!isAuthor && (
                                         <button
                                             type="button"
@@ -185,7 +185,7 @@ const PostCard = ({ post, onDeleted }) => {
                                         type="button"
                                         onClick={handleArchiveClick}
                                         disabled={updateMutation.isPending}
-                                        className="w-full px-4 py-2 text-left text-sm text-gray-300 hover:bg-white/10 flex items-center gap-2 cursor-pointer"
+                                        className="w-full px-4 py-2 text-left text-sm text-[var(--text-primary)] hover:bg-[var(--theme-surface-hover)] flex items-center gap-2 cursor-pointer"
                                     >
                                         <UilArchive size={18} color="currentColor" />
                                         Archive post
@@ -196,10 +196,10 @@ const PostCard = ({ post, onDeleted }) => {
                                         type="button"
                                         onClick={() => handleVisibilityChange('public')}
                                         disabled={updateMutation.isPending}
-                                        className={`w-full px-4 py-2 text-left text-sm flex items-center gap-2 cursor-pointer hover:bg-white/10 ${
+                                        className={`w-full px-4 py-2 text-left text-sm flex items-center gap-2 cursor-pointer hover:bg-[var(--theme-surface-hover)] ${
                                             (post.visibility || 'public') === 'public'
                                                 ? 'text-[var(--theme-accent)] bg-[var(--theme-accent)]/10'
-                                                : 'text-gray-300'
+                                                : 'text-[var(--text-primary)]'
                                         }`}
                                     >
                                         <UilGlobe size={18} color="currentColor" />
@@ -210,10 +210,10 @@ const PostCard = ({ post, onDeleted }) => {
                                         type="button"
                                         onClick={() => handleVisibilityChange('followers')}
                                         disabled={updateMutation.isPending}
-                                        className={`w-full px-4 py-2 text-left text-sm flex items-center gap-2 cursor-pointer hover:bg-white/10 ${
+                                        className={`w-full px-4 py-2 text-left text-sm flex items-center gap-2 cursor-pointer hover:bg-[var(--theme-surface-hover)] ${
                                             post.visibility === 'followers'
                                                 ? 'text-[var(--theme-accent)] bg-[var(--theme-accent)]/10'
-                                                : 'text-gray-300'
+                                                : 'text-[var(--text-primary)]'
                                         }`}
                                     >
                                         <UilUsersAlt size={18} color="currentColor" />
@@ -224,10 +224,10 @@ const PostCard = ({ post, onDeleted }) => {
                                         type="button"
                                         onClick={() => handleVisibilityChange('private')}
                                         disabled={updateMutation.isPending}
-                                        className={`w-full px-4 py-2 text-left text-sm flex items-center gap-2 cursor-pointer hover:bg-white/10 ${
+                                        className={`w-full px-4 py-2 text-left text-sm flex items-center gap-2 cursor-pointer hover:bg-[var(--theme-surface-hover)] ${
                                             post.visibility === 'private'
                                                 ? 'text-[var(--theme-accent)] bg-[var(--theme-accent)]/10'
-                                                : 'text-gray-300'
+                                                : 'text-[var(--text-primary)]'
                                         }`}
                                     >
                                         <UilLock size={18} color="currentColor" />
@@ -256,31 +256,31 @@ const PostCard = ({ post, onDeleted }) => {
             {/* Sharer's text (when this post is a share) */}
             {post.shared_post && (
                 <div className="mb-3">
-                    <p className="text-slate-100 whitespace-pre-wrap">{highlightHashtags(post.content || '')}</p>
+                    <p className="text-[var(--text-primary)] whitespace-pre-wrap">{highlightHashtags(post.content || '')}</p>
                 </div>
             )}
 
             {/* Original post embed (when this is a share) – content only, actions live on the sharing post */}
             {post.shared_post && (
-                <div className="mb-2 rounded-lg border border-gray-600 overflow-hidden bg-[var(--theme-surface)]">
+                <div className="mb-2 rounded-xl border border-[var(--theme-border)] overflow-hidden bg-gray-50 dark:bg-[var(--theme-surface)]">
                     <Link
                         to={`/post/${post.shared_post.id}`}
-                        className="block p-3 hover:bg-white/5 transition-colors"
+                        className="block p-3 hover:bg-[var(--theme-surface-hover)] transition-colors"
                     >
                         <div className="flex items-center gap-2 mb-2">
                             <Avatar src={post.shared_post.user?.profile_picture} alt={post.shared_post.user?.name} size="sm" />
                             <div className="flex-1 min-w-0">
-                                <span className="font-medium text-white text-sm">{post.shared_post.user?.name}</span>
-                                <span className="text-gray-400 text-sm"> · @{post.shared_post.user?.username}</span>
+                                <span className="font-medium text-[var(--text-primary)] text-sm">{post.shared_post.user?.name}</span>
+                                <span className="text-[var(--text-secondary)] text-sm"> · @{post.shared_post.user?.username}</span>
                             </div>
                         </div>
-                        <p className="text-sm text-gray-300 line-clamp-3">{post.shared_post.content || '—'}</p>
+                        <p className="text-sm text-[var(--text-primary)] line-clamp-3">{post.shared_post.content || '—'}</p>
                         {post.shared_post.poll && (
                             <div className="mt-2 py-2">
-                                <p className="text-xs font-medium text-gray-400 mb-2">{post.shared_post.poll.question}</p>
+                                <p className="text-xs font-medium text-[var(--text-secondary)] mb-2">{post.shared_post.poll.question}</p>
                                 <div className="space-y-1">
                                     {post.shared_post.poll.options?.slice(0, 3).map((o) => (
-                                        <div key={o.id} className="text-xs text-gray-500 flex justify-between">
+                                        <div key={o.id} className="text-xs text-[var(--text-secondary)] flex justify-between">
                                             <span>{o.text}</span>
                                             {post.shared_post.poll.user_voted_option_id != null && (
                                                 <span>{o.percentage}%</span>
@@ -314,13 +314,26 @@ const PostCard = ({ post, onDeleted }) => {
 
             {/* Media first (reference order) — constrained so image fits in card, no cut-off */}
             {!post.shared_post && post.media_url && (
-                <div className="mt-2 mb-1 w-full min-w-0 rounded-xl overflow-hidden bg-[var(--theme-surface)]">
+                <div className="mt-3 mb-1 w-full min-w-0 rounded-2xl overflow-hidden bg-[var(--theme-surface)]">
                     {post.media_type !== 'video' ? (
-                        <img
-                            src={post.media_url}
-                            alt="Post media"
-                            className="w-full max-w-full h-auto max-h-[420px] object-contain block"
-                        />
+                        <>
+                            <img
+                                src={post.media_url}
+                                alt="Post media"
+                                className="w-full max-w-full h-auto max-h-[420px] object-contain block"
+                                onError={(e) => {
+                                    e.target.style.display = 'none';
+                                    e.target.nextSibling && (e.target.nextSibling.style.display = 'flex');
+                                }}
+                            />
+                            <div
+                                style={{ display: 'none' }}
+                                className="w-full h-32 items-center justify-center text-sm text-[var(--text-secondary)] bg-[var(--theme-surface-hover)] rounded-2xl"
+                            >
+                                <span className="material-symbols-outlined mr-2 text-[20px]">broken_image</span>
+                                Media unavailable
+                            </div>
+                        </>
                     ) : (
                         <video
                             src={post.media_url}
@@ -348,8 +361,8 @@ const PostCard = ({ post, onDeleted }) => {
 
             {/* Poll - for posts with poll */}
             {!post.shared_post && post.poll && (
-                <div className="my-4 p-4 rounded-xl bg-white/5 border border-white/10">
-                    <p className="font-medium text-white mb-3">{post.poll.question}</p>
+                <div className="my-4 p-4 rounded-xl bg-gray-50 dark:bg-white/5 border border-[var(--theme-border)]">
+                    <p className="font-medium text-[var(--text-primary)] mb-3">{post.poll.question}</p>
                     <div className="space-y-2">
                         {post.poll.options?.map((opt) => {
                             const hasVoted = post.poll.user_voted_option_id != null;
@@ -368,14 +381,14 @@ const PostCard = ({ post, onDeleted }) => {
                                         hasVoted
                                             ? isSelected
                                                 ? 'border-[var(--theme-accent)] bg-[var(--theme-accent)]/20'
-                                                : 'border-white/10 bg-white/5'
-                                            : 'border-white/10 hover:border-white/20 hover:bg-white/5'
+                                                : 'border-[var(--theme-border)] bg-gray-50 dark:bg-white/5'
+                                            : 'border-[var(--theme-border)] hover:border-[var(--theme-border)] hover:bg-[var(--theme-surface-hover)]'
                                     }`}
                                 >
                                     <div className="flex items-center justify-between gap-2">
                                         <span className="text-[var(--text-primary)]">{opt.text}</span>
                                         {hasVoted && (
-                                            <span className="text-sm text-slate-400">
+                                            <span className="text-sm text-[var(--text-secondary)]">
                                                 {opt.percentage}% ({opt.votes_count})
                                             </span>
                                         )}
@@ -396,13 +409,13 @@ const PostCard = ({ post, onDeleted }) => {
                         })}
                     </div>
                     {post.poll.total_votes > 0 && (
-                        <p className="text-xs text-slate-500 mt-2">{post.poll.total_votes} vote{post.poll.total_votes !== 1 ? 's' : ''}</p>
+                        <p className="text-xs text-[var(--text-secondary)] mt-2">{post.poll.total_votes} vote{post.poll.total_votes !== 1 ? 's' : ''}</p>
                     )}
                 </div>
             )}
 
             {/* Post Actions - Stitch: like/comment/share left, bookmark right */}
-            <div className="flex items-center justify-between pt-3 border-t border-white/5">
+            <div className="mt-4 flex items-center justify-between">
                 <div className="flex items-center gap-5">
                     <button
                         type="button"
@@ -412,7 +425,7 @@ const PostCard = ({ post, onDeleted }) => {
                             post.is_liked
                                 ? 'text-rose-500 hover:text-rose-500'
                                 : 'text-[var(--text-secondary)] hover:text-rose-500'
-                            } hover:bg-white/5`}
+                            } hover:bg-[var(--theme-surface-hover)]`}
                         >
                             <span className={`material-symbols-outlined text-[22px] ${post.is_liked ? 'text-rose-500 fill-rose-500' : 'text-[var(--text-secondary)]'}`}>favorite</span>
                             <span className="text-xs font-medium">{(post.likes_count ?? 0) > 999 ? `${((post.likes_count ?? 0) / 1000).toFixed(1)}k` : post.likes_count ?? 0}</span>
@@ -424,7 +437,7 @@ const PostCard = ({ post, onDeleted }) => {
                                 e.preventDefault();
                                 setCommentModalPost(post);
                             }}
-                            className="flex items-center gap-2.5 min-w-[44px] min-h-[44px] py-2 px-3 -my-2 -mx-1 rounded-xl text-slate-400 hover:text-primary hover:bg-white/5 transition-colors cursor-pointer"
+                            className="flex items-center gap-2.5 min-w-[44px] min-h-[44px] py-2 px-3 -my-2 -mx-1 rounded-xl text-[var(--text-secondary)] hover:text-primary hover:bg-[var(--theme-surface-hover)] transition-colors cursor-pointer"
                         >
                             <span className="material-symbols-outlined text-[22px]">chat_bubble</span>
                             <span className="text-xs font-medium">{post.comments_count ?? 0}</span>
@@ -437,9 +450,9 @@ const PostCard = ({ post, onDeleted }) => {
                                     e.preventDefault();
                                     setShareModalPost(post);
                                 }}
-                                className="flex items-center gap-2.5 min-w-[44px] min-h-[44px] py-2 px-3 -my-2 -mx-1 rounded-xl text-slate-400 hover:text-sky-500 hover:bg-white/5 transition-colors cursor-pointer"
+                                className="flex items-center gap-2.5 min-w-[44px] min-h-[44px] py-2 px-3 -my-2 -mx-1 rounded-xl text-[var(--text-secondary)] hover:text-sky-500 hover:bg-[var(--theme-surface-hover)] transition-colors cursor-pointer"
                             >
-                                <span className="material-symbols-outlined text-[22px]">share</span>
+                                <span className="material-symbols-outlined text-[22px]">ios_share</span>
                                 <span className="text-xs font-medium">{post.shares_count ?? 0}</span>
                             </button>
                         </div>
@@ -450,7 +463,7 @@ const PostCard = ({ post, onDeleted }) => {
                         onClick={handleBookmark}
                         disabled={isBookmarkPending}
                         className={`min-w-[44px] min-h-[44px] py-2 px-3 -my-2 -mr-3 rounded-xl transition-colors cursor-pointer disabled:opacity-60 ${
-                            post.is_bookmarked ? 'text-primary' : 'text-slate-400 hover:text-primary hover:bg-white/5'
+                            post.is_bookmarked ? 'text-primary' : 'text-[var(--text-secondary)] hover:text-primary hover:bg-[var(--theme-surface-hover)]'
                         }`}
                     >
                         <span className={`material-symbols-outlined text-[22px] ${post.is_bookmarked ? 'fill-primary' : ''}`}>bookmark</span>
@@ -536,7 +549,7 @@ const PostCard = ({ post, onDeleted }) => {
                     </div>
                 )}
                 {post.comments_count > 0 && (
-                    <Link to={`/post/${post.id}`} className="text-sm text-gray-400 hover:text-[var(--theme-accent)] block">
+                    <Link to={`/post/${post.id}`} className="text-sm text-[var(--text-secondary)] hover:text-[var(--theme-accent)] block">
                         View all {post.comments_count} comment{post.comments_count !== 1 ? 's' : ''}
                     </Link>
                 )}

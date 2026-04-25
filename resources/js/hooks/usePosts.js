@@ -59,68 +59,73 @@ export const useCreatePost = () => {
             await queryClient.cancelQueries({ queryKey: ['posts', 'feed'] });
             await queryClient.cancelQueries({ queryKey: ['user-posts'] });
 
-            const previousFeed = queryClient.getQueryData(['posts', 'feed']);
+            const previousFeed = queryClient.getQueriesData({ queryKey: ['posts', 'feed'], exact: false });
             const previousUserPostsByUsername = queryClient.getQueryData(['user-posts', user?.username]);
             const previousUserPostsById = queryClient.getQueryData(['user-posts', user?.id]);
 
-            const optimisticPost = {
-                id: `temp-${Date.now()}`,
-                content: String(get('content') || ''),
-                media_url: null,
-                media_type: null,
-                visibility: String(get('visibility') || 'public'),
-                user: {
-                    id: user?.id,
-                    name: user?.name,
-                    username: user?.username,
-                    profile_picture: user?.profile_picture,
-                },
-                likes_count: 0,
-                comments_count: 0,
-                shares_count: 0,
-                is_liked: false,
-                hashtags: [],
-                shared_post_id: raw instanceof FormData ? raw.get('shared_post_id') : raw?.shared_post_id,
-                shared_post: sharedPost || null,
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString(),
-            };
+            const hasMedia = raw instanceof FormData
+                ? raw.get('media') !== null
+                : !!raw?.media;
 
-            // Optimistically add post to feed
-            queryClient.setQueryData(['posts', 'feed'], (old) => {
-                if (!old) return old;
-                return {
-                    ...old,
-                    pages: [
-                        {
-                            ...old.pages[0],
-                            data: {
-                                ...old.pages[0].data,
-                                posts: [optimisticPost, ...(old.pages[0].data.posts || [])],
-                            },
-                        },
-                        ...old.pages.slice(1),
-                    ],
+            if (!hasMedia) {
+                const optimisticPost = {
+                    id: `temp-${Date.now()}`,
+                    content: String(get('content') || ''),
+                    media_url: null,
+                    media_type: null,
+                    visibility: String(get('visibility') || 'public'),
+                    user: {
+                        id: user?.id,
+                        name: user?.name,
+                        username: user?.username,
+                        profile_picture: user?.profile_picture,
+                    },
+                    likes_count: 0,
+                    comments_count: 0,
+                    shares_count: 0,
+                    is_liked: false,
+                    hashtags: [],
+                    shared_post_id: raw instanceof FormData ? raw.get('shared_post_id') : raw?.shared_post_id,
+                    shared_post: sharedPost || null,
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString(),
                 };
-            });
 
-            // Optimistically add post to user's own profile posts (using username as cache key)
-            if (user?.username) {
-                queryClient.setQueryData(['user-posts', user.username], (old) => {
-                    // Handle first time (no cache yet) or empty cache
-                    const existingPosts = old?.posts ?? [];
-                    const base = old ?? {
-                        posts: [],
-                        pagination: { current_page: 1, last_page: 1, per_page: 15, total: 0 },
-                    };
+                // Optimistically add post to feed (all sort variants)
+                queryClient.setQueriesData({ queryKey: ['posts', 'feed'], exact: false }, (old) => {
+                    if (!old) return old;
                     return {
-                        ...base,
-                        posts: [optimisticPost, ...existingPosts],
-                        pagination: base.pagination
-                            ? { ...base.pagination, total: (base.pagination.total ?? 0) + 1 }
-                            : base.pagination,
+                        ...old,
+                        pages: [
+                            {
+                                ...old.pages[0],
+                                data: {
+                                    ...old.pages[0].data,
+                                    posts: [optimisticPost, ...(old.pages[0].data.posts || [])],
+                                },
+                            },
+                            ...old.pages.slice(1),
+                        ],
                     };
                 });
+
+                // Optimistically add post to user's own profile posts (using username as cache key)
+                if (user?.username) {
+                    queryClient.setQueryData(['user-posts', user.username], (old) => {
+                        const existingPosts = old?.posts ?? [];
+                        const base = old ?? {
+                            posts: [],
+                            pagination: { current_page: 1, last_page: 1, per_page: 15, total: 0 },
+                        };
+                        return {
+                            ...base,
+                            posts: [optimisticPost, ...existingPosts],
+                            pagination: base.pagination
+                                ? { ...base.pagination, total: (base.pagination.total ?? 0) + 1 }
+                                : base.pagination,
+                        };
+                    });
+                }
             }
 
             return { previousFeed, previousUserPostsByUsername, previousUserPostsById };
@@ -135,8 +140,8 @@ export const useCreatePost = () => {
                 return;
             }
 
-            // Update feed with real post data (replace optimistic post)
-            queryClient.setQueryData(['posts', 'feed'], (old) => {
+            // Update feed with real post data (replace optimistic post — all sort variants)
+            queryClient.setQueriesData({ queryKey: ['posts', 'feed'], exact: false }, (old) => {
                 if (!old) return old;
                 const pages = old.pages.map((page, index) => {
                     if (index === 0) {
@@ -147,13 +152,7 @@ export const useCreatePost = () => {
                         if (!posts.some((p) => p.id === newPost.id)) {
                             posts.unshift(newPost);
                         }
-                        return {
-                            ...page,
-                            data: {
-                                ...page.data,
-                                posts,
-                            },
-                        };
+                        return { ...page, data: { ...page.data, posts } };
                     }
                     return page;
                 });
@@ -192,7 +191,7 @@ export const useCreatePost = () => {
         onError: (error, newPostData, context) => {
             // Rollback on error
             if (context?.previousFeed) {
-                queryClient.setQueryData(['posts', 'feed'], context.previousFeed);
+                context.previousFeed.forEach(([key, data]) => queryClient.setQueryData(key, data));
             }
             if (context?.previousUserPostsByUsername && user?.username) {
                 queryClient.setQueryData(['user-posts', user.username], context.previousUserPostsByUsername);

@@ -40,46 +40,46 @@ const ShareToTimelineModal = ({ post, onClose, onSubmit, isSubmitting }) => {
                             {...register('content')}
                             placeholder="Add your thoughts (optional)"
                             rows={3}
-                            className="w-full px-4 py-2 bg-[#1A1A2E] border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
+                            className="w-full px-4 py-2 bg-[var(--theme-surface-hover)] border border-[var(--theme-border)] rounded-lg text-[var(--text-primary)] placeholder-[var(--text-secondary)] focus:ring-2 focus:ring-[var(--theme-accent)]/30 focus:border-[var(--theme-accent)]/40 focus:outline-none resize-none"
                             maxLength={5000}
                         />
                         <p className="text-xs text-gray-400 mt-1">{content.length}/5000</p>
 
                         {/* Original post preview */}
-                        <div className="mt-4 p-3 bg-[#1A1A2E] rounded-lg border border-gray-700">
-                            <p className="text-xs text-gray-400 mb-2">Sharing this post:</p>
+                        <div className="mt-4 p-3 bg-[var(--theme-surface-hover)] rounded-lg border border-[var(--theme-border)]">
+                            <p className="text-xs text-[var(--text-secondary)] mb-2">Sharing this post:</p>
                             <div className="flex gap-3">
                                 <Avatar src={post.user?.profile_picture} alt={post.user?.name} size="sm" />
                                 <div className="flex-1 min-w-0">
-                                    <p className="text-sm font-medium text-white">{post.user?.name}</p>
-                                    <p className="text-xs text-gray-400">@{post.user?.username} · {formatDate(post.created_at)}</p>
-                                    <p className="text-sm text-gray-300 mt-1 line-clamp-2">{post.content || '—'}</p>
+                                    <p className="text-sm font-medium text-[var(--text-primary)]">{post.user?.name}</p>
+                                    <p className="text-xs text-[var(--text-secondary)]">@{post.user?.username} · {formatDate(post.created_at)}</p>
+                                    <p className="text-sm text-[var(--text-primary)] mt-1 line-clamp-2">{post.content || '—'}</p>
                                 </div>
                             </div>
                         </div>
 
                         <div className="mt-4">
-                            <p className="text-sm font-medium text-gray-300 mb-2">Who can see this?</p>
+                            <p className="text-sm font-medium text-[var(--text-primary)] mb-2">Who can see this?</p>
                             <div className="flex gap-4">
-                                <label className="flex items-center gap-2 cursor-pointer text-gray-300">
+                                <label className="flex items-center gap-2 cursor-pointer text-[var(--text-secondary)]">
                                     <input
                                         type="radio"
                                         name="visibility"
                                         value="public"
                                         checked={visibility === 'public'}
                                         onChange={(e) => setVisibility(e.target.value)}
-                                        className="text-purple-500"
+                                        className="text-[var(--theme-accent)]"
                                     />
                                     <span className="text-sm">Public</span>
                                 </label>
-                                <label className="flex items-center gap-2 cursor-pointer text-gray-300">
+                                <label className="flex items-center gap-2 cursor-pointer text-[var(--text-secondary)]">
                                     <input
                                         type="radio"
                                         name="visibility"
                                         value="followers"
                                         checked={visibility === 'followers'}
                                         onChange={(e) => setVisibility(e.target.value)}
-                                        className="text-purple-500"
+                                        className="text-[var(--theme-accent)]"
                                     />
                                     <span className="text-sm">Friends</span>
                                 </label>

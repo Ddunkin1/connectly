@@ -131,38 +131,61 @@ const PostInput = ({ onPostCreated, variant = 'feed' }) => {
 
     const containerClasses =
         variant === 'modal'
-            ? 'rounded-2xl p-5 shadow-xl bg-[var(--theme-surface)] border border-[var(--theme-border)]'
-            : 'glass-effect rounded-2xl p-5 mb-6 shadow-xl transition-all duration-200 focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary/30 border border-transparent';
+            ? 'rounded-2xl p-5 bg-white dark:bg-[var(--theme-surface)] border border-[var(--theme-border)] shadow-sm'
+            : 'bg-white dark:bg-[var(--theme-surface)] rounded-2xl p-5 mb-4 shadow-sm shadow-black/5 border border-black/[0.06] dark:border-white/[0.06]';
 
     return (
         <div className={containerClasses}>
+            {variant === 'feed' && (
+                <p className="text-center text-sm font-semibold text-[var(--text-primary)] pb-3 mb-4 border-b border-[var(--theme-border)]">
+                    Create Post
+                </p>
+            )}
             <form onSubmit={handleSubmit(onSubmit)}>
                 <div className="flex items-start gap-4">
-                    <Avatar src={user?.profile_picture} alt={user?.name} size="lg" className="w-10 h-10 shrink-0 rounded-full ring-2 ring-primary/20" />
+                    <Avatar src={user?.profile_picture} alt={user?.name} size="lg" className="w-11 h-11 shrink-0 rounded-full" />
                     <div className="flex-1 min-w-0 space-y-4">
                         <textarea
                             {...register('content')}
                             placeholder="Share a thought, a photo, or a poll..."
                             onFocus={() => setIsExpanded(true)}
                             rows={2}
-                            className="w-full bg-transparent border-none focus:ring-0 text-[15px] leading-relaxed resize-none min-h-[48px] py-3 text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] focus:outline-none"
+                            className="w-full bg-gray-50 dark:bg-white/5 border border-[var(--theme-border)] rounded-xl px-3 py-2.5 text-sm leading-relaxed resize-none min-h-[100px] text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] focus:outline-none focus:ring-2 focus:ring-[var(--theme-accent)]/30 focus:border-[var(--theme-accent)]/40 transition-all mt-3"
                         />
-                        <div className="flex items-center justify-between pt-4 border-t border-white/5">
+
+                        {mediaPreview && (
+                            <div className="relative mt-3 rounded-xl overflow-hidden border border-[var(--theme-border)] bg-black/5 dark:bg-white/5">
+                                {mediaType === 'image' ? (
+                                    <img src={mediaPreview} alt="Preview" className="w-full max-h-72 object-cover" />
+                                ) : (
+                                    <video src={mediaPreview} controls className="w-full max-h-72" />
+                                )}
+                                <button
+                                    type="button"
+                                    onClick={removeMedia}
+                                    className="absolute top-2 right-2 bg-black/60 hover:bg-black/80 text-white rounded-full w-7 h-7 flex items-center justify-center transition-colors"
+                                >
+                                    <UilTimes size={14} color="white" />
+                                </button>
+                            </div>
+                        )}
+
+                        <div className="flex items-center justify-between pt-3 mt-3 border-t border-[var(--theme-border)]">
                             <div className="flex items-center gap-2">
-                                <label htmlFor={mediaInputId} className="p-2 rounded-xl hover:bg-white/5 text-primary cursor-pointer transition-colors" title="Add photo or video">
+                                <label htmlFor={mediaInputId} className="p-2 rounded-xl hover:bg-[var(--theme-surface-hover)] text-[var(--theme-accent)] cursor-pointer transition-colors" title="Add photo or video">
                                     <span className="material-symbols-outlined">image</span>
                                     <input ref={mediaInputRef} type="file" id={mediaInputId} accept="image/*,video/*" onChange={handleFileChange} className="hidden" />
                                 </label>
-                                <button type="button" onClick={() => mediaInputRef.current?.click()} className="p-2 rounded-xl hover:bg-white/5 text-primary transition-colors" title="Add video">
+                                <button type="button" onClick={() => mediaInputRef.current?.click()} className="p-2 rounded-xl hover:bg-[var(--theme-surface-hover)] text-[var(--theme-accent)] transition-colors" title="Add video">
                                     <span className="material-symbols-outlined">videocam</span>
                                 </button>
-                                <button type="button" className="p-2 rounded-xl hover:bg-white/5 text-primary transition-colors">
+                                <button type="button" className="p-2 rounded-xl hover:bg-[var(--theme-surface-hover)] text-[var(--theme-accent)] transition-colors">
                                     <span className="material-symbols-outlined">sentiment_satisfied</span>
                                 </button>
                                 <button
                                     type="button"
                                     onClick={() => setPollMode((p) => !p)}
-                                    className={`p-2 rounded-xl transition-colors ${pollMode ? 'bg-primary/20 text-primary' : 'hover:bg-white/5 text-primary'}`}
+                                    className={`p-2 rounded-xl transition-colors ${pollMode ? 'bg-[var(--theme-accent)]/20 text-[var(--theme-accent)]' : 'hover:bg-[var(--theme-surface-hover)] text-[var(--theme-accent)]'}`}
                                     title="Add poll"
                                 >
                                     <span className="material-symbols-outlined">equalizer</span>
@@ -171,7 +194,7 @@ const PostInput = ({ onPostCreated, variant = 'feed' }) => {
                             <button
                                 type="submit"
                                 disabled={!isFormValid || createPostMutation.isPending}
-                                className="bg-primary hover:bg-primary/90 text-white h-12 min-h-12 px-8 rounded-xl font-semibold transition-all shadow-lg shadow-primary/10 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                                className="bg-[var(--theme-accent)] hover:bg-[var(--theme-accent-hover)] text-white h-10 px-6 rounded-full font-medium text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
                             >
                                 {createPostMutation.isPending ? '...' : 'Post'}
                             </button>
@@ -180,7 +203,7 @@ const PostInput = ({ onPostCreated, variant = 'feed' }) => {
                 </div>
 
                 {isExpanded && (
-                    <div className="mt-4 pt-4 border-t border-white/5 flex items-center justify-between flex-wrap gap-2">
+                    <div className="mt-4 pt-4 border-t border-[var(--theme-border)] flex items-center justify-between flex-wrap gap-2">
                         <div className="flex items-center gap-6">
                             <span className="text-sm text-[var(--text-secondary)]">Who can see this?</span>
                             <label className="flex items-center gap-1.5 cursor-pointer text-[var(--text-secondary)] hover:text-[var(--text-primary)] text-sm">
@@ -207,7 +230,7 @@ const PostInput = ({ onPostCreated, variant = 'feed' }) => {
                             value={pollQuestion}
                             onChange={(e) => setPollQuestion(e.target.value)}
                             placeholder="Ask a question..."
-                            className="w-full px-4 py-2 rounded-lg bg-[var(--theme-bg-main)] border border-[var(--theme-border)] text-[var(--text-primary)] placeholder:[color:var(--text-secondary)] focus:outline-none focus:ring-2 focus:ring-[var(--theme-accent)]"
+                            className="w-full px-4 py-2 rounded-lg bg-gray-50 dark:bg-white/5 border border-[var(--theme-border)] text-[var(--text-primary)] placeholder:[color:var(--text-secondary)] focus:outline-none focus:ring-2 focus:ring-[var(--theme-accent)]"
                         />
                         <div className="space-y-2">
                             {pollOptions.map((opt, i) => (
@@ -217,7 +240,7 @@ const PostInput = ({ onPostCreated, variant = 'feed' }) => {
                                         value={opt}
                                         onChange={(e) => setPollOption(i, e.target.value)}
                                         placeholder={`Option ${i + 1}`}
-                                        className="flex-1 px-4 py-2 rounded-lg bg-[var(--theme-bg-main)] border border-[var(--theme-border)] text-[var(--text-primary)] placeholder:[color:var(--text-secondary)] focus:outline-none focus:ring-2 focus:ring-[var(--theme-accent)]"
+                                        className="flex-1 px-4 py-2 rounded-lg bg-gray-50 dark:bg-white/5 border border-[var(--theme-border)] text-[var(--text-primary)] placeholder:[color:var(--text-secondary)] focus:outline-none focus:ring-2 focus:ring-[var(--theme-accent)]"
                                     />
                                     <button
                                         type="button"
@@ -242,22 +265,6 @@ const PostInput = ({ onPostCreated, variant = 'feed' }) => {
                     </div>
                 )}
 
-                {mediaPreview && (
-                    <div className="relative mt-4">
-                        {mediaType === 'image' ? (
-                            <img src={mediaPreview} alt="Preview" className="w-full h-48 object-cover rounded-[12px]" />
-                        ) : (
-                            <video src={mediaPreview} controls className="w-full h-48 rounded-[12px]" />
-                        )}
-                        <button
-                            type="button"
-                            onClick={removeMedia}
-                            className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
-                        >
-                            <UilTimes size={14} color="white" />
-                        </button>
-                    </div>
-                )}
             </form>
         </div>
     );

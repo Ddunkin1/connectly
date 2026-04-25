@@ -1,38 +1,116 @@
-# Production Dockerfile for Laravel API (e.g. Railway).
-# Railway runs this instead of Nixpacks when Dockerfile is present.
-# Laravel is served with php artisan serve so /api/* routes work.
-
-FROM php:8.2-cli
-
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    git \
-    unzip \
-    libzip-dev \
-    libpng-dev \
-    libonig-dev \
-    && docker-php-ext-install zip pdo_mysql mbstring exif pcntl bcmath gd \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
-
-COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
-
+# ============================================================
+# Stage 1 - Build Vite/React frontend
+# ============================================================
+FROM node:20-alpine AS node-builder
 WORKDIR /app
 
-# Install PHP deps first (better layer cache)
-COPY composer.json composer.lock /app/
-RUN composer install --no-dev --no-scripts --no-autoloader --prefer-dist
+COPY package.json package-lock.json ./
+RUN npm ci
 
-# Copy app (excluding dev assets)
-COPY . /app
+COPY vite.config.js ./
+COPY resources ./resources
+COPY public ./public
 
-# Finish composer (autoload, etc.)
-RUN composer dump-autoload --optimize
+# Reverb / broadcast vars must be baked into the JS bundle at build time.
+# Pass them as Docker build args in Railway → Variables → Build Variables.
+ARG VITE_REVERB_APP_KEY=""
+ARG VITE_REVERB_HOST=""
+ARG VITE_REVERB_PORT="443"
+ARG VITE_REVERB_SCHEME="https"
+ARG VITE_APP_URL=""
 
-# .env must exist; Railway injects real vars at runtime
-RUN test -f .env || cp .env.example .env
+ENV VITE_REVERB_APP_KEY=$VITE_REVERB_APP_KEY \
+    VITE_REVERB_HOST=$VITE_REVERB_HOST \
+    VITE_REVERB_PORT=$VITE_REVERB_PORT \
+    VITE_REVERB_SCHEME=$VITE_REVERB_SCHEME \
+    VITE_APP_URL=$VITE_APP_URL
 
-# Optional: cache config/routes at runtime via start script if you want
-EXPOSE 8000
+RUN npm run build
 
-# Railway sets PORT; default 8000 for local docker run
-CMD ["sh", "-c", "php artisan config:clear && php artisan serve --host=0.0.0.0 --port=${PORT:-8000}"]
+# ============================================================
+# Stage 2 - Install PHP/Composer dependencies
+# ============================================================
+FROM composer:2 AS composer-builder
+WORKDIR /app
+
+COPY composer.json composer.lock ./
+RUN composer install \
+    --no-dev \
+    --no-scripts \
+    --no-autoloader \
+    --prefer-dist \
+    --ignore-platform-reqs
+
+COPY . .
+RUN composer dump-autoload --optimize --no-dev
+
+# ============================================================
+# Stage 3 - Production image (Nginx + PHP-FPM + Supervisor)
+# ============================================================
+FROM php:8.3-fpm-alpine AS production
+
+# System packages
+RUN apk add --no-cache \
+    nginx \
+    supervisor \
+    ffmpeg \
+    gettext \
+    libpng-dev \
+    libjpeg-turbo-dev \
+    libwebp-dev \
+    freetype-dev \
+    libzip-dev \
+    oniguruma-dev \
+    libxml2-dev \
+    curl-dev \
+    mysql-client
+
+# PHP extensions
+RUN docker-php-ext-configure gd \
+        --with-freetype \
+        --with-jpeg \
+        --with-webp \
+    && docker-php-ext-install -j$(nproc) \
+        pdo \
+        pdo_mysql \
+        mbstring \
+        xml \
+        curl \
+        zip \
+        gd \
+        bcmath \
+        opcache \
+        pcntl \
+        exif
+
+WORKDIR /var/www/html
+
+# Laravel app (from composer stage — includes vendor/)
+COPY --from=composer-builder /app /var/www/html
+
+# Built Vite assets (from node stage)
+COPY --from=node-builder /app/public/build /var/www/html/public/build
+
+# Docker config files
+COPY docker/php.ini          /usr/local/etc/php/conf.d/app.ini
+COPY docker/nginx.conf       /etc/nginx/nginx.conf.template
+COPY docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+COPY docker/start.sh         /start.sh
+RUN chmod +x /start.sh
+
+# Storage / cache directories and permissions
+RUN mkdir -p \
+        storage/framework/sessions \
+        storage/framework/views \
+        storage/framework/cache \
+        storage/logs \
+        bootstrap/cache \
+    && chown -R www-data:www-data /var/www/html \
+    && chmod -R 775 storage bootstrap/cache
+
+# Fallback .env so artisan doesn't crash before Railway injects vars
+RUN test -f .env || (test -f .env.example && cp .env.example .env || echo "APP_KEY=" > .env)
+
+EXPOSE 8080
+
+CMD ["/start.sh"]

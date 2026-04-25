@@ -5,26 +5,27 @@ const THEME_KEY = 'connectly-theme';
 
 export const FONT_SIZES = ['sm', 'md', 'lg'];
 export const ACCENT_COLORS = {
+    forest: { name: 'Forest', hex: '#2563eb' },
     purple: { name: 'Purple', hex: '#8B5CF6' },
-    yellow: { name: 'Yellow', hex: '#EAB308' },
+    blue: { name: 'Blue', hex: '#3B82F6' },
     red: { name: 'Red', hex: '#EF4444' },
+    yellow: { name: 'Yellow', hex: '#EAB308' },
     peachy: { name: 'Peachy', hex: '#F472B6' },
     teal: { name: 'Teal', hex: '#14B8A6' },
-    blue: { name: 'Blue', hex: '#3B82F6' },
 };
 export const BACKGROUND_THEMES = {
     light: {
         name: 'Light',
-        bg: '#f5f7f8',
+        bg: '#f4fdf8',
         sidebar: '#ffffff',
         surface: '#ffffff',
-        surfaceHover: '#f0f2f4',
-        feedBg: '#f5f7f8',
-        feedMuted: '#eef0f2',
+        surfaceHover: '#e8f9f0',
+        feedBg: '#f4fdf8',
+        feedMuted: '#edfaf3',
         textPrimary: '#1a1a1a',
         textSecondary: '#475569',
-        border: 'rgba(0,0,0,0.12)',
-        cardShadow: '0 1px 3px rgba(0,0,0,0.08)',
+        border: 'rgba(0,0,0,0.08)',
+        cardShadow: '0 1px 3px rgba(0,0,0,0.06)',
         glassBg: 'rgba(255,255,255,0.9)',
     },
     dim: {
@@ -47,7 +48,7 @@ const useThemeStore = create(
     persist(
         (set) => ({
             fontSize: 'md',
-            accentColor: 'peachy',
+            accentColor: 'forest',
             background: 'dim',
             isCustomizerOpen: false,
             setFontSize: (fontSize) => {
@@ -102,7 +103,7 @@ const useThemeStore = create(
         }),
         {
             name: THEME_KEY,
-            version: 3,
+            version: 5,
             partialize: (s) => ({ fontSize: s.fontSize, accentColor: s.accentColor, background: s.background }),
             onRehydrateStorage: () => () => useThemeStore.getState().applyToDom(),
             migrate: (persistedState, version) => {
@@ -112,6 +113,9 @@ const useThemeStore = create(
                 }
                 if (version < 3 && ['stitch', 'dark'].includes(next?.background)) {
                     next = { ...next, background: 'dim' };
+                }
+                if (version < 4 && next?.accentColor === 'peachy') {
+                    next = { ...next, accentColor: 'forest' };
                 }
                 return next;
             },

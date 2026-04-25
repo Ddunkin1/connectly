@@ -189,16 +189,21 @@ class PostService
             }
 
             if (! $mediaUrl) {
-                \Log::warning('Post media upload failed after retries; creating post without media.', [
+                \Log::warning('Supabase upload failed after retries; falling back to local storage.', [
                     'user_id' => $user->id,
                     'file_name' => $file->getClientOriginalName(),
                     'error' => $lastError?->getMessage(),
                 ]);
 
-                // If user posted a media-only post (no caption), don't silently create an empty card.
-                if (empty($content)) {
+                // Fall back to local public storage so media is never silently dropped
+                $localUrl = $this->storeLocally(null, $file, $isVideo);
+                if ($localUrl) {
+                    $mediaUrl = $localUrl;
+                    $mediaType = $isVideo ? 'video' : 'image';
+                } elseif (empty($content)) {
+                    // Last resort: no local save either and no caption — surface the error
                     throw ValidationException::withMessages([
-                        'media' => ['Media upload failed (connection timeout to Supabase). Please try again.'],
+                        'media' => ['Media upload failed. Please try again.'],
                     ]);
                 }
             }
@@ -241,6 +246,33 @@ class PostService
         }
 
         return $post->load(['user', 'hashtags', 'sharedPost.user', 'poll.options']);
+    }
+
+    /**
+     * Save media to local public storage as a fallback when Supabase is unreachable.
+     * Files land in storage/app/public/posts/ and are served via /storage/posts/<name>.
+     */
+    private function storeLocally(?string $transcodedPath, $uploadedFile, bool $isVideo): ?string
+    {
+        try {
+            $ext = $isVideo ? 'mp4' : ($uploadedFile->getClientOriginalExtension() ?: 'jpg');
+            $name = uniqid('post_', true) . '.' . $ext;
+            $dest = storage_path('app/public/posts/' . $name);
+
+            if (!is_dir(dirname($dest))) {
+                mkdir(dirname($dest), 0755, true);
+            }
+
+            $source = $transcodedPath ?? $uploadedFile->getRealPath();
+            if (!copy($source, $dest)) {
+                return null;
+            }
+
+            return rtrim(config('app.url'), '/') . '/api/local-media/' . $name;
+        } catch (\Throwable $e) {
+            \Log::error('Local media fallback failed.', ['error' => $e->getMessage()]);
+            return null;
+        }
     }
 
     /**

@@ -44,7 +44,7 @@ const Notifications = () => {
     };
 
     return (
-        <div className="w-full max-w-[800px] mx-auto">
+        <div className="w-full max-w-[680px] mx-auto">
             <div className="bg-[var(--theme-surface)] rounded-xl border border-[var(--theme-border)] overflow-hidden mb-6">
                 <div className="px-4 py-3 border-b border-[var(--theme-border)] flex items-center justify-between">
                     <h1 className="text-lg font-semibold text-[var(--text-primary)]">Notifications</h1>

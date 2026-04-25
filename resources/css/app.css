@@ -17,8 +17,8 @@
     --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     --font-display: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     /* Stitch AI / Premium Connectly colors (exact match to reference HTML) */
-    --color-primary: #8A2BE2;
-    --color-primary-dark: #7C3AED;
+    --color-primary: #2563eb;
+    --color-primary-dark: #1d4ed8;
     --color-background-light: #F8FAFC;
     --color-background-dark: #0A0A0B;
     --color-card-dark: #1A1A1D;
@@ -145,31 +145,31 @@ html.dark .text-gray-300 { color: var(--text-primary, #ffffff) !important; }
 /* Theme customization - CSS variables (set by themeStore) */
 /* Layout overhaul design tokens (per spec) */
 :root {
-    --theme-bg-main: #121212;
-    --theme-bg-sidebar: #161616;
-    --theme-surface: #1A1A1A;
-    --theme-surface-hover: #1E1E1E;
-    --theme-accent: #8A2BE2;
-    --theme-accent-hover: #7C3AED;
-    --theme-border: #2A2A2A;
+    --theme-bg-main: #eef4ef;
+    --theme-bg-sidebar: #ffffff;
+    --theme-surface: #ffffff;
+    --theme-surface-hover: #f0fdf4;
+    --theme-accent: #2563eb;
+    --theme-accent-hover: #1d4ed8;
+    --theme-border: #e5e7eb;
     /* Layout spec tokens */
-    --bg-primary: #0A0A0A;
-    --bg-secondary: #141414;
-    --bg-card: #1A1A1A;
-    --bg-hover: #252525;
-    --text-primary: #FFFFFF;
-    --text-secondary: #A0A0A0;
-    --accent-primary: #8A2BE2;
-    --accent-gradient: linear-gradient(135deg, #8B5CF6 0%, #6366F1 100%);
-    --border-color: #2A2A2A;
-    /* Typography - rem so they scale with root font-size (html[data-font-size] on #app-root) */
+    --bg-primary: #eef4ef;
+    --bg-secondary: #f9fafb;
+    --bg-card: #ffffff;
+    --bg-hover: #dbeafe;
+    --text-primary: #111827;
+    --text-secondary: #6b7280;
+    --accent-primary: #2563eb;
+    --accent-gradient: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+    --border-color: #e5e7eb;
+    /* Typography */
     --text-xl: 1.5rem;
     --text-lg: 1.25rem;
     --text-md: 1rem;
     --text-sm: 0.875rem;
     --text-xs: 0.75rem;
     --text-2xs: 0.625rem;
-    /* Spacing (aligned with spec) */
+    /* Spacing */
     --space-xs: 4px;
     --space-sm: 8px;
     --space-md: 16px;
@@ -180,14 +180,14 @@ html.dark .text-gray-300 { color: var(--text-primary, #ffffff) !important; }
     --space-3xl: 64px;
     --content-max: 900px;
     --layout-gap: 24px;
-    /* Light feed tokens (main feed area) – softer, cohesive with dark sidebars */
+    /* Feed tokens */
     --bg-feed: #ffffff;
     --bg-feed-muted: #f8f9fa;
-    --text-feed: #1a1a1a;
+    --text-feed: #111827;
     --text-feed-muted: #6b7280;
     --card-feed: #ffffff;
     --border-feed: rgba(0, 0, 0, 0.06);
-    --sidebar-edge: rgba(255, 255, 255, 0.04);
+    --sidebar-edge: rgba(0, 0, 0, 0.04);
     /* Spacing scale */
     --space-4: 4px;
     --space-8: 8px;
@@ -204,19 +204,35 @@ html.dark .text-gray-300 { color: var(--text-primary, #ffffff) !important; }
     --radius-xl: 24px;
     --radius-full: 9999px;
     /* Shadows */
-    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
-    --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.4);
-    --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.5);
-    --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.2);
-    --shadow-card-hover: 0 4px 12px rgba(0, 0, 0, 0.3);
-    --shadow-button: 0 2px 4px rgba(0, 0, 0, 0.2);
-    --shadow-elevated: 0 8px 16px rgba(0, 0, 0, 0.4);
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.07);
+    --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
+    --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.04);
+    --shadow-card-hover: 0 4px 12px rgba(0, 0, 0, 0.08);
+    --shadow-button: 0 1px 3px rgba(0, 0, 0, 0.1);
+    --shadow-elevated: 0 8px 16px rgba(0, 0, 0, 0.1);
 }
 
-/* Font size scaling */
-html[data-font-size="sm"] #app-root { font-size: 14px; }
-html[data-font-size="md"] #app-root { font-size: 16px; }
-html[data-font-size="lg"] #app-root { font-size: 18px; }
+html.dark {
+    --theme-bg-main: #0d1210;
+    --theme-bg-sidebar: #111a10;
+    --theme-surface: #1a2118;
+    --theme-surface-hover: #1f2a1e;
+    --theme-accent: #3b82f6;
+    --theme-accent-hover: #2563eb;
+    --theme-border: #1e3a5f;
+    --bg-primary: #0d1117;
+    --bg-secondary: #0f172a;
+    --text-primary: #f1f5f9;
+    --text-secondary: #94a3b8;
+    --accent-primary: #3b82f6;
+    --border-color: #1e3a5f;
+}
+
+/* Font size scaling — must target html so rem-based Tailwind classes scale correctly */
+html[data-font-size="sm"] { font-size: 14px; }
+html[data-font-size="md"] { font-size: 16px; }
+html[data-font-size="lg"] { font-size: 18px; }
 
 /* Use theme variables */
 .theme-bg-main { background-color: var(--theme-bg-main); }
@@ -474,15 +490,15 @@ html:not(.dark) .scrollbar-styled::-webkit-scrollbar-thumb { background: rgba(0,
 /* Admin canvas + motion tuning per theme */
 .admin-main-canvas {
     background:
-        radial-gradient(900px 420px at 78% -10%, rgba(217, 70, 239, 0.18), transparent 60%),
-        radial-gradient(820px 420px at -8% 62%, rgba(99, 102, 241, 0.14), transparent 64%),
+        radial-gradient(900px 420px at 78% -10%, rgba(22, 101, 52, 0.12), transparent 60%),
+        radial-gradient(820px 420px at -8% 62%, rgba(34, 197, 94, 0.1), transparent 64%),
         linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0));
 }
 
 html.dark .admin-main-canvas {
     background:
-        radial-gradient(900px 420px at 78% -10%, rgba(217, 70, 239, 0.22), transparent 60%),
-        radial-gradient(820px 420px at -8% 62%, rgba(99, 102, 241, 0.2), transparent 64%),
+        radial-gradient(900px 420px at 78% -10%, rgba(22, 101, 52, 0.18), transparent 60%),
+        radial-gradient(820px 420px at -8% 62%, rgba(34, 197, 94, 0.15), transparent 64%),
         linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0));
 }
 
@@ -497,9 +513,9 @@ html:not(.dark) .admin-shimmer::after {
     background: linear-gradient(
         90deg,
         transparent 0%,
-        rgba(99, 102, 241, 0.02) 28%,
-        rgba(139, 92, 246, 0.26) 50%,
-        rgba(99, 102, 241, 0.03) 72%,
+        rgba(22, 101, 52, 0.02) 28%,
+        rgba(34, 197, 94, 0.2) 50%,
+        rgba(22, 101, 52, 0.02) 72%,
         transparent 100%
     );
 }
@@ -622,14 +638,14 @@ html.dark .admin-login-canvas {
 .member-canvas {
     position: relative;
     background:
-        radial-gradient(900px 420px at 88% -8%, rgba(59, 130, 246, 0.15), transparent 60%),
-        radial-gradient(860px 420px at -6% 66%, rgba(139, 92, 246, 0.14), transparent 62%),
+        radial-gradient(900px 420px at 88% -8%, rgba(22, 101, 52, 0.1), transparent 60%),
+        radial-gradient(860px 420px at -6% 66%, rgba(34, 197, 94, 0.08), transparent 62%),
         linear-gradient(180deg, rgba(255, 255, 255, 0.01), rgba(255, 255, 255, 0));
 }
 html.dark .member-canvas {
     background:
-        radial-gradient(900px 420px at 88% -8%, rgba(59, 130, 246, 0.2), transparent 60%),
-        radial-gradient(860px 420px at -6% 66%, rgba(139, 92, 246, 0.2), transparent 62%),
+        radial-gradient(900px 420px at 88% -8%, rgba(22, 101, 52, 0.15), transparent 60%),
+        radial-gradient(860px 420px at -6% 66%, rgba(34, 197, 94, 0.12), transparent 62%),
         linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0));
 }
 
@@ -649,7 +665,7 @@ html.dark .member-canvas {
     width: 44%;
     height: 140%;
     transform: translateX(-120%) skewX(-18deg);
-    background: linear-gradient(90deg, transparent 0%, rgba(59, 130, 246, 0.02) 30%, rgba(139, 92, 246, 0.2) 50%, rgba(59, 130, 246, 0.02) 70%, transparent 100%);
+    background: linear-gradient(90deg, transparent 0%, rgba(22, 101, 52, 0.02) 30%, rgba(34, 197, 94, 0.18) 50%, rgba(22, 101, 52, 0.02) 70%, transparent 100%);
     pointer-events: none;
     animation: member-shimmer 3.2s ease-in-out infinite;
 }

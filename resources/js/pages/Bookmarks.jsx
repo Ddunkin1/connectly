@@ -11,7 +11,7 @@ const Bookmarks = () => {
 
     if (isLoading) {
         return (
-            <div className="max-w-3xl mx-auto py-8">
+            <div className="max-w-[680px] mx-auto w-full py-8">
                 <header className="mb-8">
                     <h1 className="text-2xl font-bold text-[var(--text-primary)]">Bookmarks</h1>
                     <p className="text-sm text-[var(--text-secondary)] mt-1">Posts you saved for later</p>
@@ -23,7 +23,7 @@ const Bookmarks = () => {
 
     if (isError) {
         return (
-            <div className="max-w-3xl mx-auto py-8">
+            <div className="max-w-[680px] mx-auto w-full py-8">
                 <header className="mb-8">
                     <h1 className="text-2xl font-bold text-[var(--text-primary)]">Bookmarks</h1>
                     <p className="text-sm text-[var(--text-secondary)] mt-1">Posts you saved for later</p>
@@ -37,7 +37,7 @@ const Bookmarks = () => {
     }
 
     return (
-        <div className="max-w-3xl mx-auto py-6 px-1">
+        <div className="max-w-[680px] mx-auto w-full py-6 px-1">
             <header className="mb-8">
                 <h1 className="text-2xl font-bold text-[var(--text-primary)]">Bookmarks</h1>
                 <p className="text-sm text-[var(--text-secondary)] mt-1">Posts you saved for later</p>

@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import Avatar from '../common/Avatar';
 import useAuthStore from '../../store/authStore';
 import useThemeStore from '../../store/themeStore';
@@ -9,9 +9,11 @@ import { useConversations } from '../../hooks/useConversations';
 import { useQuery } from '@tanstack/react-query';
 import { searchAPI } from '../../services/api';
 import CreatePostModal from '../modal/createPostModal';
+import { Home, Bookmark, UsersGroup, Users, Notification, Email, Search, Menu, Close, Plus } from 'griddy-icons';
 
 const AppTopBar = ({ onMenuToggle, showMenuButton = false, mobileMenuOpen = false }) => {
     const navigate = useNavigate();
+    const location = useLocation();
     const user = useAuthStore((s) => s.user);
     const openThemeCustomizer = useThemeStore((s) => s.openCustomizer);
     const { data: unreadNotifications } = useUnreadNotificationsCount();
@@ -66,62 +68,61 @@ const AppTopBar = ({ onMenuToggle, showMenuButton = false, mobileMenuOpen = fals
     };
 
     return (
-        <header className="fixed top-0 left-0 right-0 h-[60px] z-40 flex items-center px-3 sm:px-4 lg:px-6 glass-effect border-b border-white/[0.06]"
-            style={{ backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)' }}
-        >
-            <div className="flex items-center w-full max-w-6xl mx-auto gap-2 sm:gap-4">
+        <header className="fixed top-0 left-0 right-0 h-16 z-40 flex items-center px-4 sm:px-6 bg-[#f4fdf8]/75 dark:bg-[#0d1210]/75 backdrop-blur-sm border-b border-black/[0.08] dark:border-white/[0.06]">
+            {/* ── Nav icons — absolute center of the full-width header = viewport center ── */}
+            <div className="hidden sm:flex absolute left-1/2 -translate-x-1/2 items-center gap-6 z-10">
+                {[
+                    { Icon: Home,       path: '/home',        label: 'Home' },
+                    { Icon: Bookmark,   path: '/bookmarks',   label: 'Bookmarks' },
+                    { Icon: UsersGroup, path: '/communities', label: 'Communities' },
+                    { Icon: Users,      path: '/connections', label: 'Connections' },
+                ].map(({ Icon, path, label }) => {
+                    const isActive = location.pathname === path;
+                    return (
+                        <Link key={path} to={path} aria-label={label}
+                            className={`w-11 h-11 flex items-center justify-center rounded-xl transition-all ${
+                                isActive
+                                    ? 'bg-[var(--theme-accent)]/20 text-[var(--theme-accent)]'
+                                    : 'text-[var(--text-secondary)] hover:bg-[var(--theme-surface-hover)] hover:text-[var(--text-primary)]'
+                            }`}
+                        >
+                            <Icon size={22} color="currentColor" />
+                        </Link>
+                    );
+                })}
+            </div>
 
-                {/* ── Left: hamburger + logo ── */}
-                <div className="flex items-center shrink-0 sm:w-[200px] md:w-[240px]">
+            <div className="flex items-center justify-between w-full max-w-[1200px] mx-auto">
+
+                {/* ── Left: logo column (w-64 for sidebar alignment) + search ── */}
+                <div className="flex items-center">
+                <div className="flex items-center gap-3 shrink-0">
                     {showMenuButton && (
                         <button
                             type="button"
                             onClick={onMenuToggle}
-                            className="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-white/8 text-slate-400 hover:text-slate-200 transition-all"
+                            className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[var(--theme-surface-hover)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-all shrink-0"
                             aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
                             aria-expanded={mobileMenuOpen}
                         >
-                            <span className="material-symbols-outlined text-[22px]">
-                                {mobileMenuOpen ? 'close' : 'menu'}
-                            </span>
+                            {mobileMenuOpen
+                                ? <Close size={22} color="currentColor" />
+                                : <Menu size={22} color="currentColor" />}
                         </button>
                     )}
 
-                    {/* Logo — shown always (with or without hamburger) */}
-                    <Link
-                        to="/home"
-                        className={`flex items-center gap-2 ${showMenuButton ? 'ml-1.5' : ''}`}
-                    >
-                        {/* Icon mark */}
-                        <div className="relative shrink-0">
-                            <div className={`${showMenuButton ? 'w-7 h-7' : 'w-8 h-8'} rounded-[10px] flex items-center justify-center`}
-                                style={{ background: 'linear-gradient(135deg, #359EFF 0%, #7B61FF 100%)', boxShadow: '0 4px 14px rgba(53,158,255,0.35)' }}
-                            >
-                                <span className="text-white font-black leading-none"
-                                    style={{ fontSize: showMenuButton ? '13px' : '15px', letterSpacing: '-0.5px' }}
-                                >
-                                    C
-                                </span>
-                            </div>
-                        </div>
-
-                        {/* Brand name */}
-                        <span
-                            className={`font-extrabold tracking-tight ${showMenuButton ? 'text-[15px]' : 'hidden sm:block text-[17px]'}`}
-                            style={{ background: 'linear-gradient(135deg, #fff 30%, rgba(255,255,255,0.65) 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}
-                        >
-                            Connectly
-                        </span>
+                    <Link to="/home" className="flex flex-col leading-tight shrink-0 sm:pl-7">
+                        <span className="font-bold text-xl text-[var(--text-primary)] tracking-tight">Connectly</span>
+                        <span className="hidden sm:block text-[10px] text-[var(--text-secondary)] leading-none">Connect with your school</span>
                     </Link>
                 </div>
 
-                {/* ── Center: search bar (sm+) ── */}
-                <div className="hidden sm:flex flex-1 justify-center items-center min-w-0">
-                    <div ref={suggestionsRef} className="relative w-full max-w-xl">
-                        <form onSubmit={handleSearch}>
+                {/* ── Search bar — sits right after logo column ── */}
+                <div ref={suggestionsRef} className="hidden sm:block relative w-64 ml-3">
+                    <form onSubmit={handleSearch}>
                             <div className="relative group">
-                                <span className="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-primary text-[20px] pointer-events-none transition-colors">
-                                    search
+                                <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--text-secondary)] group-focus-within:text-[var(--theme-accent)] pointer-events-none transition-colors">
+                                    <Search size={18} color="currentColor" />
                                 </span>
                                 <input
                                     type="text"
@@ -129,20 +130,20 @@ const AppTopBar = ({ onMenuToggle, showMenuButton = false, mobileMenuOpen = fals
                                     onChange={(e) => { setSearchQuery(e.target.value); setShowSuggestions(true); }}
                                     onFocus={() => { if (searchQuery.trim().length > 1) setShowSuggestions(true); }}
                                     placeholder="Search people, communities, topics…"
-                                    className="w-full bg-white/[0.06] border border-white/[0.08] hover:border-white/[0.14] rounded-2xl py-2 pl-10 pr-4 focus:ring-2 focus:ring-primary/40 focus:border-primary/40 focus:outline-none text-sm text-slate-200 placeholder:text-slate-600 transition-all"
+                                    className="w-full bg-white/60 dark:bg-white/5 border border-black/[0.08] dark:border-white/10 rounded-full py-2 pl-10 pr-4 focus:ring-2 focus:ring-[var(--theme-accent)]/20 focus:border-[var(--theme-accent)]/30 focus:outline-none text-sm text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] transition-all"
                                 />
                             </div>
                         </form>
 
                         {/* Search suggestions dropdown */}
                         {showSuggestions && (suggestionUsers.length > 0 || suggestionHashtags.length > 0 || suggestionCommunities.length > 0) && (
-                            <div className="absolute left-0 right-0 top-full mt-2 z-[100] rounded-2xl bg-[var(--theme-surface)] border border-[var(--theme-border)] shadow-2xl overflow-hidden max-h-80 overflow-y-auto">
+                            <div className="absolute left-0 right-0 top-full mt-2 z-[100] rounded-xl bg-white dark:bg-[var(--theme-surface)] border border-[var(--theme-border)] shadow-lg overflow-hidden max-h-80 overflow-y-auto">
                                 {suggestionUsers.length > 0 && (
                                     <div className="border-b border-white/[0.06]">
                                         <p className="px-4 pt-3 pb-1 text-[10px] uppercase tracking-[0.15em] font-semibold text-slate-500">People</p>
                                         {suggestionUsers.map((u) => (
                                             <Link key={u.id} to={`/profile/${u.username}`}
-                                                className="flex items-center gap-3 px-4 py-2.5 hover:bg-white/[0.04] transition-colors"
+                                                className="flex items-center gap-3 px-4 py-2.5 hover:bg-[var(--theme-surface-hover)] transition-colors"
                                                 onClick={() => setShowSuggestions(false)}
                                             >
                                                 <Avatar src={u.profile_picture} alt={u.name} size="sm" className="w-7 h-7 rounded-full shrink-0" />
@@ -159,7 +160,7 @@ const AppTopBar = ({ onMenuToggle, showMenuButton = false, mobileMenuOpen = fals
                                         <p className="px-4 pt-3 pb-1 text-[10px] uppercase tracking-[0.15em] font-semibold text-slate-500">Hashtags</p>
                                         {suggestionHashtags.map((h) => (
                                             <Link key={h.id} to={`/hashtag/${encodeURIComponent(h.name)}`}
-                                                className="flex items-center gap-3 px-4 py-2.5 hover:bg-white/[0.04] transition-colors"
+                                                className="flex items-center gap-3 px-4 py-2.5 hover:bg-[var(--theme-surface-hover)] transition-colors"
                                                 onClick={() => setShowSuggestions(false)}
                                             >
                                                 <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
@@ -175,13 +176,13 @@ const AppTopBar = ({ onMenuToggle, showMenuButton = false, mobileMenuOpen = fals
                                         <p className="px-4 pt-3 pb-1 text-[10px] uppercase tracking-[0.15em] font-semibold text-slate-500">Communities</p>
                                         {suggestionCommunities.map((c) => (
                                             <Link key={c.id} to={`/communities/${c.id}`}
-                                                className="flex items-center gap-3 px-4 py-2.5 hover:bg-white/[0.04] transition-colors"
+                                                className="flex items-center gap-3 px-4 py-2.5 hover:bg-[var(--theme-surface-hover)] transition-colors"
                                                 onClick={() => setShowSuggestions(false)}
                                             >
-                                                <div className="w-7 h-7 rounded-full bg-violet-500/10 flex items-center justify-center shrink-0">
-                                                    <span className="material-symbols-outlined text-[16px] text-violet-400">group</span>
+                                                <div className="w-7 h-7 rounded-full bg-[var(--theme-accent)]/10 flex items-center justify-center shrink-0">
+                                                    <span className="material-symbols-outlined text-[16px] text-[var(--theme-accent)]">group</span>
                                                 </div>
-                                                <span className="text-sm text-slate-200 truncate">{c.name}</span>
+                                                <span className="text-sm text-[var(--text-primary)] truncate">{c.name}</span>
                                             </Link>
                                         ))}
                                     </div>
@@ -192,42 +193,32 @@ const AppTopBar = ({ onMenuToggle, showMenuButton = false, mobileMenuOpen = fals
                 </div>
 
                 {/* ── Right: actions + avatar ── */}
-                <div className="flex items-center gap-0.5 sm:gap-1 shrink-0 sm:w-[200px] md:w-[240px] justify-end ml-auto">
+                <div className="flex items-center gap-3">
 
                     {/* Mobile: search icon */}
                     <Link to="/search"
-                        className="sm:hidden w-9 h-9 flex items-center justify-center rounded-xl text-slate-400 hover:text-slate-200 hover:bg-white/8 transition-all"
+                        className="sm:hidden w-9 h-9 flex items-center justify-center rounded-xl text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--theme-surface-hover)] transition-all"
                         aria-label="Search"
                     >
                         <span className="material-symbols-outlined text-[21px]">search</span>
                     </Link>
 
-                    {/* Create post — styled as a pill on desktop, icon on mobile */}
+                    {/* Create post — mobile icon only (desktop uses sidebar button) */}
                     <button
                         type="button"
                         onClick={() => setIsCreatePostOpen(true)}
-                        className="sm:hidden w-9 h-9 flex items-center justify-center rounded-xl text-slate-400 hover:text-slate-200 hover:bg-white/8 transition-all cursor-pointer"
+                        className="sm:hidden w-9 h-9 flex items-center justify-center rounded-xl text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--theme-surface-hover)] transition-all cursor-pointer"
                         aria-label="Create post"
                     >
-                        <span className="material-symbols-outlined text-[21px]">add_circle</span>
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() => setIsCreatePostOpen(true)}
-                        className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium text-white cursor-pointer transition-all hover:opacity-90 active:scale-95"
-                        style={{ background: 'linear-gradient(135deg, #359EFF 0%, #7B61FF 100%)', boxShadow: '0 2px 10px rgba(53,158,255,0.25)' }}
-                        aria-label="Create post"
-                    >
-                        <span className="material-symbols-outlined text-[18px]">add</span>
-                        <span>Create</span>
+                        <Plus size={22} color="currentColor" />
                     </button>
 
                     {/* Notifications (desktop) */}
                     <Link to="/notifications"
-                        className="hidden sm:flex relative w-9 h-9 items-center justify-center rounded-xl text-slate-400 hover:text-slate-200 hover:bg-white/8 transition-all"
+                        className="hidden sm:flex relative w-10 h-10 items-center justify-center rounded-xl text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--theme-surface-hover)] transition-all"
                         aria-label="Notifications"
                     >
-                        <span className="material-symbols-outlined text-[21px]">notifications</span>
+                        <Notification size={22} color="currentColor" />
                         {notificationsBadge > 0 && (
                             <span className="absolute top-0.5 right-0.5 min-w-[16px] h-4 px-0.5 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center">
                                 {notificationsBadge > 9 ? '9+' : notificationsBadge}
@@ -237,10 +228,10 @@ const AppTopBar = ({ onMenuToggle, showMenuButton = false, mobileMenuOpen = fals
 
                     {/* Messages (desktop) */}
                     <Link to="/messages"
-                        className="hidden sm:flex relative w-9 h-9 items-center justify-center rounded-xl text-slate-400 hover:text-slate-200 hover:bg-white/8 transition-all"
+                        className="hidden sm:flex relative w-10 h-10 items-center justify-center rounded-xl text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--theme-surface-hover)] transition-all"
                         aria-label="Messages"
                     >
-                        <span className="material-symbols-outlined text-[21px]">mail</span>
+                        <Email size={22} color="currentColor" />
                         {messagesBadge > 0 && (
                             <span className="absolute top-0.5 right-0.5 min-w-[16px] h-4 px-0.5 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center">
                                 {messagesBadge > 9 ? '9+' : messagesBadge}
@@ -248,18 +239,8 @@ const AppTopBar = ({ onMenuToggle, showMenuButton = false, mobileMenuOpen = fals
                         )}
                     </Link>
 
-                    {/* Theme toggle (desktop) */}
-                    <button
-                        type="button"
-                        onClick={openThemeCustomizer}
-                        className="hidden sm:flex w-9 h-9 items-center justify-center rounded-xl text-slate-400 hover:text-slate-200 hover:bg-white/8 transition-all"
-                        aria-label="Theme"
-                    >
-                        <span className="material-symbols-outlined text-[21px]">palette</span>
-                    </button>
-
                     {/* Divider (desktop) */}
-                    <div className="hidden sm:block w-px h-5 bg-white/10 mx-1" />
+                    <div className="hidden sm:block w-px h-5 bg-[var(--theme-border)] mx-1" />
 
                     {/* Avatar + dropdown */}
                     {user && (
@@ -267,28 +248,20 @@ const AppTopBar = ({ onMenuToggle, showMenuButton = false, mobileMenuOpen = fals
                             <button
                                 type="button"
                                 onClick={() => setShowProfileMenu((v) => !v)}
-                                className="relative flex items-center justify-center rounded-full focus:outline-none group"
+                                className="relative flex items-center justify-center rounded-full focus:outline-none"
                                 aria-label="Profile menu"
                                 aria-expanded={showProfileMenu}
                             >
-                                {/* Gradient ring */}
-                                <div className="absolute inset-0 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                                    style={{ background: 'linear-gradient(135deg, #359EFF, #7B61FF)', padding: '1.5px' }}
+                                <Avatar
+                                    src={user.profile_picture}
+                                    alt={user.name}
+                                    size="sm"
+                                    className={`w-8 h-8 sm:w-[34px] sm:h-[34px] rounded-full object-cover ring-2 transition-all ${showProfileMenu ? 'ring-[var(--theme-accent)]' : 'ring-transparent hover:ring-[var(--theme-accent)]/40'}`}
                                 />
-                                <div className="relative rounded-full p-[2px]"
-                                    style={{ background: showProfileMenu ? 'linear-gradient(135deg, #359EFF, #7B61FF)' : 'transparent' }}
-                                >
-                                    <Avatar
-                                        src={user.profile_picture}
-                                        alt={user.name}
-                                        size="sm"
-                                        className="w-8 h-8 sm:w-[34px] sm:h-[34px] rounded-full object-cover ring-[1.5px] ring-white/10"
-                                    />
-                                </div>
                             </button>
 
                             {showProfileMenu && (
-                                <div className="absolute right-0 mt-2.5 w-52 py-1.5 rounded-2xl bg-[var(--theme-surface)] border border-[var(--theme-border)] shadow-2xl z-50 overflow-hidden">
+                                <div className="absolute right-0 mt-2.5 w-52 py-1.5 rounded-xl bg-white dark:bg-[var(--theme-surface)] border border-[var(--theme-border)] shadow-lg z-50 overflow-hidden">
                                     {/* User info header */}
                                     <div className="px-4 py-2.5 border-b border-white/[0.06] mb-1">
                                         <p className="text-sm font-semibold text-[var(--text-primary)] truncate">{user.name}</p>
@@ -296,25 +269,25 @@ const AppTopBar = ({ onMenuToggle, showMenuButton = false, mobileMenuOpen = fals
                                     </div>
 
                                     <Link to={`/profile/${user.username}`}
-                                        className="flex items-center gap-3 px-4 py-2.5 text-sm text-[var(--text-primary)] hover:bg-white/[0.04] transition-colors"
+                                        className="flex items-center gap-3 px-4 py-2.5 text-sm text-[var(--text-primary)] hover:bg-[var(--theme-surface-hover)] transition-colors"
                                         onClick={() => setShowProfileMenu(false)}
                                     >
-                                        <span className="material-symbols-outlined text-[18px] text-slate-400">person</span>
+                                        <span className="material-symbols-outlined text-[18px] text-[var(--text-secondary)]">person</span>
                                         View profile
                                     </Link>
                                     <Link to="/settings"
-                                        className="flex items-center gap-3 px-4 py-2.5 text-sm text-[var(--text-primary)] hover:bg-white/[0.04] transition-colors"
+                                        className="flex items-center gap-3 px-4 py-2.5 text-sm text-[var(--text-primary)] hover:bg-[var(--theme-surface-hover)] transition-colors"
                                         onClick={() => setShowProfileMenu(false)}
                                     >
-                                        <span className="material-symbols-outlined text-[18px] text-slate-400">settings</span>
+                                        <span className="material-symbols-outlined text-[18px] text-[var(--text-secondary)]">settings</span>
                                         Settings
                                     </Link>
                                     <button
                                         type="button"
                                         onClick={() => { setShowProfileMenu(false); openThemeCustomizer(); }}
-                                        className="sm:hidden flex items-center gap-3 w-full px-4 py-2.5 text-sm text-[var(--text-primary)] hover:bg-white/[0.04] transition-colors text-left"
+                                        className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-[var(--text-primary)] hover:bg-[var(--theme-surface-hover)] transition-colors text-left"
                                     >
-                                        <span className="material-symbols-outlined text-[18px] text-slate-400">palette</span>
+                                        <span className="material-symbols-outlined text-[18px] text-[var(--text-secondary)]">palette</span>
                                         Appearance
                                     </button>
 
