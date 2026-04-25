@@ -70,7 +70,7 @@ class AgoraToken
         $content    = self::packString($signature) . $msg;
         $compressed = zlib_encode($content, ZLIB_ENCODING_DEFLATE, 9);
 
-        return self::VERSION . $appId . base64_encode($compressed);
+        return self::VERSION . base64_encode($compressed);
     }
 
     // ── Packing helpers ──────────────────────────────────────────────────────
