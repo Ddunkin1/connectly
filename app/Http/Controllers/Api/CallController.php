@@ -9,11 +9,12 @@ use App\Models\Conversation;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Http;
 
 class CallController extends Controller
 {
     /**
-     * Generate an Agora RTC token for a one-on-one video call.
+     * Create (or reuse) a Daily.co room and return the URL.
      *
      * POST /api/calls/token
      * Body: { conversation_id }
@@ -24,8 +25,27 @@ class CallController extends Controller
 
         $conversation = $this->findAuthorizedConversation($request->conversation_id);
 
+        $roomName  = 'connectly-call-' . $conversation->id;
+        $subdomain = config('services.daily.subdomain', 'connectly');
+        $apiKey    = config('services.daily.api_key');
+
+        $response = Http::withToken($apiKey)
+            ->post('https://api.daily.co/v1/rooms', [
+                'name'       => $roomName,
+                'properties' => [
+                    'enable_prejoin_ui' => false,
+                    'exp'               => time() + 3600,
+                ],
+            ]);
+
+        // 409 = room already exists — perfectly fine
+        if (!$response->successful() && $response->status() !== 409) {
+            return response()->json(['error' => 'Could not create Daily.co room'], 500);
+        }
+
         return response()->json([
-            'room_name' => 'connectly-call-' . $conversation->id,
+            'room_url'  => "https://{$subdomain}.daily.co/{$roomName}",
+            'room_name' => $roomName,
         ]);
     }
 

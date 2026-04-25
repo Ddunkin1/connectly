@@ -106,7 +106,7 @@ export default function RealtimeCallProvider({ children }) {
 
             {activeCall && (
                 <VideoCall
-                    roomName={activeCall.room_name}
+                    roomUrl={activeCall.room_url}
                     conversationId={activeCall.conversation_id}
                     onEnd={handleCallEnd}
                 />
