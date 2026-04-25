@@ -90,12 +90,11 @@ class SocialAuthController extends Controller
                 ->where('action', ModerationEvent::ACTION_BAN)
                 ->orderByDesc('id')
                 ->first();
-            $frontend = rtrim(config('app.frontend_url', env('FRONTEND_URL', env('APP_URL'))), '/');
             $qs = $banEvent?->reason_code
                 ? '?reason_code=' . rawurlencode($banEvent->reason_code)
                 : '';
 
-            return redirect()->away($frontend . '/account-banned' . $qs);
+            return redirect('/account-banned' . $qs);
         }
 
         if ($user->isSuspended()) {
@@ -103,9 +102,8 @@ class SocialAuthController extends Controller
         }
 
         $token = $user->createToken('auth_token')->plainTextToken;
-        $frontend = rtrim(config('app.frontend_url', env('FRONTEND_URL', env('APP_URL'))), '/');
 
-        return redirect()->away($frontend . '/auth/callback?token=' . urlencode($token));
+        return redirect('/auth/callback?token=' . urlencode($token));
     }
 
     private function uniqueUsername(string $base): string
@@ -123,8 +121,6 @@ class SocialAuthController extends Controller
 
     private function redirectToFrontendWithError(string $message): RedirectResponse
     {
-        $frontend = rtrim(config('app.frontend_url', env('FRONTEND_URL', env('APP_URL'))), '/');
-
-        return redirect()->away($frontend . '/login?error=' . urlencode($message));
+        return redirect('/login?error=' . urlencode($message));
     }
 }
