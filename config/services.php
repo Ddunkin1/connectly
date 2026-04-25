@@ -63,8 +63,8 @@ return [
     ],
 
     'agora' => [
-        'app_id'          => env('AGORA_APP_ID'),
-        'app_certificate' => env('AGORA_APP_CERTIFICATE'),
+        'app_id'          => trim(env('AGORA_APP_ID', ''), "\"' \t"),
+        'app_certificate' => trim(env('AGORA_APP_CERTIFICATE', ''), "\"' \t"),
     ],
 
 ];
