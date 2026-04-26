@@ -36,6 +36,7 @@ const DEFAULT_BADGE = { icon: 'notifications', bg: 'bg-gray-500' };
 const NotificationItem = ({
     notification,
     onMarkAsRead,
+    respondedFriendRequests,
     onAcceptFriendRequest,
     onDeclineFriendRequest,
     onAcceptCommunityInvite,
@@ -114,7 +115,9 @@ const NotificationItem = ({
         }
     };
 
-    const hasActions = (type === 'friend_request' && data.friend_request_id)
+    const friendRequestResponded = type === 'friend_request' && respondedFriendRequests?.has(data.friend_request_id);
+
+    const hasActions = (type === 'friend_request' && data.friend_request_id && !friendRequestResponded)
         || (type === 'community_invite' && data.community_id && data.community_invite_id)
         || (type === 'community_invite_suggested' && data.community_id && data.community_invite_id)
         || (type === 'community_join_request' && data.community_id && data.join_request_id);

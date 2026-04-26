@@ -57,6 +57,7 @@ const Notifications = () => {
     const newFollowers  = highlightsData?.new_followers ?? [];
     const topPosts      = highlightsData?.top_posts ?? [];
     const [warningModalEventId, setWarningModalEventId] = React.useState(null);
+    const [respondedFriendRequests, setRespondedFriendRequests] = React.useState(new Set());
 
     const groups = groupNotifications(notifications);
     const groupKeys = Object.keys(groups).filter((k) => groups[k].length > 0);
@@ -64,8 +65,15 @@ const Notifications = () => {
     const itemProps = {
         onMarkAsRead:              (id) => markAsReadMutation.mutate(id),
         onOpenWarning:             (eventId) => setWarningModalEventId(eventId),
-        onAcceptFriendRequest:     (frid) => acceptFriendRequestMutation.mutate(frid),
-        onDeclineFriendRequest:    (frid) => rejectFriendRequestMutation.mutate(frid),
+        respondedFriendRequests,
+        onAcceptFriendRequest:     (frid) => {
+            setRespondedFriendRequests((prev) => new Set([...prev, frid]));
+            acceptFriendRequestMutation.mutate(frid);
+        },
+        onDeclineFriendRequest:    (frid) => {
+            setRespondedFriendRequests((prev) => new Set([...prev, frid]));
+            rejectFriendRequestMutation.mutate(frid);
+        },
         onAcceptCommunityInvite:   (cid, iid) => acceptInviteMutation.mutate({ communityId: cid, inviteId: iid }),
         onDeclineCommunityInvite:  (cid, iid) => declineInviteMutation.mutate({ communityId: cid, inviteId: iid }),
         onApproveSuggestedInvite:  (cid, iid) => approveSuggestedMutation.mutate({ communityId: cid, inviteId: iid }),

@@ -38,17 +38,12 @@ export const useAcceptFriendRequest = () => {
     return useMutation({
         mutationFn: (friendRequestId) => friendRequestAPI.acceptFriendRequest(friendRequestId),
         onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['notifications'] });
             queryClient.invalidateQueries({ queryKey: ['friend-requests'] });
             queryClient.invalidateQueries({ queryKey: ['profile'] });
             queryClient.invalidateQueries({ queryKey: ['user'] });
             queryClient.invalidateQueries({ queryKey: ['user-posts'] });
             queryClient.invalidateQueries({ queryKey: ['suggested-users'] });
-            queryClient.refetchQueries({ queryKey: ['friend-requests'] });
-            queryClient.refetchQueries({ queryKey: ['profile'] });
-            queryClient.refetchQueries({ queryKey: ['user'] });
-            queryClient.refetchQueries({ queryKey: ['posts'] });
-            queryClient.refetchQueries({ queryKey: ['user-posts'] });
-            queryClient.refetchQueries({ queryKey: ['suggested-users'] });
             toast.success('Friend request accepted');
         },
         onError: (error) => {
@@ -63,15 +58,12 @@ export const useRejectFriendRequest = () => {
     return useMutation({
         mutationFn: (friendRequestId) => friendRequestAPI.rejectFriendRequest(friendRequestId),
         onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['notifications'] });
             queryClient.invalidateQueries({ queryKey: ['friend-requests'] });
             queryClient.invalidateQueries({ queryKey: ['profile'] });
             queryClient.invalidateQueries({ queryKey: ['user-posts'] });
             queryClient.invalidateQueries({ queryKey: ['suggested-users'] });
-            queryClient.refetchQueries({ queryKey: ['friend-requests'] });
-            queryClient.refetchQueries({ queryKey: ['profile'] });
-            queryClient.refetchQueries({ queryKey: ['user-posts'] });
-            queryClient.refetchQueries({ queryKey: ['suggested-users'] });
-            toast.success('Friend request rejected');
+            toast.success('Friend request declined');
         },
         onError: (error) => {
             toast.error(error.response?.data?.message || 'Failed to reject friend request');
