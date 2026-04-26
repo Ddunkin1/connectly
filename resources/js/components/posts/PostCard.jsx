@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Avatar from '../common/Avatar';
 import { UilHeart, UilHeartAlt, UilComment, UilShare, UilBookmark, UilBookmarkFull, UilEllipsisH, UilTrash, UilMegaphone, UilArchive, UilGlobe, UilUsersAlt, UilLock } from '../common/Icons';
@@ -23,12 +23,20 @@ const PostCard = ({ post, onDeleted }) => {
     const deleteMutation = useDeletePost();
     const updateMutation = useUpdatePost();
     const votePollMutation = useVotePoll();
+    const [optimisticLike, setOptimisticLike] = useState(null);
     const [shareModalPost, setShareModalPost] = useState(null);
     const [shareViaMessagePost, setShareViaMessagePost] = useState(null);
     const [shareViaMessageInitialReceiver, setShareViaMessageInitialReceiver] = useState(null);
     const [commentModalPost, setCommentModalPost] = useState(null);
     const [moreOpen, setMoreOpen] = useState(false);
     const [reportModalOpen, setReportModalOpen] = useState(false);
+
+    const isLiked = optimisticLike !== null ? optimisticLike.is_liked : (post.is_liked ?? false);
+    const displayLikesCount = optimisticLike !== null ? optimisticLike.likes_count : (post.likes_count ?? 0);
+
+    useEffect(() => {
+        setOptimisticLike(null);
+    }, [post.id, post.is_liked, post.likes_count]);
 
     const isAuthor = user?.id === post.user?.id;
 
@@ -60,9 +68,11 @@ const PostCard = ({ post, onDeleted }) => {
     };
 
     const handleLike = () => {
-        if (post.is_liked) {
+        if (isLiked) {
+            setOptimisticLike({ is_liked: false, likes_count: Math.max(0, displayLikesCount - 1) });
             unlikeMutation.mutate(post.id);
         } else {
+            setOptimisticLike({ is_liked: true, likes_count: displayLikesCount + 1 });
             likeMutation.mutate(post.id);
         }
     };
@@ -422,13 +432,16 @@ const PostCard = ({ post, onDeleted }) => {
                         onClick={handleLike}
                         disabled={isLikePendingFor(post.id)}
                         className={`flex items-center gap-2.5 min-w-[44px] min-h-[44px] py-2 px-3 -my-2 -mx-1 rounded-xl transition-colors group/btn cursor-pointer disabled:opacity-60 ${
-                            post.is_liked
+                            isLiked
                                 ? 'text-rose-500 hover:text-rose-500'
                                 : 'text-[var(--text-secondary)] hover:text-rose-500'
                             } hover:bg-[var(--theme-surface-hover)]`}
                         >
-                            <span className={`material-symbols-outlined text-[22px] ${post.is_liked ? 'text-rose-500 fill-rose-500' : 'text-[var(--text-secondary)]'}`}>favorite</span>
-                            <span className="text-xs font-medium">{(post.likes_count ?? 0) > 999 ? `${((post.likes_count ?? 0) / 1000).toFixed(1)}k` : post.likes_count ?? 0}</span>
+                            <span
+                                className={`material-symbols-outlined text-[22px] ${isLiked ? 'text-rose-500' : 'text-[var(--text-secondary)]'}`}
+                                style={isLiked ? { fontVariationSettings: "'FILL' 1" } : undefined}
+                            >favorite</span>
+                            <span className="text-xs font-medium">{displayLikesCount > 999 ? `${(displayLikesCount / 1000).toFixed(1)}k` : displayLikesCount}</span>
                         </button>
 
                         <button
@@ -510,13 +523,13 @@ const PostCard = ({ post, onDeleted }) => {
                             initialReceiver={shareViaMessageInitialReceiver}
                         />
                     )}
-                {(post.likes_count > 0 || post.is_liked) && (
+                {(displayLikesCount > 0 || isLiked) && (
                     <div className="flex items-center gap-2">
                         {(() => {
                             const likers = post.recent_likers ?? [];
-                            const total = post.likes_count ?? 0;
+                            const total = displayLikesCount;
                             const othersCount = Math.max(0, total - 1);
-                            const displayLikers = post.is_liked && user
+                            const displayLikers = isLiked && user
                                 ? [user, ...likers.filter((l) => l?.id !== user?.id)].slice(0, 3)
                                 : likers.slice(0, 3);
                             const firstLiker = displayLikers[0];
@@ -537,7 +550,7 @@ const PostCard = ({ post, onDeleted }) => {
                                         </div>
                                     )}
                                     <span className="text-sm text-[var(--text-secondary)]">
-                                        {post.is_liked && user
+                                        {isLiked && user
                                             ? `Liked by you${othersCount > 0 ? ` and ${othersCount} others` : ''}`
                                             : firstLiker
                                                 ? `Liked by ${firstLiker.name}${othersCount > 0 ? ` and ${othersCount} others` : ''}`

@@ -19,7 +19,7 @@ import Landing from './pages/Landing';
 
 // Error boundary + loading skeleton
 import { ErrorBoundary, SectionErrorBoundary } from './components/ErrorBoundary';
-import PageSkeleton from './components/PageSkeleton';
+import PageSkeleton from './components/PageSkeleton'; // still used for public/admin routes
 
 // Stores + providers (always needed)
 import useAuthStore from './store/authStore';
@@ -199,7 +199,7 @@ function AppContent() {
         <MainLayout showRightPanel={!isMessagesPage} showLeftPanel={!isMessagesPage}>
             {isMessagesPage ? (
                 <div className={`flex-1 flex min-h-0 overflow-hidden h-[calc(100vh-60px)]`}>
-                    <Suspense fallback={<PageSkeleton />}>
+                    <Suspense fallback={null}>
                         <Routes>
                             <Route
                                 path="/messages/:username?"
@@ -212,7 +212,7 @@ function AppContent() {
                 <div className="flex-1 overflow-y-auto scrollbar-hide min-w-0 flex justify-center bg-[var(--bg-primary)]">
                     <div className="min-w-0 flex flex-col w-full max-w-5xl pt-4 md:pt-8 px-3 md:px-6 pb-16 md:pb-6">
                         <SectionErrorBoundary>
-                            <Suspense fallback={<PageSkeleton />}>
+                            <Suspense fallback={null}>
                                 <Routes>
                                     <Route path="/home"              element={<ProtectedRoute><Home /></ProtectedRoute>} />
                                     <Route path="/onboarding"        element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />

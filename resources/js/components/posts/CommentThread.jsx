@@ -73,9 +73,9 @@ const CommentThread = ({ postId, comment, level = 0, postAuthorId }) => {
             <div className="flex items-start space-x-3">
                 <Avatar src={comment.user?.profile_picture} alt={comment.user?.name} size="sm" />
                 <div className="flex-1">
-                    <div className="bg-gray-50 rounded-lg p-3">
+                    <div className="bg-[var(--theme-surface-hover)] rounded-lg p-3">
                         <div className="flex items-center flex-wrap gap-x-2 gap-y-0.5 mb-1">
-                            <span className="font-semibold text-sm text-gray-900">
+                            <span className="font-semibold text-sm text-[var(--text-primary)]">
                                 {comment.user?.name}
                             </span>
                             {isCommentAuthor && (
@@ -89,13 +89,13 @@ const CommentThread = ({ postId, comment, level = 0, postAuthorId }) => {
                                     Pinned
                                 </span>
                             )}
-                            <span className="text-xs text-gray-500">
+                            <span className="text-xs text-[var(--text-secondary)]">
                                 {formatDate(comment.created_at)}
                             </span>
                         </div>
-                        {comment.content ? <p className="text-sm text-gray-700">{comment.content}</p> : null}
+                        {comment.content ? <p className="text-sm text-[var(--text-primary)]">{comment.content}</p> : null}
                         {comment.media_url && (
-                            <div className="mt-2 rounded-lg overflow-hidden bg-gray-100 max-w-full">
+                            <div className="mt-2 rounded-lg overflow-hidden bg-[var(--theme-surface)] max-w-full">
                                 {comment.media_type === 'video' ? (
                                     <video src={comment.media_url} controls className="max-h-48 w-full object-contain" />
                                 ) : (
@@ -125,16 +125,19 @@ const CommentThread = ({ postId, comment, level = 0, postAuthorId }) => {
                                     }
                                 }}
                                 disabled={likeCommentMutation.isPending || unlikeCommentMutation.isPending}
-                                className={`text-xs font-medium inline-flex items-center gap-1 ${isLiked ? 'text-rose-500' : 'text-gray-500 hover:text-rose-500'}`}
+                                className={`text-xs font-medium inline-flex items-center gap-1 ${isLiked ? 'text-rose-500' : 'text-[var(--text-secondary)] hover:text-rose-500'}`}
                                 title={isLiked ? 'Unlike' : 'Like'}
                             >
-                                <span className={`material-symbols-outlined text-sm ${isLiked ? 'fill-rose-500' : ''}`}>favorite</span>
+                                <span
+                                    className={`material-symbols-outlined text-sm ${isLiked ? 'text-rose-500' : ''}`}
+                                    style={isLiked ? { fontVariationSettings: "'FILL' 1" } : undefined}
+                                >favorite</span>
                                 {likesCount > 0 && <span>{likesCount}</span>}
                             </button>
                         )}
                         <button
                             onClick={() => setIsReplying(!isReplying)}
-                            className="text-xs text-gray-500 hover:text-[#359EFF]"
+                            className="text-xs text-[var(--text-secondary)] hover:text-[var(--theme-accent)]"
                         >
                             Reply
                         </button>
@@ -163,7 +166,7 @@ const CommentThread = ({ postId, comment, level = 0, postAuthorId }) => {
                         {(comment.replies_count > 0 || replies.length > 0) && (
                             <button
                                 onClick={() => setShowReplies(!showReplies)}
-                                className="text-xs text-gray-500 hover:text-[#359EFF]"
+                                className="text-xs text-[var(--text-secondary)] hover:text-[var(--theme-accent)]"
                             >
                                 {showReplies ? 'Hide' : 'Show'} {Math.max(comment.replies_count ?? 0, replies.length)} replies
                             </button>
@@ -180,7 +183,7 @@ const CommentThread = ({ postId, comment, level = 0, postAuthorId }) => {
                                         {...register('content')}
                                         placeholder="Write a reply..."
                                         rows={2}
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#359EFF] text-sm resize-none"
+                                        className="w-full px-3 py-2 border border-[var(--theme-border)] rounded-lg bg-[var(--theme-surface-hover)] text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] focus:outline-none focus:ring-2 focus:ring-[var(--theme-accent)]/40 focus:border-[var(--theme-accent)] text-sm resize-none"
                                     />
                                     <div className="flex items-center justify-between mt-2 flex-wrap gap-2">
                                         <button type="button" onClick={() => replyFileInputRef.current?.click()} className="text-xs text-gray-500 hover:text-[#359EFF] flex items-center gap-1">

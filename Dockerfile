@@ -106,6 +106,8 @@ RUN mkdir -p \
         storage/framework/sessions \
         storage/framework/views \
         storage/framework/cache \
+        storage/app/public/posts \
+        storage/app/public/profile-pictures \
         storage/logs \
         bootstrap/cache \
     && chown -R www-data:www-data /var/www/html \

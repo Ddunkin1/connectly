@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import AppTopBar from './AppTopBar';
 import LeftSidebar from './LeftSidebar';
 import RightSidebar from './RightSidebar';
 import MobileBottomNav from './MobileBottomNav';
+import ScrollIndicator from './ScrollIndicator';
 
 const BREAKPOINT_TABLET  = 768;
 const BREAKPOINT_DESKTOP = 1024;
@@ -23,6 +24,7 @@ const BREAKPOINT_DESKTOP = 1024;
  *   - Full three-column layout with optional RightSidebar.
  */
 const MainLayout = ({ children, showRightPanel = true, showLeftPanel = true }) => {
+    const mainRef = useRef(null);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [windowWidth, setWindowWidth] = useState(
         typeof window !== 'undefined' ? window.innerWidth : 1200
@@ -93,8 +95,11 @@ const MainLayout = ({ children, showRightPanel = true, showLeftPanel = true }) =
                     )}
 
                     {/* Main content */}
-                    <main className="flex-1 flex flex-col min-h-0 min-w-0 h-full overflow-x-hidden">
-                        <div className="flex-1 min-h-0 flex flex-col overflow-x-hidden min-w-0">
+                    <main
+                        ref={mainRef}
+                        className="flex-1 flex flex-col min-h-0 min-w-0 h-full overflow-y-auto overflow-x-hidden feed-main-scroll"
+                    >
+                        <div className="flex-1 min-h-0 flex flex-col min-w-0">
                             {children}
                         </div>
                     </main>
@@ -110,6 +115,9 @@ const MainLayout = ({ children, showRightPanel = true, showLeftPanel = true }) =
 
             {/* ── Mobile bottom navigation ── */}
             {showLeftPanel && <MobileBottomNav />}
+
+            {/* ── Right-edge scroll indicator ── */}
+            {!isMobile && <ScrollIndicator scrollContainerRef={mainRef} />}
         </div>
     );
 };

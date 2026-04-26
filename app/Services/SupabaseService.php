@@ -56,8 +56,8 @@ class SupabaseService
             // Use service_role key if available (bypasses RLS), otherwise use anon key
             // Use withBody() to send raw binary data instead of JSON encoding
             // Longer timeouts to avoid cURL 28 (SSL/connection timeout) on slow or distant networks
-            $response = Http::connectTimeout(60)
-                ->timeout(180)
+            $response = Http::connectTimeout(15)
+                ->timeout(60)
                 ->withHeaders([
                     'apikey' => $this->activeKey,
                     'Authorization' => 'Bearer ' . $this->activeKey,
@@ -133,8 +133,8 @@ class SupabaseService
                 throw new \RuntimeException('Could not read transcoded video file.');
             }
 
-            $response = Http::connectTimeout(60)
-                ->timeout(180)
+            $response = Http::connectTimeout(15)
+                ->timeout(60)
                 ->withHeaders([
                     'apikey' => $this->activeKey,
                     'Authorization' => 'Bearer ' . $this->activeKey,

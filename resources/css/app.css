@@ -305,8 +305,10 @@ html:not(.dark) .glass-effect {
 /* Custom scrollbar - theme-aware */
 .custom-scrollbar::-webkit-scrollbar { width: 4px; }
 .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-html.dark .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 10px; }
-html:not(.dark) .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(0, 0, 0, 0.2); border-radius: 10px; }
+html.dark .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 10px; }
+html.dark .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.28); }
+html:not(.dark) .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.15); border-radius: 10px; }
+html:not(.dark) .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.3); }
 
 /* Glass for Quick Chat - theme-aware */
 html.dark .glass {
@@ -321,10 +323,33 @@ html:not(.dark) .glass {
 }
 
 /* Custom scrollbar (general) - theme-aware */
-.scrollbar-styled::-webkit-scrollbar { width: 6px; }
+.scrollbar-styled::-webkit-scrollbar { width: 5px; }
 .scrollbar-styled::-webkit-scrollbar-track { background: transparent; }
-html.dark .scrollbar-styled::-webkit-scrollbar-thumb { background: var(--theme-border, #27272A); border-radius: 10px; }
-html:not(.dark) .scrollbar-styled::-webkit-scrollbar-thumb { background: rgba(0, 0, 0, 0.25); border-radius: 10px; }
+html.dark .scrollbar-styled::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 10px; }
+html.dark .scrollbar-styled::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.3); }
+html:not(.dark) .scrollbar-styled::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.15); border-radius: 10px; }
+html:not(.dark) .scrollbar-styled::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.3); }
+
+/* Global aesthetic scrollbar for any inner scrollable (modals, sidebars, etc.) */
+html.dark ::-webkit-scrollbar { width: 5px; height: 5px; }
+html.dark ::-webkit-scrollbar-track { background: transparent; }
+html.dark ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 99px; }
+html.dark ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.25); }
+html:not(.dark) ::-webkit-scrollbar { width: 5px; height: 5px; }
+html:not(.dark) ::-webkit-scrollbar-track { background: transparent; }
+html:not(.dark) ::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.12); border-radius: 99px; }
+html:not(.dark) ::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.28); }
+/* Firefox thin scrollbar for inner containers */
+html.dark * { scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.1) transparent; }
+html:not(.dark) * { scrollbar-width: thin; scrollbar-color: rgba(0,0,0,0.12) transparent; }
+
+/* ScrollIndicator CSS variables */
+html.dark  { --scrollbar-thumb: rgba(255,255,255,0.22); --scrollbar-thumb-hover: rgba(255,255,255,0.45); --scrollbar-track: rgba(255,255,255,0.05); }
+html:not(.dark) { --scrollbar-thumb: rgba(0,0,0,0.18); --scrollbar-thumb-hover: rgba(0,0,0,0.38); --scrollbar-track: rgba(0,0,0,0.04); }
+
+/* Hide the native scrollbar on the main feed area (replaced by ScrollIndicator overlay) */
+.feed-main-scroll { scrollbar-width: none; -ms-overflow-style: none; }
+.feed-main-scroll::-webkit-scrollbar { display: none; }
 
 /* Story card - exact spec from guide */
 .story-card {
