@@ -1,5 +1,6 @@
 import React from 'react';
 import { useNotifications, useMarkNotificationAsRead, useMarkAllNotificationsAsRead } from '../hooks/useNotifications';
+import { useAcceptFriendRequest, useRejectFriendRequest } from '../hooks/useFriendRequests';
 import {
     useAcceptCommunityInviteAny,
     useDeclineCommunityInviteAny,
@@ -36,6 +37,8 @@ const Notifications = () => {
     const { data, isLoading } = useNotifications();
     const markAsReadMutation     = useMarkNotificationAsRead();
     const markAllAsReadMutation  = useMarkAllNotificationsAsRead();
+    const acceptFriendRequestMutation = useAcceptFriendRequest();
+    const rejectFriendRequestMutation = useRejectFriendRequest();
     const acceptInviteMutation   = useAcceptCommunityInviteAny();
     const declineInviteMutation  = useDeclineCommunityInviteAny();
     const approveSuggestedMutation = useApproveCommunityInviteAny();
@@ -61,6 +64,8 @@ const Notifications = () => {
     const itemProps = {
         onMarkAsRead:              (id) => markAsReadMutation.mutate(id),
         onOpenWarning:             (eventId) => setWarningModalEventId(eventId),
+        onAcceptFriendRequest:     (frid) => acceptFriendRequestMutation.mutate(frid),
+        onDeclineFriendRequest:    (frid) => rejectFriendRequestMutation.mutate(frid),
         onAcceptCommunityInvite:   (cid, iid) => acceptInviteMutation.mutate({ communityId: cid, inviteId: iid }),
         onDeclineCommunityInvite:  (cid, iid) => declineInviteMutation.mutate({ communityId: cid, inviteId: iid }),
         onApproveSuggestedInvite:  (cid, iid) => approveSuggestedMutation.mutate({ communityId: cid, inviteId: iid }),

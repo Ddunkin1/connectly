@@ -36,6 +36,8 @@ const DEFAULT_BADGE = { icon: 'notifications', bg: 'bg-gray-500' };
 const NotificationItem = ({
     notification,
     onMarkAsRead,
+    onAcceptFriendRequest,
+    onDeclineFriendRequest,
     onAcceptCommunityInvite,
     onDeclineCommunityInvite,
     onApproveSuggestedInvite,
@@ -112,7 +114,8 @@ const NotificationItem = ({
         }
     };
 
-    const hasActions = (type === 'community_invite' && data.community_id && data.community_invite_id)
+    const hasActions = (type === 'friend_request' && data.friend_request_id)
+        || (type === 'community_invite' && data.community_id && data.community_invite_id)
         || (type === 'community_invite_suggested' && data.community_id && data.community_invite_id)
         || (type === 'community_join_request' && data.community_id && data.join_request_id);
 
@@ -181,6 +184,20 @@ const NotificationItem = ({
                 {/* Action buttons (community invite / join request) */}
                 {hasActions && (
                     <div className="flex items-center gap-2 mt-2.5" onClick={(e) => e.stopPropagation()}>
+                        {type === 'friend_request' && (
+                            <>
+                                <button
+                                    type="button"
+                                    onClick={(e) => { e.preventDefault(); onDeclineFriendRequest?.(data.friend_request_id); }}
+                                    className="px-3 py-1.5 rounded-lg text-xs font-medium border border-[var(--theme-border)] text-[var(--text-secondary)] hover:bg-[var(--theme-surface-hover)] transition-colors"
+                                >Decline</button>
+                                <button
+                                    type="button"
+                                    onClick={(e) => { e.preventDefault(); onAcceptFriendRequest?.(data.friend_request_id); }}
+                                    className="px-3 py-1.5 rounded-lg text-xs font-medium bg-[var(--theme-accent)] text-white hover:opacity-90 transition-opacity"
+                                >Accept</button>
+                            </>
+                        )}
                         {type === 'community_invite' && (
                             <>
                                 <button

@@ -139,6 +139,8 @@ export const postsAPI = {
     unlikePost: (postId) => api.delete(`/posts/${postId}/unlike`),
     sharePost: (postId) => api.post(`/posts/${postId}/share`),
     votePoll: (postId, pollOptionId) => api.post(`/posts/${postId}/polls/vote`, { poll_option_id: pollOptionId }),
+    trackView: (postId) => api.post(`/posts/${postId}/view`),
+    getAnalytics: (postId) => api.get(`/posts/${postId}/analytics`),
 };
 
 // Comments API

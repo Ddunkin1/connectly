@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import Avatar from '../common/Avatar';
 import { UilHeart, UilHeartAlt, UilComment, UilShare, UilBookmark, UilBookmarkFull, UilEllipsisH, UilTrash, UilMegaphone, UilArchive, UilGlobe, UilUsersAlt, UilLock } from '../common/Icons';
@@ -11,6 +11,8 @@ import toast from 'react-hot-toast';
 import SharePostModal from '../modal/SharePostModal';
 import ShareViaMessageModal from './ShareViaMessageModal';
 import CommentModal from '../modal/CommentModal';
+import PostAnalyticsModal from './PostAnalyticsModal';
+import { postsAPI } from '../../services/api';
 
 const PostCard = ({ post, onDeleted }) => {
     const user = useAuthStore((state) => state.user);
@@ -30,6 +32,8 @@ const PostCard = ({ post, onDeleted }) => {
     const [commentModalPost, setCommentModalPost] = useState(null);
     const [moreOpen, setMoreOpen] = useState(false);
     const [reportModalOpen, setReportModalOpen] = useState(false);
+    const [analyticsOpen, setAnalyticsOpen] = useState(false);
+    const cardRef = useRef(null);
 
     const isLiked = optimisticLike !== null ? optimisticLike.is_liked : (post.is_liked ?? false);
     const displayLikesCount = optimisticLike !== null ? optimisticLike.likes_count : (post.likes_count ?? 0);
@@ -37,6 +41,22 @@ const PostCard = ({ post, onDeleted }) => {
     useEffect(() => {
         setOptimisticLike(null);
     }, [post.id, post.is_liked, post.likes_count]);
+
+    // Track view when post is visible for 2+ seconds
+    useEffect(() => {
+        const el = cardRef.current;
+        if (!el) return;
+        let timer = null;
+        const observer = new IntersectionObserver(([entry]) => {
+            if (entry.isIntersecting) {
+                timer = setTimeout(() => postsAPI.trackView(post.id).catch(() => {}), 2000);
+            } else {
+                clearTimeout(timer);
+            }
+        }, { threshold: 0.5 });
+        observer.observe(el);
+        return () => { observer.disconnect(); clearTimeout(timer); };
+    }, [post.id]);
 
     const isAuthor = user?.id === post.user?.id;
 
@@ -123,7 +143,7 @@ const PostCard = ({ post, onDeleted }) => {
     };
 
     return (
-        <article className="bg-white dark:bg-[var(--theme-surface)] overflow-visible group mb-3 last:mb-0 p-5 rounded-2xl shadow-sm shadow-black/[0.06] border border-black/[0.07] dark:border-white/[0.06] min-w-0 w-full">
+        <article ref={cardRef} className="bg-white dark:bg-[var(--theme-surface)] overflow-visible group mb-3 last:mb-0 p-5 rounded-2xl shadow-sm shadow-black/[0.06] border border-black/[0.07] dark:border-white/[0.06] min-w-0 w-full">
             {/* Post Header - Stitch: avatar ring-2 ring-primary/20, 1 HOUR AGO, public icon */}
             <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center space-x-3">
@@ -191,6 +211,15 @@ const PostCard = ({ post, onDeleted }) => {
                                     )}
                                     {isAuthor && (
                                     <>
+                                    <button
+                                        type="button"
+                                        onClick={() => { setMoreOpen(false); setAnalyticsOpen(true); }}
+                                        className="w-full px-4 py-2 text-left text-sm text-[var(--text-primary)] hover:bg-[var(--theme-surface-hover)] flex items-center gap-2 cursor-pointer"
+                                    >
+                                        <span className="material-symbols-outlined text-[var(--text-secondary)]" style={{ fontSize: 18 }}>bar_chart</span>
+                                        View analytics
+                                    </button>
+                                    <div className="border-t border-[var(--theme-border)] my-1" />
                                     <button
                                         type="button"
                                         onClick={handleArchiveClick}
@@ -573,6 +602,11 @@ const PostCard = ({ post, onDeleted }) => {
                 reportableType="post"
                 reportableId={post.id}
                 title="Report post"
+            />
+            <PostAnalyticsModal
+                postId={post.id}
+                isOpen={analyticsOpen}
+                onClose={() => setAnalyticsOpen(false)}
             />
         </article>
     );

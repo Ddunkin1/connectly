@@ -28,6 +28,7 @@ use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\BanAppealController;
 use App\Http\Controllers\Api\CallController;
 use App\Http\Controllers\Api\WarningAppealController;
+use App\Http\Controllers\Api\PostAnalyticsController;
 use App\Http\Controllers\Api\WarningEventController;
 use App\Http\Controllers\Api\Admin\AdminWarningAppealController;
 use App\Http\Controllers\Api\Admin\AdminBanAppealController;
@@ -134,6 +135,10 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function () {
 
     // Poll vote
     Route::post('/posts/{post}/polls/vote', [PollVoteController::class, 'vote']);
+
+    // Post analytics & view tracking
+    Route::post('/posts/{post}/view', [PostAnalyticsController::class, 'recordView']);
+    Route::get('/posts/{post}/analytics', [PostAnalyticsController::class, 'show']);
 
     // Stories
     Route::get('/stories', [StoryController::class, 'index']);

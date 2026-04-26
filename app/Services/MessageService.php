@@ -48,9 +48,12 @@ class MessageService
         ]);
 
         $messageModel->load(['sender', 'receiver']);
-        broadcast(new MessageSent($messageModel))->toOthers();
-        // Notify receiver on their user channel so they get it anywhere in the app
-        broadcast(new MessageReceived($messageModel));
+        try {
+            broadcast(new MessageSent($messageModel))->toOthers();
+            broadcast(new MessageReceived($messageModel));
+        } catch (\Throwable $e) {
+            \Log::warning('Broadcast failed for message ' . $messageModel->id . ': ' . $e->getMessage());
+        }
 
         return $messageModel;
     }
