@@ -4,8 +4,7 @@ namespace App\Services;
 
 /**
  * Agora AccessToken2 (v007) builder.
- *
- * Matches the official Agora PHP sample:
+ * Matches the official Agora PHP SDK exactly:
  * https://github.com/AgoraIO/Tools/tree/master/DynamicKey/AgoraDynamicKey/php
  */
 class AgoraToken
@@ -19,15 +18,6 @@ class AgoraToken
     private const PRIV_PUBLISH_VIDEO   = 3;
     private const PRIV_PUBLISH_DATA    = 4;
 
-    /**
-     * Build an RTC token for a publisher (join + publish audio/video/data).
-     *
-     * @param  string  $appId          Agora App ID
-     * @param  string  $appCertificate Agora App Certificate
-     * @param  string  $channelName    Channel name
-     * @param  int     $uid            User ID (0 = wildcard)
-     * @param  int     $expiresIn      Seconds from now the token stays valid
-     */
     public static function buildRtcToken(
         string $appId,
         string $appCertificate,
@@ -40,44 +30,34 @@ class AgoraToken
         $expire  = $issueTs + $expiresIn;
         $uidStr  = $uid === 0 ? '' : (string) $uid;
 
-        // Agora AccessToken2 signing key: daily-rotating double HMAC
-        $signingTs  = $issueTs - ($issueTs % 86400) + 86400;
-        $signingKey = hash_hmac('sha256', (string) $issueTs,  $appCertificate, true);
-        $signingKey = hash_hmac('sha256', (string) $signingTs, $signingKey,     true);
+        // Signing key: HMAC(key=pack(issueTs), msg=appCert) -> HMAC(key=pack(salt), msg=result)
+        $signingKey = hash_hmac('sha256', $appCertificate, self::packUint32($issueTs), true);
+        $signingKey = hash_hmac('sha256', $signingKey,     self::packUint32($salt),    true);
 
-        // Pack the RTC service block
+        // Service block: type + privileges map + channelName + uid (official order)
         $privileges = [
-            self::PRIV_JOIN_CHANNEL  => $expire,
-            self::PRIV_PUBLISH_AUDIO => $expire,
-            self::PRIV_PUBLISH_VIDEO => $expire,
-            self::PRIV_PUBLISH_DATA  => $expire,
+            self::PRIV_JOIN_CHANNEL    => $expire,
+            self::PRIV_PUBLISH_AUDIO   => $expire,
+            self::PRIV_PUBLISH_VIDEO   => $expire,
+            self::PRIV_PUBLISH_DATA    => $expire,
         ];
 
         $service = self::packUint16(self::SERVICE_RTC)
+                 . self::packMapUint32($privileges)
                  . self::packString($channelName)
-                 . self::packString($uidStr)
-                 . self::packMapUint32($privileges);
+                 . self::packString($uidStr);
 
-        // Services block (shared between signing info and token content)
-        $servicesBlock = self::packUint16(1) . $service;
+        // Data body: appId + issueTs + expire + salt + numServices + service
+        $data = self::packString($appId)
+              . self::packUint32($issueTs)
+              . self::packUint32($expire)
+              . self::packUint32($salt)
+              . self::packUint16(1)
+              . $service;
 
-        // Signing info: AppId + issueTs + expire + salt + services (must match official SDK)
-        $signingInfo = $appId
-                     . self::packUint32($issueTs)
-                     . self::packUint32($expire)
-                     . self::packUint32($salt)
-                     . $servicesBlock;
+        $signature = hash_hmac('sha256', $data, $signingKey, true);
 
-        $signature = hash_hmac('sha256', $signingInfo, $signingKey, true);
-
-        // Token content: signature + issueTs + expire + salt + services (no AppId in body)
-        $content = self::packString($signature)
-                 . self::packUint32($issueTs)
-                 . self::packUint32($expire)
-                 . self::packUint32($salt)
-                 . $servicesBlock;
-
-        $compressed = zlib_encode($content, ZLIB_ENCODING_DEFLATE, 9);
+        $compressed = zlib_encode(self::packString($signature) . $data, ZLIB_ENCODING_DEFLATE, 9);
 
         return self::VERSION . base64_encode($compressed);
     }
