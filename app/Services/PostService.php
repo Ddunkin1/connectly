@@ -148,7 +148,7 @@ class PostService
         if (isset($data['media']) && $data['media']) {
             $file = $data['media'];
             $content = trim($data['content'] ?? '');
-            $mimeType = $file->getMimeType();
+            $mimeType = $file->getMimeType() ?? $file->getClientMimeType() ?? '';
             $isVideo = str_starts_with($mimeType, 'video/');
 
             // Transcode video to H.264/AAC MP4 for cross-browser playback
@@ -268,7 +268,7 @@ class PostService
                 return null;
             }
 
-            return rtrim(config('app.url'), '/') . '/api/local-media/' . $name;
+            return rtrim(config('app.url'), '/') . '/api/local-media/posts/' . $name;
         } catch (\Throwable $e) {
             \Log::error('Local media fallback failed.', ['error' => $e->getMessage()]);
             return null;

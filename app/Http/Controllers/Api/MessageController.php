@@ -54,10 +54,20 @@ class MessageController extends Controller
 
             if ($request->hasFile('media')) {
                 $file = $request->file('media');
-                $url = $this->supabaseService->uploadFile($file, 'message-attachments');
+                $mime = $file->getMimeType() ?? $file->getClientMimeType() ?? '';
+                $type = str_starts_with($mime, 'video/') ? 'video' : (str_starts_with($mime, 'image/') ? 'image' : 'file');
+
+                $url = null;
+                try {
+                    $url = $this->supabaseService->uploadFile($file, 'message-attachments');
+                } catch (\Throwable $uploadErr) {
+                    Log::warning('Supabase attachment upload failed; using local fallback.', [
+                        'error' => $uploadErr->getMessage(),
+                    ]);
+                    $url = $this->storeAttachmentLocally($file);
+                }
+
                 if ($url) {
-                    $mime = $file->getMimeType();
-                    $type = str_starts_with($mime, 'video/') ? 'video' : (str_starts_with($mime, 'image/') ? 'image' : 'file');
                     $options['attachment_url'] = $url;
                     $options['attachment_type'] = $type;
                 }
@@ -239,5 +249,27 @@ class MessageController extends Controller
             'message' => 'Message unpinned successfully',
             'data' => new MessageResource($unpinned),
         ]);
+    }
+
+    private function storeAttachmentLocally(\Illuminate\Http\UploadedFile $file): ?string
+    {
+        try {
+            $ext  = $file->getClientOriginalExtension() ?: 'bin';
+            $name = uniqid('msg_', true) . '.' . $ext;
+            $dest = storage_path('app/public/message-attachments/' . $name);
+
+            if (! is_dir(dirname($dest))) {
+                mkdir(dirname($dest), 0755, true);
+            }
+
+            if (! copy($file->getRealPath(), $dest)) {
+                return null;
+            }
+
+            return rtrim(config('app.url'), '/') . '/api/local-media/message-attachments/' . $name;
+        } catch (\Throwable $e) {
+            Log::error('Local message attachment fallback failed.', ['error' => $e->getMessage()]);
+            return null;
+        }
     }
 }

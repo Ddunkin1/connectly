@@ -14,30 +14,34 @@ class PostAnalyticsController extends Controller
 {
     public function recordView(Request $request, Post $post): JsonResponse
     {
-        $userId = $request->user()?->id;
+        try {
+            $userId = $request->user()?->id;
 
-        // Don't count the author's own views
-        if ($userId && $userId === $post->user_id) {
-            return response()->json(['ok' => true]);
-        }
+            // Don't count the author's own views
+            if ($userId && $userId === $post->user_id) {
+                return response()->json(['ok' => true]);
+            }
 
-        // One view per user (or IP for guests) per post per hour
-        $exists = PostView::where('post_id', $post->id)
-            ->where('viewed_at', '>=', now()->subHour())
-            ->when(
-                $userId,
-                fn ($q) => $q->where('user_id', $userId),
-                fn ($q) => $q->whereNull('user_id')->where('viewer_ip', $request->ip())
-            )
-            ->exists();
+            // One view per user (or IP for guests) per post per hour
+            $exists = PostView::where('post_id', $post->id)
+                ->where('viewed_at', '>=', now()->subHour())
+                ->when(
+                    $userId,
+                    fn ($q) => $q->where('user_id', $userId),
+                    fn ($q) => $q->whereNull('user_id')->where('viewer_ip', $request->ip())
+                )
+                ->exists();
 
-        if (! $exists) {
-            PostView::create([
-                'post_id'   => $post->id,
-                'user_id'   => $userId,
-                'viewer_ip' => $userId ? null : $request->ip(),
-                'viewed_at' => now(),
-            ]);
+            if (! $exists) {
+                PostView::create([
+                    'post_id'   => $post->id,
+                    'user_id'   => $userId,
+                    'viewer_ip' => $userId ? null : $request->ip(),
+                    'viewed_at' => now(),
+                ]);
+            }
+        } catch (\Throwable) {
+            // Table may not exist yet (migration pending) — never surface this as an error
         }
 
         return response()->json(['ok' => true]);

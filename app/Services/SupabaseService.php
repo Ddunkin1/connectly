@@ -56,7 +56,7 @@ class SupabaseService
             // Use service_role key if available (bypasses RLS), otherwise use anon key
             // Use withBody() to send raw binary data instead of JSON encoding
             // Longer timeouts to avoid cURL 28 (SSL/connection timeout) on slow or distant networks
-            $response = Http::connectTimeout(15)
+            $response = Http::connectTimeout(5)
                 ->timeout(60)
                 ->withHeaders([
                     'apikey' => $this->activeKey,
@@ -133,7 +133,7 @@ class SupabaseService
                 throw new \RuntimeException('Could not read transcoded video file.');
             }
 
-            $response = Http::connectTimeout(15)
+            $response = Http::connectTimeout(5)
                 ->timeout(60)
                 ->withHeaders([
                     'apikey' => $this->activeKey,
@@ -173,7 +173,7 @@ class SupabaseService
         try {
             $key = $serviceRoleKey ?? $this->serviceRoleKey ?? $this->supabaseKey;
             
-            $response = Http::connectTimeout(30)->timeout(60)->withHeaders([
+            $response = Http::connectTimeout(5)->timeout(60)->withHeaders([
                 'apikey' => $key,
                 'Authorization' => 'Bearer ' . $key,
                 'Content-Type' => 'application/json',
@@ -233,7 +233,7 @@ class SupabaseService
         }
 
         try {
-            $response = Http::connectTimeout(30)
+            $response = Http::connectTimeout(5)
                 ->timeout(60)
                 ->withHeaders([
                     'apikey' => $key,
@@ -272,7 +272,7 @@ class SupabaseService
         }
 
         try {
-            $publicResponse = Http::connectTimeout(20)
+            $publicResponse = Http::connectTimeout(5)
                 ->timeout(60)
                 ->get($publicUrl);
 
@@ -319,7 +319,7 @@ class SupabaseService
         }
 
         try {
-            $response = Http::connectTimeout(30)
+            $response = Http::connectTimeout(5)
                 ->timeout(60)
                 ->withHeaders([
                     'apikey' => $this->activeKey,
@@ -379,7 +379,7 @@ class SupabaseService
                 $path = str_replace("{$this->supabaseUrl}/storage/v1/object/public/{$this->bucket}/", '', $filePath);
             }
 
-            $response = Http::connectTimeout(30)->timeout(60)->withHeaders([
+            $response = Http::connectTimeout(5)->timeout(60)->withHeaders([
                 'apikey' => $this->activeKey,
                 'Authorization' => 'Bearer ' . $this->activeKey,
             ])->delete(
