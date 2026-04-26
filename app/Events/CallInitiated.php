@@ -19,6 +19,7 @@ class CallInitiated implements ShouldBroadcastNow
         public string $callerAvatar,
         public string $channelName,
         public int    $conversationId,
+        public string $callType = 'video',
     ) {}
 
     public function broadcastOn(): array
@@ -41,6 +42,7 @@ class CallInitiated implements ShouldBroadcastNow
             'caller_avatar'   => $this->callerAvatar,
             'channel_name'    => $this->channelName,
             'conversation_id' => $this->conversationId,
+            'call_type'       => $this->callType,
         ];
     }
 }

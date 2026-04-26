@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { getEcho } from '../../echo';
 import useAuthStore from '../../store/authStore';
 import { callAPI } from '../../services/api';
@@ -15,12 +15,16 @@ export default function RealtimeCallProvider({ children }) {
     const [incomingCall, setIncomingCall] = useState(null); // callee sees this
     const [activeCall,   setActiveCall]   = useState(null); // both sides in call
 
+    // Keep a ref so async callbacks (CallAccepted) can read the current call_type
+    const callingCallRef = useRef(null);
+    useEffect(() => { callingCallRef.current = callingCall; }, [callingCall]);
+
     // Listen for 'start-calling' dispatched by MessageChatHeader
     useEffect(() => {
         const handler = (e) => {
             setIncomingCall(null);
             setActiveCall(null);
-            setCallingCall(e.detail);
+            setCallingCall({ ...e.detail, call_type: e.detail.call_type ?? 'video' });
         };
         window.addEventListener('start-calling', handler);
         return () => window.removeEventListener('start-calling', handler);
@@ -49,6 +53,7 @@ export default function RealtimeCallProvider({ children }) {
                         },
                         channelName:    payload.channel_name,
                         conversationId: payload.conversation_id,
+                        callType:       payload.call_type ?? 'video',
                     });
                     return calling;
                 });
@@ -59,6 +64,7 @@ export default function RealtimeCallProvider({ children }) {
         channel.listen('.CallAccepted', async (payload) => {
             try {
                 const res = await callAPI.generateToken(payload.conversation_id);
+                const callType = callingCallRef.current?.call_type ?? 'video';
                 setCallingCall(null);
                 setActiveCall({
                     app_id:          res.data.app_id,
@@ -66,6 +72,7 @@ export default function RealtimeCallProvider({ children }) {
                     channel_name:    res.data.channel_name,
                     uid:             res.data.uid,
                     conversation_id: payload.conversation_id,
+                    call_type:       callType,
                 });
             } catch {}
         });
@@ -115,6 +122,7 @@ export default function RealtimeCallProvider({ children }) {
                 <CallingScreen
                     callee={callingCall.callee}
                     conversationId={callingCall.conversation_id}
+                    callType={callingCall.call_type ?? 'video'}
                     onCancel={handleCallingCancel}
                 />
             )}
@@ -123,6 +131,7 @@ export default function RealtimeCallProvider({ children }) {
                 <IncomingCall
                     caller={incomingCall.caller}
                     conversationId={incomingCall.conversationId}
+                    callType={incomingCall.callType ?? 'video'}
                     onAccept={handleAccept}
                     onDecline={handleDecline}
                 />
@@ -135,6 +144,7 @@ export default function RealtimeCallProvider({ children }) {
                     channelName={activeCall.channel_name}
                     uid={activeCall.uid}
                     conversationId={activeCall.conversation_id}
+                    callType={activeCall.call_type ?? 'video'}
                     onEnd={handleCallEnd}
                 />
             )}

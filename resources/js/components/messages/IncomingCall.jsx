@@ -13,7 +13,7 @@ const RING_TIMEOUT = 30_000;
  *   onAccept(callData) – called with { channel_name, token, app_id, uid, conversation_id }
  *   onDecline()     – called when the call is dismissed
  */
-export default function IncomingCall({ caller, conversationId, onAccept, onDecline }) {
+export default function IncomingCall({ caller, conversationId, callType = 'video', onAccept, onDecline }) {
     const [accepting, setAccepting] = useState(false);
     const [declining, setDeclining] = useState(false);
     const audioRef  = useRef(null);
@@ -61,6 +61,7 @@ export default function IncomingCall({ caller, conversationId, onAccept, onDecli
                 channel_name:    tokenRes.data.channel_name,
                 uid:             tokenRes.data.uid,
                 conversation_id: conversationId,
+                call_type:       callType,
             });
         } catch {
             setAccepting(false);
@@ -104,7 +105,9 @@ export default function IncomingCall({ caller, conversationId, onAccept, onDecli
                     </div>
 
                     <div className="text-center">
-                        <p className="text-xs text-[var(--text-secondary)] mb-1 uppercase tracking-widest">Incoming video call</p>
+                        <p className="text-xs text-[var(--text-secondary)] mb-1 uppercase tracking-widest">
+                            Incoming {callType === 'audio' ? 'voice' : 'video'} call
+                        </p>
                         <h2 className="text-lg font-semibold text-[var(--text-primary)]">{caller.name}</h2>
                     </div>
 
@@ -136,7 +139,9 @@ export default function IncomingCall({ caller, conversationId, onAccept, onDecli
                                 {accepting ? (
                                     <div className="w-5 h-5 border-2 border-white/40 border-t-white rounded-full animate-spin" />
                                 ) : (
-                                    <span className="material-symbols-outlined text-white text-3xl">videocam</span>
+                                    <span className="material-symbols-outlined text-white text-3xl">
+                            {callType === 'audio' ? 'call' : 'videocam'}
+                        </span>
                                 )}
                             </button>
                             <span className="text-xs text-[var(--text-secondary)]">Accept</span>

@@ -8,14 +8,15 @@ const MessageChatHeader = ({ otherUser, conversationId, onBack }) => {
 
     if (!otherUser) return null;
 
-    const handleVideoCall = async () => {
+    const startCall = async (callType) => {
         if (calling || !conversationId) return;
         setCalling(true);
         try {
-            await callAPI.initiate(conversationId);
+            await callAPI.initiate(conversationId, callType);
             window.dispatchEvent(new CustomEvent('start-calling', {
                 detail: {
                     conversation_id: conversationId,
+                    call_type:       callType,
                     callee: {
                         id:       otherUser.id,
                         name:     otherUser.name,
@@ -25,11 +26,14 @@ const MessageChatHeader = ({ otherUser, conversationId, onBack }) => {
                 },
             }));
         } catch {
-            toast.error('Could not start video call. Please try again.');
+            toast.error(`Could not start ${callType} call. Please try again.`);
         } finally {
             setCalling(false);
         }
     };
+
+    const handleAudioCall = () => startCall('audio');
+    const handleVideoCall = () => startCall('video');
 
     return (
         <header className="h-16 px-3 sm:px-6 flex items-center justify-between border-b border-[var(--theme-border)] bg-[var(--theme-bg-main)] shrink-0">
@@ -61,11 +65,18 @@ const MessageChatHeader = ({ otherUser, conversationId, onBack }) => {
                 </div>
             </div>
             <div className="flex items-center gap-2 shrink-0">
-                <button type="button" className="w-9 h-9 rounded-full flex items-center justify-center text-[var(--text-primary)]/80 hover:bg-[var(--theme-surface-hover)] hover:text-[var(--text-primary)] transition-all" aria-label="Voice call">
+                {/* Audio call button */}
+                <button
+                    type="button"
+                    onClick={handleAudioCall}
+                    disabled={calling || !conversationId}
+                    className="w-9 h-9 rounded-full flex items-center justify-center text-[var(--text-primary)]/80 hover:bg-[var(--theme-surface-hover)] hover:text-[var(--text-primary)] transition-all disabled:opacity-50"
+                    aria-label="Voice call"
+                >
                     <span className="material-symbols-outlined text-xl">call</span>
                 </button>
 
-                {/* Video call button — initiates Agora call */}
+                {/* Video call button */}
                 <button
                     type="button"
                     onClick={handleVideoCall}

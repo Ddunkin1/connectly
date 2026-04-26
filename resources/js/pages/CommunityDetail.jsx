@@ -122,40 +122,42 @@ const CommunityDetail = () => {
     return (
         <div className="max-w-4xl mx-auto">
             {/* Community Header */}
-            <div className="rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-6 mb-6 shadow-[var(--shadow-card)]">
-                <div className="flex items-start justify-between mb-4">
-                    <div className="flex items-start space-x-4">
-                        <Avatar src={community.avatar} alt={community.name} size="xl" />
-                        <div>
-                            <h1 className="text-2xl font-bold text-[var(--text-primary)]">{community.name}</h1>
-                            <p className="text-sm text-[var(--text-secondary)] mt-1">
-                                Created by {community.creator?.name || 'Unknown'}
-                            </p>
-                            <div className="flex items-center flex-wrap gap-x-4 gap-y-1 mt-2">
-                                <span className="text-sm text-[var(--text-secondary)]">
-                                    {isMember ? (
-                                        <button
-                                            type="button"
-                                            onClick={() => setMembersModalOpen(true)}
-                                            className="hover:text-[var(--theme-accent)] hover:underline focus:outline-none focus:underline"
-                                        >
-                                            {community.members_count || 0} members
-                                        </button>
-                                    ) : (
-                                        <span>{community.members_count || 0} members</span>
-                                    )}
-                                </span>
-                                <span className={`text-xs px-2 py-1 rounded ${
-                                    community.privacy === 'private'
-                                        ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30'
-                                        : 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30'
-                                }`}>
-                                    {community.privacy === 'private' ? 'Private' : 'Public'}
-                                </span>
-                            </div>
+            <div className="rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 sm:p-6 mb-6 shadow-[var(--shadow-card)]">
+                {/* Top row: avatar + info */}
+                <div className="flex items-start gap-3 sm:gap-4 mb-4">
+                    <Avatar src={community.avatar} alt={community.name} size="xl" className="shrink-0" />
+                    <div className="min-w-0 flex-1">
+                        <h1 className="text-xl sm:text-2xl font-bold text-[var(--text-primary)] break-words">{community.name}</h1>
+                        <p className="text-sm text-[var(--text-secondary)] mt-0.5">
+                            Created by {community.creator?.name || 'Unknown'}
+                        </p>
+                        <div className="flex items-center flex-wrap gap-x-3 gap-y-1 mt-2">
+                            <span className="text-sm text-[var(--text-secondary)]">
+                                {isMember ? (
+                                    <button
+                                        type="button"
+                                        onClick={() => setMembersModalOpen(true)}
+                                        className="hover:text-[var(--theme-accent)] hover:underline focus:outline-none"
+                                    >
+                                        {community.members_count || 0} members
+                                    </button>
+                                ) : (
+                                    <span>{community.members_count || 0} members</span>
+                                )}
+                            </span>
+                            <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                                community.privacy === 'private'
+                                    ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30'
+                                    : 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30'
+                            }`}>
+                                {community.privacy === 'private' ? 'Private' : 'Public'}
+                            </span>
                         </div>
                     </div>
-                    <div className="flex flex-wrap items-center justify-end gap-1.5 shrink-0">
+                </div>
+
+                {/* Action buttons — full width row below info on all sizes */}
+                <div className="flex flex-wrap items-center gap-1.5">
                         {isCreator ? (
                             <>
                                 <Button variant="primary" size="sm" onClick={() => setInviteModalOpen(true)} className="!px-2.5 !py-1 !text-xs">
@@ -221,10 +223,9 @@ const CommunityDetail = () => {
                                 Request to join
                             </Button>
                         )}
-                    </div>
                 </div>
                 {community.description && (
-                    <p className="text-[var(--text-primary)] mt-4">{community.description}</p>
+                    <p className="text-sm text-[var(--text-primary)] mt-4 break-words">{community.description}</p>
                 )}
             </div>
 

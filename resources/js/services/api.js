@@ -281,7 +281,7 @@ export const groupMessagesAPI = {
 // Video Calls API
 export const callAPI = {
     generateToken: (conversationId) => api.post('/calls/token',   { conversation_id: conversationId }),
-    initiate:      (conversationId) => api.post('/calls/initiate', { conversation_id: conversationId }),
+    initiate:      (conversationId, callType = 'video') => api.post('/calls/initiate', { conversation_id: conversationId, call_type: callType }),
     accept:        (conversationId) => api.post('/calls/accept',   { conversation_id: conversationId }),
     end:           (conversationId, status = 'ended', duration = 0) =>
                       api.post('/calls/end', { conversation_id: conversationId, status, duration }),

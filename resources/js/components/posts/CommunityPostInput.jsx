@@ -77,9 +77,9 @@ const CommunityPostInput = ({ communityId, requiresApproval, onPostSubmitted }) 
                 </p>
             )}
             <form onSubmit={handleSubmit(onSubmit)}>
-                <div className="flex items-center gap-3 min-h-[64px]">
-                    <Avatar src={user?.profile_picture} alt={user?.name} size="lg" className="w-10 h-10 shrink-0" />
-                    <div className="flex-1 min-w-0 flex items-center gap-3 h-12 px-4 rounded-full bg-[var(--theme-surface-hover)] border border-[var(--theme-border)]">
+                <div className="flex items-center gap-3">
+                    <Avatar src={user?.profile_picture} alt={user?.name} size="md" className="shrink-0" />
+                    <div className="flex-1 min-w-0 flex items-center gap-2 h-12 px-3 rounded-full bg-[var(--theme-surface-hover)] border border-[var(--theme-border)]">
                         <input
                             {...register('content')}
                             type="text"
@@ -87,17 +87,18 @@ const CommunityPostInput = ({ communityId, requiresApproval, onPostSubmitted }) 
                             className="flex-1 min-w-0 bg-transparent text-[var(--text-primary)] placeholder-[var(--text-secondary)]/70 text-sm focus:outline-none"
                         />
                         <label htmlFor="community-media-upload" className="cursor-pointer text-[var(--theme-accent)] hover:opacity-80 shrink-0" aria-label="Add image or video">
-                            <UilImage size={24} color="currentColor" />
+                            <UilImage size={20} color="currentColor" />
                             <input type="file" id="community-media-upload" accept="image/*,video/*" onChange={handleFileChange} className="hidden" />
                         </label>
+                        <div className="w-px h-5 bg-[var(--theme-border)] shrink-0" aria-hidden="true" />
+                        <button
+                            type="submit"
+                            disabled={!isFormValid || submitMutation.isPending}
+                            className="shrink-0 px-3 h-8 rounded-full bg-[var(--theme-accent)] hover:opacity-90 text-white font-medium text-sm flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
+                        >
+                            {submitMutation.isPending ? '...' : 'Post'}
+                        </button>
                     </div>
-                    <button
-                        type="submit"
-                        disabled={!isFormValid || submitMutation.isPending}
-                        className="shrink-0 w-20 h-10 rounded-full bg-[var(--theme-accent)] hover:opacity-90 text-white font-medium text-sm flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
-                    >
-                        {submitMutation.isPending ? '...' : 'Post'}
-                    </button>
                 </div>
 
                 {mediaPreview && (

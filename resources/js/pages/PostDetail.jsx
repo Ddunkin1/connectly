@@ -62,7 +62,7 @@ const PostDetail = () => {
             />
 
             {/* Comment Input */}
-            <div id="comment-section" className="bg-white rounded-lg border border-gray-200 p-4 mt-4">
+            <div id="comment-section" className="bg-[var(--theme-surface)] rounded-lg border border-[var(--theme-border)] p-4 mt-4">
                 <form onSubmit={handleSubmit(onSubmit)}>
                     <div className="flex items-start space-x-3">
                         <Avatar src={user?.profile_picture} alt={user?.name} size="md" />
@@ -71,7 +71,7 @@ const PostDetail = () => {
                                 {...register('content', { required: 'Comment cannot be empty' })}
                                 placeholder="Write a comment..."
                                 rows={3}
-                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#359EFF] focus:border-transparent resize-none"
+                                className="w-full px-4 py-2 border border-[var(--theme-border)] rounded-lg bg-[var(--theme-surface-hover)] text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] focus:outline-none focus:ring-2 focus:ring-[var(--theme-accent)]/40 focus:border-[var(--theme-accent)] resize-none"
                             />
                             <div className="flex items-center justify-end mt-2">
                                 <Button
@@ -90,7 +90,7 @@ const PostDetail = () => {
 
             {/* Comments */}
             <div className="mt-4 space-y-4">
-                <h3 className="text-lg font-semibold text-gray-900">
+                <h3 className="text-lg font-semibold text-[var(--text-primary)]">
                     Comments ({Math.max(post.comments_count ?? 0, commentsData?.length ?? 0)})
                 </h3>
                 {commentsLoading ? (
@@ -100,8 +100,8 @@ const PostDetail = () => {
                         ))}
                     </div>
                 ) : topLevelComments.length === 0 ? (
-                    <div className="text-center py-8 bg-white rounded-lg border border-gray-200">
-                        <p className="text-gray-500">No comments yet. Be the first to comment!</p>
+                    <div className="text-center py-8 bg-[var(--theme-surface)] rounded-lg border border-[var(--theme-border)]">
+                        <p className="text-[var(--text-secondary)]">No comments yet. Be the first to comment!</p>
                     </div>
                 ) : (
                     topLevelComments.map((comment) => (

@@ -210,7 +210,7 @@ function AppContent() {
                 </div>
             ) : (
                 <div className="flex-1 overflow-y-auto scrollbar-hide min-w-0 flex justify-center bg-[var(--bg-primary)]">
-                    <div className="min-w-0 flex flex-col w-full max-w-5xl pt-4 md:pt-8 px-3 md:px-6 pb-16 md:pb-6">
+                    <div className="min-w-0 flex flex-col w-full max-w-5xl pt-4 md:pt-8 px-3 md:px-6 pb-24 md:pb-6">
                         <SectionErrorBoundary>
                             <Suspense fallback={null}>
                                 <Routes>

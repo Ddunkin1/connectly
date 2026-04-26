@@ -53,14 +53,19 @@ class CallController extends Controller
      */
     public function initiate(Request $request): JsonResponse
     {
-        $request->validate(['conversation_id' => ['required', 'integer', 'exists:conversations,id']]);
+        $request->validate([
+            'conversation_id' => ['required', 'integer', 'exists:conversations,id'],
+            'call_type'       => ['nullable', 'string', 'in:audio,video'],
+        ]);
 
         $conversation = $this->findAuthorizedConversation($request->conversation_id);
         $caller       = Auth::user();
         $recipient    = $conversation->getOtherUser($caller);
+        $callType     = $request->input('call_type', 'video');
 
         // Remember who initiated so end() can label the message correctly
         Cache::put("call_initiator_{$conversation->id}", $caller->id, now()->addHour());
+        Cache::put("call_type_{$conversation->id}", $callType, now()->addHour());
 
         event(new CallInitiated(
             recipientId:    $recipient->id,
@@ -69,6 +74,7 @@ class CallController extends Controller
             callerAvatar:   $caller->profile_picture ?? '',
             channelName:    'call_conversation_' . $conversation->id,
             conversationId: $conversation->id,
+            callType:       $callType,
         ));
 
         return response()->json(['status' => 'initiated']);
@@ -117,11 +123,12 @@ class CallController extends Controller
         $status      = $request->input('status', 'ended');
         $duration    = (int) $request->input('duration', 0);
         $initiatorId = Cache::pull("call_initiator_{$conversation->id}") ?? $caller->id;
+        $callType    = Cache::pull("call_type_{$conversation->id}") ?? 'video';
 
-        // Format: call_missed:{initiatorId}  or  call_ended:{duration}:{initiatorId}
+        // Format: call_missed:{type}:{initiatorId}  or  call_ended:{type}:{duration}:{initiatorId}
         $body = $status === 'ended'
-            ? "call_ended:{$duration}:{$initiatorId}"
-            : "call_missed:{$initiatorId}";
+            ? "call_ended:{$callType}:{$duration}:{$initiatorId}"
+            : "call_missed:{$callType}:{$initiatorId}";
 
         $callMessage = Message::create([
             'conversation_id' => $conversation->id,
