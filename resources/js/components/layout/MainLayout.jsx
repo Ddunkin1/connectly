@@ -74,7 +74,7 @@ const MainLayout = ({ children, showRightPanel = true, showLeftPanel = true }) =
                     />
                     {/* Drawer */}
                     <div
-                        className={`fixed left-0 top-16 h-[calc(100vh-4rem)] z-30 transition-transform duration-300 ease-in-out ${
+                        className={`fixed left-0 top-16 h-[calc(100vh-4rem)] z-30 transition-transform duration-300 ease-in-out bg-[var(--theme-surface)] border-r border-[var(--theme-border)] shadow-2xl ${
                             mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
                         }`}
                     >

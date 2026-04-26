@@ -128,7 +128,7 @@ class PostController extends Controller
             ], 201);
         } catch (ValidationException $e) {
             throw $e;
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             \Log::error('Post creation failed: ' . $e->getMessage(), [
                 'trace' => $e->getTraceAsString(),
                 'data' => $request->all(),

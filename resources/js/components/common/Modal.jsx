@@ -28,7 +28,8 @@ const Modal = ({ isOpen, onClose, title, children, size = 'md' }) => {
 
     const modalUi = (
         <div className="fixed inset-0 z-50 overflow-hidden admin-fade-up" role="dialog" aria-modal="true">
-            <div className="flex items-center justify-center h-full p-4 text-center">
+            {/* On mobile: bottom-sheet. On sm+: centered dialog */}
+            <div className="flex items-end sm:items-center justify-center h-full sm:p-4 text-center">
                 <div
                     className="fixed inset-0 z-40 transition-opacity bg-black/55 backdrop-blur-[1px]"
                     aria-hidden="true"
@@ -36,18 +37,22 @@ const Modal = ({ isOpen, onClose, title, children, size = 'md' }) => {
                 />
 
                 <div
-                    className={`relative z-50 mx-auto bg-[var(--theme-surface)] text-[var(--text-primary)] text-left overflow-hidden rounded-3xl border border-[var(--theme-border)] shadow-[0_24px_60px_-22px_rgba(0,0,0,0.7)] transform transition-all duration-300 flex flex-col ${sizes[size]} w-full`}
-                    style={{ maxHeight: '88vh', color: 'var(--text-primary)' }}
+                    className={`relative z-50 mx-auto bg-[var(--theme-surface)] text-[var(--text-primary)] text-left overflow-hidden rounded-t-3xl sm:rounded-3xl border border-[var(--theme-border)] shadow-[0_24px_60px_-22px_rgba(0,0,0,0.7)] transform transition-all duration-300 flex flex-col ${sizes[size]} w-full`}
+                    style={{ maxHeight: '90vh', color: 'var(--text-primary)' }}
                     onClick={(e) => e.stopPropagation()}
                 >
+                    {/* Drag handle on mobile */}
+                    <div className="sm:hidden flex justify-center pt-3 pb-1 shrink-0">
+                        <div className="w-10 h-1 rounded-full bg-[var(--theme-border)]" />
+                    </div>
                     {title && (
                         <div className="px-5 py-3 border-b border-[var(--theme-border)] shrink-0 bg-[var(--theme-surface-hover)]/65">
                             <h3 className="text-base font-semibold text-[var(--text-primary)]">{title}</h3>
                         </div>
                     )}
                     <div
-                        className="px-5 py-4 overflow-y-auto overflow-x-hidden min-h-0 flex-1 pb-4 [&_input]:text-[var(--text-primary)] [&_textarea]:text-[var(--text-primary)] [&_select]:text-[var(--text-primary)]"
-                        style={{ maxHeight: 'calc(88vh - 4rem)', color: 'var(--text-primary)' }}
+                        className="px-5 py-4 overflow-y-auto overflow-x-hidden min-h-0 flex-1 pb-safe [&_input]:text-[var(--text-primary)] [&_textarea]:text-[var(--text-primary)] [&_select]:text-[var(--text-primary)]"
+                        style={{ maxHeight: 'calc(90vh - 4rem)', color: 'var(--text-primary)' }}
                     >
                         {children}
                     </div>
