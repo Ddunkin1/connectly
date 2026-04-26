@@ -4,12 +4,38 @@ import Avatar from '../common/Avatar';
 import useAuthStore from '../../store/authStore';
 import useThemeStore from '../../store/themeStore';
 import { useLogout } from '../../hooks/useAuth';
-import { useUnreadNotificationsCount } from '../../hooks/useNotifications';
+import { useNotifications, useUnreadNotificationsCount, useMarkAllNotificationsAsRead } from '../../hooks/useNotifications';
 import { useConversations } from '../../hooks/useConversations';
 import { useQuery } from '@tanstack/react-query';
 import { searchAPI } from '../../services/api';
 import CreatePostModal from '../modal/createPostModal';
 import { Home, Bookmark, UsersGroup, Users, Notification, Email, Search, Menu, Close, Plus } from 'griddy-icons';
+
+function notifText(n) {
+    const name = n.data?.actor_name || n.data?.sender_name || 'Someone';
+    switch (n.type) {
+        case 'like':            return `${name} liked your post`;
+        case 'comment':         return `${name} commented on your post`;
+        case 'comment_reply':   return `${name} replied to your comment`;
+        case 'comment_like':    return `${name} liked your comment`;
+        case 'mention':         return `${name} mentioned you`;
+        case 'share':           return `${name} shared your post`;
+        case 'friend_request':  return `${name} sent you a friend request`;
+        case 'friend_request_accepted': return `${name} accepted your friend request`;
+        case 'community_invite': return `${name} invited you to a community`;
+        case 'community_join_request_approved': return 'Your join request was approved';
+        default:                return n.data?.message || 'New notification';
+    }
+}
+
+function timeAgo(dateStr) {
+    if (!dateStr) return '';
+    const diff = Math.floor((Date.now() - new Date(dateStr)) / 1000);
+    if (diff < 60)   return `${diff}s`;
+    if (diff < 3600) return `${Math.floor(diff / 60)}m`;
+    if (diff < 86400) return `${Math.floor(diff / 3600)}h`;
+    return `${Math.floor(diff / 86400)}d`;
+}
 
 const AppTopBar = ({ onMenuToggle, showMenuButton = false, mobileMenuOpen = false }) => {
     const navigate = useNavigate();
@@ -17,13 +43,19 @@ const AppTopBar = ({ onMenuToggle, showMenuButton = false, mobileMenuOpen = fals
     const user = useAuthStore((s) => s.user);
     const openThemeCustomizer = useThemeStore((s) => s.openCustomizer);
     const { data: unreadNotifications } = useUnreadNotificationsCount();
-    const { data: conversationsData } = useConversations();
-    const [searchQuery, setSearchQuery]       = useState('');
-    const [showSuggestions, setShowSuggestions] = useState(false);
-    const [showProfileMenu, setShowProfileMenu] = useState(false);
+    const { data: conversationsData }   = useConversations();
+    const { data: notificationsData }   = useNotifications();
+    const markAllRead                   = useMarkAllNotificationsAsRead();
+    const [searchQuery, setSearchQuery]           = useState('');
+    const [showSuggestions, setShowSuggestions]   = useState(false);
+    const [showProfileMenu, setShowProfileMenu]   = useState(false);
+    const [showNotifDropdown, setShowNotifDropdown] = useState(false);
+    const [showMsgDropdown,   setShowMsgDropdown]   = useState(false);
     const [isCreatePostOpen, setIsCreatePostOpen] = useState(false);
     const menuRef        = useRef(null);
     const suggestionsRef = useRef(null);
+    const notifRef       = useRef(null);
+    const msgRef         = useRef(null);
     const logoutMutation = useLogout();
 
     const notificationsBadge = unreadNotifications ?? 0;
@@ -49,9 +81,13 @@ const AppTopBar = ({ onMenuToggle, showMenuButton = false, mobileMenuOpen = fals
                 setShowProfileMenu(false);
             if (suggestionsRef.current && !suggestionsRef.current.contains(e.target))
                 setShowSuggestions(false);
+            if (notifRef.current && !notifRef.current.contains(e.target))
+                setShowNotifDropdown(false);
+            if (msgRef.current && !msgRef.current.contains(e.target))
+                setShowMsgDropdown(false);
         };
-        document.addEventListener('click', handleClickOutside);
-        return () => document.removeEventListener('click', handleClickOutside);
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
     const handleLogout = () => {
@@ -213,31 +249,145 @@ const AppTopBar = ({ onMenuToggle, showMenuButton = false, mobileMenuOpen = fals
                         <Plus size={22} color="currentColor" />
                     </button>
 
-                    {/* Notifications (desktop) */}
-                    <Link to="/notifications"
-                        className="hidden sm:flex relative w-10 h-10 items-center justify-center rounded-xl text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--theme-surface-hover)] transition-all"
-                        aria-label="Notifications"
-                    >
-                        <Notification size={22} color="currentColor" />
-                        {notificationsBadge > 0 && (
-                            <span className="absolute top-0.5 right-0.5 min-w-[16px] h-4 px-0.5 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center">
-                                {notificationsBadge > 9 ? '9+' : notificationsBadge}
-                            </span>
-                        )}
-                    </Link>
+                    {/* Notifications dropdown (desktop) */}
+                    <div ref={notifRef} className="hidden sm:block relative">
+                        <button
+                            type="button"
+                            onClick={() => { setShowNotifDropdown(v => !v); setShowMsgDropdown(false); }}
+                            className={`relative w-10 h-10 flex items-center justify-center rounded-xl transition-all ${showNotifDropdown ? 'bg-[var(--theme-accent)]/15 text-[var(--theme-accent)]' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--theme-surface-hover)]'}`}
+                            aria-label="Notifications"
+                        >
+                            <Notification size={22} color="currentColor" />
+                            {notificationsBadge > 0 && (
+                                <span className="absolute top-0.5 right-0.5 min-w-[16px] h-4 px-0.5 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center">
+                                    {notificationsBadge > 9 ? '9+' : notificationsBadge}
+                                </span>
+                            )}
+                        </button>
 
-                    {/* Messages (desktop) */}
-                    <Link to="/messages"
-                        className="hidden sm:flex relative w-10 h-10 items-center justify-center rounded-xl text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--theme-surface-hover)] transition-all"
-                        aria-label="Messages"
-                    >
-                        <Email size={22} color="currentColor" />
-                        {messagesBadge > 0 && (
-                            <span className="absolute top-0.5 right-0.5 min-w-[16px] h-4 px-0.5 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center">
-                                {messagesBadge > 9 ? '9+' : messagesBadge}
-                            </span>
+                        {showNotifDropdown && (
+                            <div className="absolute right-0 mt-2 w-80 rounded-2xl bg-[var(--theme-surface)] border border-[var(--theme-border)] shadow-2xl z-50 overflow-hidden">
+                                <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--theme-border)]">
+                                    <span className="text-sm font-semibold text-[var(--text-primary)]">Notifications</span>
+                                    {notificationsBadge > 0 && (
+                                        <button type="button" onClick={() => markAllRead.mutate()} className="text-xs text-[var(--theme-accent)] hover:underline">
+                                            Mark all read
+                                        </button>
+                                    )}
+                                </div>
+                                <div className="max-h-80 overflow-y-auto">
+                                    {!notificationsData?.notifications?.length ? (
+                                        <p className="text-sm text-[var(--text-secondary)] text-center py-8">No notifications yet.</p>
+                                    ) : (
+                                        notificationsData.notifications.slice(0, 6).map((n) => (
+                                            <Link
+                                                key={n.id}
+                                                to={n.data?.post_id ? `/post/${n.data.post_id}` : '/notifications'}
+                                                onClick={() => setShowNotifDropdown(false)}
+                                                className={`flex items-start gap-3 px-4 py-3 hover:bg-[var(--theme-surface-hover)] transition-colors ${!n.read_at ? 'bg-[var(--theme-accent)]/5' : ''}`}
+                                            >
+                                                <Avatar
+                                                    src={n.data?.actor_profile_picture || n.data?.sender_profile_picture}
+                                                    alt={n.data?.actor_name || ''}
+                                                    size="sm"
+                                                    className="w-8 h-8 rounded-full shrink-0 mt-0.5"
+                                                />
+                                                <div className="flex-1 min-w-0">
+                                                    <p className="text-sm text-[var(--text-primary)] leading-snug line-clamp-2">{notifText(n)}</p>
+                                                    <p className="text-xs text-[var(--text-secondary)] mt-0.5">{timeAgo(n.created_at)}</p>
+                                                </div>
+                                                {!n.read_at && <span className="w-2 h-2 rounded-full bg-[var(--theme-accent)] shrink-0 mt-1.5" />}
+                                            </Link>
+                                        ))
+                                    )}
+                                </div>
+                                <div className="border-t border-[var(--theme-border)]">
+                                    <Link
+                                        to="/notifications"
+                                        onClick={() => setShowNotifDropdown(false)}
+                                        className="block text-center text-sm text-[var(--theme-accent)] font-medium py-3 hover:bg-[var(--theme-surface-hover)] transition-colors"
+                                    >
+                                        View all notifications
+                                    </Link>
+                                </div>
+                            </div>
                         )}
-                    </Link>
+                    </div>
+
+                    {/* Messages dropdown (desktop) */}
+                    <div ref={msgRef} className="hidden sm:block relative">
+                        <button
+                            type="button"
+                            onClick={() => { setShowMsgDropdown(v => !v); setShowNotifDropdown(false); }}
+                            className={`relative w-10 h-10 flex items-center justify-center rounded-xl transition-all ${showMsgDropdown ? 'bg-[var(--theme-accent)]/15 text-[var(--theme-accent)]' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--theme-surface-hover)]'}`}
+                            aria-label="Messages"
+                        >
+                            <Email size={22} color="currentColor" />
+                            {messagesBadge > 0 && (
+                                <span className="absolute top-0.5 right-0.5 min-w-[16px] h-4 px-0.5 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center">
+                                    {messagesBadge > 9 ? '9+' : messagesBadge}
+                                </span>
+                            )}
+                        </button>
+
+                        {showMsgDropdown && (() => {
+                            const convos = conversationsData?.pages?.flatMap(p => p.data?.conversations ?? []) ?? [];
+                            return (
+                                <div className="absolute right-0 mt-2 w-80 rounded-2xl bg-[var(--theme-surface)] border border-[var(--theme-border)] shadow-2xl z-50 overflow-hidden">
+                                    <div className="px-4 py-3 border-b border-[var(--theme-border)]">
+                                        <span className="text-sm font-semibold text-[var(--text-primary)]">Messages</span>
+                                    </div>
+                                    <div className="max-h-80 overflow-y-auto">
+                                        {!convos.length ? (
+                                            <p className="text-sm text-[var(--text-secondary)] text-center py-8">No messages yet.</p>
+                                        ) : (
+                                            convos.slice(0, 6).map((c) => (
+                                                <Link
+                                                    key={c.id}
+                                                    to="/messages"
+                                                    onClick={() => setShowMsgDropdown(false)}
+                                                    className="flex items-center gap-3 px-4 py-3 hover:bg-[var(--theme-surface-hover)] transition-colors"
+                                                >
+                                                    <div className="relative shrink-0">
+                                                        <Avatar
+                                                            src={c.other_user?.profile_picture}
+                                                            alt={c.other_user?.name || ''}
+                                                            size="sm"
+                                                            className="w-9 h-9 rounded-full"
+                                                        />
+                                                        {c.other_user?.is_online && (
+                                                            <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-[var(--theme-surface)]" />
+                                                        )}
+                                                    </div>
+                                                    <div className="flex-1 min-w-0">
+                                                        <div className="flex items-center justify-between gap-1">
+                                                            <p className="text-sm font-medium text-[var(--text-primary)] truncate">{c.other_user?.name}</p>
+                                                            <p className="text-[11px] text-[var(--text-secondary)] shrink-0">{timeAgo(c.last_message?.created_at)}</p>
+                                                        </div>
+                                                        <p className="text-xs text-[var(--text-secondary)] truncate mt-0.5">{c.last_message?.message || 'No messages yet'}</p>
+                                                    </div>
+                                                    {c.unread_count > 0 && (
+                                                        <span className="shrink-0 min-w-[18px] h-[18px] px-1 bg-[var(--theme-accent)] text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+                                                            {c.unread_count > 9 ? '9+' : c.unread_count}
+                                                        </span>
+                                                    )}
+                                                </Link>
+                                            ))
+                                        )}
+                                    </div>
+                                    <div className="border-t border-[var(--theme-border)]">
+                                        <Link
+                                            to="/messages"
+                                            onClick={() => setShowMsgDropdown(false)}
+                                            className="block text-center text-sm text-[var(--theme-accent)] font-medium py-3 hover:bg-[var(--theme-surface-hover)] transition-colors"
+                                        >
+                                            Open Messages
+                                        </Link>
+                                    </div>
+                                </div>
+                            );
+                        })()}
+                    </div>
 
                     {/* Divider (desktop) */}
                     <div className="hidden sm:block w-px h-5 bg-[var(--theme-border)] mx-1" />
