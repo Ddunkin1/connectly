@@ -39,6 +39,29 @@ const ConversationList = ({ onSelectConversation, selectedConversationId }) => {
 
     const lastMessagePreview = (lastMessage) => {
         if (!lastMessage) return '';
+
+        if (lastMessage.type === 'call') {
+            const raw      = lastMessage.message ?? '';
+            const parts    = raw.split(':');
+            const kind     = parts[0];
+            const isMissed = kind === 'call_missed';
+            const hasType  = parts[1] === 'video' || parts[1] === 'audio';
+            const callType = hasType ? parts[1] : null;
+            const offset   = hasType ? 1 : 0;
+            const typeLabel = callType === 'audio' ? 'Voice call' : 'Video call';
+
+            if (isMissed) return `${typeLabel} · Missed`;
+
+            const duration = parseInt(parts[1 + offset] ?? '0', 10) || 0;
+            const hrs  = Math.floor(duration / 3600);
+            const mins = Math.floor((duration % 3600) / 60);
+            const secs = duration % 60;
+            const durationText = duration > 0
+                ? ` · ${hrs > 0 ? `${hrs}h ` : ''}${mins > 0 ? `${mins}m ` : ''}${secs}s`
+                : '';
+            return `${typeLabel}${durationText}`;
+        }
+
         if (lastMessage.attachment_url) {
             const t = lastMessage.attachment_type || 'image';
             return t === 'image' ? '📷 Photo' : t === 'video' ? '🎬 Video' : '📎 File';

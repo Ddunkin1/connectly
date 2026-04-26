@@ -3,6 +3,14 @@ import { useQueryClient } from '@tanstack/react-query';
 import { getEcho } from '../../echo';
 import useAuthStore from '../../store/authStore';
 
+function playSound(src) {
+    try {
+        const audio = new Audio(src);
+        audio.volume = 0.5;
+        audio.play().catch(() => {});
+    } catch {}
+}
+
 function getUserIdFromStorage() {
     try {
         const raw = localStorage.getItem('auth-storage');
@@ -34,6 +42,7 @@ export default function RealtimeMessagesProvider({ children }) {
 
         // Listen for Laravel broadcast notifications (likes, comments, shares, friend requests, etc.)
         channel.notification((notification) => {
+            playSound('/sounds/notification.wav');
             const norm = {
                 id: notification.id || `broadcast-${Date.now()}-${Math.random().toString(36).slice(2)}`,
                 type: notification.type ?? notification.data?.type ?? 'unknown',
@@ -69,6 +78,7 @@ export default function RealtimeMessagesProvider({ children }) {
 
             const currentUser = useAuthStore.getState().user;
             if (newMessage.sender?.id === currentUser?.id) return; // Skip own messages
+            playSound('/sounds/message.mp3');
 
             // Add message to the conversation's messages cache (or invalidate if not loaded yet)
             queryClient.setQueryData(['messages', conversationId], (old) => {

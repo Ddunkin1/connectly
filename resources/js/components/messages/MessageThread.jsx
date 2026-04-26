@@ -496,26 +496,38 @@ const MessageThread = ({ conversationId, onMediaFromMessages, onPinnedFromMessag
 
                     // ── Call system messages ──────────────────────────────────
                     if (message.type === 'call') {
-                        const raw         = message.message ?? '';
-                        const parts       = raw.split(':');
-                        const kind        = parts[0]; // 'call_missed' | 'call_ended'
-                        const isMissed    = kind === 'call_missed';
-                        const duration    = isMissed ? 0 : parseInt(parts[1] ?? '0', 10);
-                        const initiatorId = parseInt(parts[isMissed ? 1 : 2] ?? '0', 10);
+                        const raw      = message.message ?? '';
+                        const parts    = raw.split(':');
+                        const kind     = parts[0]; // 'call_missed' | 'call_ended'
+                        const isMissed = kind === 'call_missed';
+
+                        // Support both old format (call_ended:14:1) and new (call_ended:video:14:1)
+                        const hasType  = parts[1] === 'video' || parts[1] === 'audio';
+                        const callType = hasType ? parts[1] : null; // 'video' | 'audio' | null (legacy)
+                        const offset   = hasType ? 1 : 0;
+
+                        const duration    = isMissed ? 0 : (parseInt(parts[1 + offset] ?? '0', 10) || 0);
+                        const initiatorId = parseInt(parts[(isMissed ? 1 : 2) + offset] ?? '0', 10) || 0;
                         const iWasCaller  = initiatorId === user?.id;
-                        const mins        = Math.floor(duration / 60);
-                        const secs        = duration % 60;
+
+                        const hrs  = Math.floor(duration / 3600);
+                        const mins = Math.floor((duration % 3600) / 60);
+                        const secs = duration % 60;
                         const durationText = duration > 0
-                            ? ` · ${mins > 0 ? `${mins}m ` : ''}${secs}s`
+                            ? ` · ${hrs > 0 ? `${hrs}h ` : ''}${mins > 0 ? `${mins}m ` : ''}${secs}s`
                             : '';
+
+                        const typeLabel = callType === 'audio' ? 'Voice call' : 'Video call';
 
                         let label, icon;
                         if (isMissed) {
-                            label = iWasCaller ? 'You called' : 'Missed call';
-                            icon  = iWasCaller ? 'call_made' : 'missed_video_call';
+                            label = iWasCaller ? `${typeLabel} · No answer` : `${typeLabel} · Missed`;
+                            icon  = callType === 'audio'
+                                ? (iWasCaller ? 'call_made' : 'call_missed')
+                                : (iWasCaller ? 'videocam'  : 'missed_video_call');
                         } else {
-                            label = `Call ended${durationText}`;
-                            icon  = 'videocam';
+                            label = `${typeLabel}${durationText}`;
+                            icon  = callType === 'audio' ? 'call' : 'videocam';
                         }
 
                         return (
