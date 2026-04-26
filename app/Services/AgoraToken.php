@@ -58,16 +58,25 @@ class AgoraToken
                  . self::packString($uidStr)
                  . self::packMapUint32($privileges);
 
-        // Full message body that gets signed
-        $msg = self::packUint32($expire)
-             . self::packUint32($issueTs)
-             . self::packUint32($salt)
-             . self::packUint16(1)   // number of services
-             . $service;
+        // Services block (shared between signing info and token content)
+        $servicesBlock = self::packUint16(1) . $service;
 
-        $signature = hash_hmac('sha256', $msg, $signingKey, true);
+        // Signing info: AppId + issueTs + expire + salt + services (must match official SDK)
+        $signingInfo = $appId
+                     . self::packUint32($issueTs)
+                     . self::packUint32($expire)
+                     . self::packUint32($salt)
+                     . $servicesBlock;
 
-        $content    = self::packString($signature) . $msg;
+        $signature = hash_hmac('sha256', $signingInfo, $signingKey, true);
+
+        // Token content: signature + issueTs + expire + salt + services (no AppId in body)
+        $content = self::packString($signature)
+                 . self::packUint32($issueTs)
+                 . self::packUint32($expire)
+                 . self::packUint32($salt)
+                 . $servicesBlock;
+
         $compressed = zlib_encode($content, ZLIB_ENCODING_DEFLATE, 9);
 
         return self::VERSION . base64_encode($compressed);
