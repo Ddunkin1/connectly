@@ -34,8 +34,6 @@ export const useMessages = (conversationId) => {
         initialPageParam: 1,
         retry: 1,
         retryDelay: 1000,
-        refetchInterval: 15000,
-        refetchIntervalInBackground: false,
     });
 };
 
@@ -93,9 +91,9 @@ export const useMarkAsRead = () => {
 
     return useMutation({
         mutationFn: (conversationId) => messagesAPI.markAsRead(conversationId),
-        onSuccess: () => {
+        onSuccess: (_data, conversationId) => {
             queryClient.invalidateQueries({ queryKey: ['conversations'] });
-            queryClient.invalidateQueries({ queryKey: ['messages'] });
+            queryClient.invalidateQueries({ queryKey: ['messages', conversationId] });
         },
         onError: (error) => {
             toast.error(error.response?.data?.message || 'Failed to mark as read');
