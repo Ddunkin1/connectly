@@ -79,6 +79,8 @@ class StoryService
                     'media_url' => $s->media_url,
                     'media_type' => $s->media_type,
                     'caption' => $s->caption,
+                    'visibility' => $s->visibility ?? 'public',
+                    'is_archived' => (bool) $s->is_archived,
                     'expires_at' => $s->expires_at->toIso8601String(),
                     'created_at' => $s->created_at->toIso8601String(),
                 ])->toArray(),

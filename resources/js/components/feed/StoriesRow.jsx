@@ -82,8 +82,7 @@ const StoriesRow = () => {
                                         <Avatar
                                             src={group.user?.profile_picture}
                                             alt={group.user?.name}
-                                            className="w-13 h-13 rounded-full object-cover"
-                                            style={{ width: 52, height: 52 }}
+                                            size="lg"
                                         />
                                     </div>
                                 </div>
