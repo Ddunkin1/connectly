@@ -33,6 +33,13 @@ class ConversationService
                 'user_one_id' => $ids[0],
                 'user_two_id' => $ids[1],
             ]);
+        } else {
+            // Un-hide for the user who is actively re-opening the conversation
+            if ($user1->id === $ids[0] && $conversation->hidden_by_user_one) {
+                $conversation->update(['hidden_by_user_one' => false]);
+            } elseif ($user1->id === $ids[1] && $conversation->hidden_by_user_two) {
+                $conversation->update(['hidden_by_user_two' => false]);
+            }
         }
 
         return $conversation->load(['userOne', 'userTwo']);
@@ -50,6 +57,15 @@ class ConversationService
             $query->whereNotIn('user_one_id', $blockedIds)
                   ->whereNotIn('user_two_id', $blockedIds);
         }
+
+        // Filter out conversations the user has hidden
+        $query->where(function ($q) use ($user) {
+            $q->where(function ($q2) use ($user) {
+                $q2->where('user_one_id', $user->id)->where('hidden_by_user_one', false);
+            })->orWhere(function ($q2) use ($user) {
+                $q2->where('user_two_id', $user->id)->where('hidden_by_user_two', false);
+            });
+        });
 
         $conversations = $query
             ->with(['userOne', 'userTwo'])

@@ -22,7 +22,7 @@ class StoreMessageRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'receiver_id' => ['required', 'exists:users,id', 'different:' . $this->user()->id],
+            'receiver_id' => ['required', 'exists:users,id'],
             'message' => ['required_without:media', 'nullable', 'string', 'max:5000'],
             'media' => ['nullable', 'file', 'mimes:jpeg,jpg,png,gif,webp,mp4,webm,mov,pdf,doc,docx,xls,xlsx,ppt,pptx,txt,csv,zip', 'max:51200'], // 50MB
         ];
@@ -38,7 +38,6 @@ class StoreMessageRequest extends FormRequest
         return [
             'receiver_id.required' => 'Receiver is required.',
             'receiver_id.exists' => 'Receiver user not found.',
-            'receiver_id.different' => 'You cannot send a message to yourself.',
             'message.required' => 'Message content is required.',
             'message.max' => 'Message cannot exceed 5000 characters.',
         ];

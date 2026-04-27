@@ -147,6 +147,7 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function () {
     // Stories
     Route::get('/stories', [StoryController::class, 'index']);
     Route::post('/stories', [StoryController::class, 'store']);
+    Route::get('/stories/archived', [StoryController::class, 'archived']);
     Route::post('/stories/{story}/view', [StoryController::class, 'view']);
     Route::get('/stories/{story}', [StoryController::class, 'show']);
     Route::patch('/stories/{story}', [StoryController::class, 'update']);
@@ -236,6 +237,7 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function () {
 
     // Conversations
     Route::get('/conversations', [ConversationController::class, 'index']);
+    Route::delete('/conversations/{conversation}', [ConversationController::class, 'destroy']);
 
     // Group conversations
     Route::get('/group-conversations', [GroupConversationController::class, 'index']);

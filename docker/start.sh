@@ -12,6 +12,9 @@ sed "s/RAILWAY_PORT/$APP_PORT/g" /etc/nginx/nginx.conf.template > /etc/nginx/ngi
 echo "==> Running database migrations"
 php artisan migrate --force
 
+echo "==> Seeding admin account"
+php artisan db:seed --class=AdminTestAccountSeeder --force
+
 echo "==> Creating storage symlink"
 php artisan storage:link 2>/dev/null || true
 

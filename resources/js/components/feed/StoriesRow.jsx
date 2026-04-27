@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import useAuthStore from '../../store/authStore';
 import { useStories } from '../../hooks/useStories';
 import CreateStoryModal from './CreateStoryModal';
@@ -6,17 +7,77 @@ import StoryViewer from './StoryViewer';
 import Avatar from '../common/Avatar';
 import LoadingSpinner from '../common/LoadingSpinner';
 
+const StoryContextMenu = ({ group, anchorRect, onViewStory, onClose, navigate }) => {
+    if (!anchorRect) return null;
+
+    const MENU_W = 160;
+    const MENU_H = 100;
+    const GAP = 8;
+
+    // Try to appear above the bubble; fall back to below if not enough room
+    let top = anchorRect.top - MENU_H - GAP;
+    if (top < 8) top = anchorRect.bottom + GAP;
+
+    let left = anchorRect.left + anchorRect.width / 2 - MENU_W / 2;
+    if (left < 8) left = 8;
+    if (left + MENU_W > window.innerWidth - 8) left = window.innerWidth - MENU_W - 8;
+
+    return (
+        <>
+            {/* Invisible backdrop to catch outside clicks */}
+            <div className="fixed inset-0 z-[90]" onClick={onClose} />
+
+            <div
+                className="fixed z-[91] bg-[var(--theme-surface)] border border-[var(--theme-border)] rounded-2xl shadow-2xl overflow-hidden"
+                style={{ top, left, width: MENU_W }}
+            >
+                {/* User identity strip */}
+                <div className="flex items-center gap-2 px-3 pt-3 pb-2 border-b border-[var(--theme-border)]">
+                    <Avatar src={group.user?.profile_picture} alt={group.user?.name} size="xs" className="w-6 h-6 rounded-full shrink-0" />
+                    <span className="text-xs font-semibold text-[var(--text-primary)] truncate">{group.user?.name}</span>
+                </div>
+
+                <button
+                    type="button"
+                    onClick={onViewStory}
+                    className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm text-[var(--text-primary)] hover:bg-[var(--theme-surface-hover)] transition-colors"
+                >
+                    <span className="material-symbols-outlined text-[18px] text-[var(--theme-accent)]">auto_stories</span>
+                    View story
+                </button>
+
+                <button
+                    type="button"
+                    onClick={() => { navigate(`/profile/${group.user?.username}`); onClose(); }}
+                    className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm text-[var(--text-primary)] hover:bg-[var(--theme-surface-hover)] transition-colors"
+                >
+                    <span className="material-symbols-outlined text-[18px] text-[var(--text-secondary)]">person</span>
+                    View profile
+                </button>
+            </div>
+        </>
+    );
+};
+
 const StoriesRow = () => {
     const user = useAuthStore((s) => s.user);
+    const navigate = useNavigate();
     const { data: storiesGrouped = [], isLoading, refetch } = useStories();
     const [createModalOpen, setCreateModalOpen] = useState(false);
     const [viewerOpen, setViewerOpen] = useState(false);
     const [viewerStartIndex, setViewerStartIndex] = useState(0);
+    const [menuState, setMenuState] = useState(null); // { groupIndex, anchorRect }
 
     const openViewer = (userIndex) => {
+        setMenuState(null);
         setViewerStartIndex(userIndex);
         setViewerOpen(true);
     };
+
+    const handleStoryClick = useCallback((e, index) => {
+        const rect = e.currentTarget.getBoundingClientRect();
+        setMenuState({ groupIndex: index, anchorRect: rect });
+    }, []);
 
     const handleStoryCreated = () => {
         setCreateModalOpen(false);
@@ -42,6 +103,8 @@ const StoriesRow = () => {
         );
     }
 
+    const activeGroup = menuState !== null ? storiesGrouped[menuState.groupIndex] : null;
+
     return (
         <>
             <div className="bg-white dark:bg-[var(--theme-surface)] rounded-2xl shadow-sm border border-black/[0.06] dark:border-white/[0.06] px-4 py-3">
@@ -62,15 +125,17 @@ const StoriesRow = () => {
 
                     {storiesGrouped.map((group, index) => {
                         const hasRing = group.has_unviewed;
+                        const isMenuOpen = menuState?.groupIndex === index;
                         return (
                             <button
                                 key={group.user?.id}
                                 type="button"
-                                onClick={() => openViewer(index)}
+                                onClick={(e) => handleStoryClick(e, index)}
                                 className="flex flex-col items-center flex-shrink-0 cursor-pointer group"
-                                aria-label={`View ${group.user?.name}'s story`}
+                                aria-label={`${group.user?.name}'s story`}
                             >
-                                <div className="p-[2px] rounded-full"
+                                <div
+                                    className={`p-[2px] rounded-full transition-transform ${isMenuOpen ? 'scale-110' : 'group-hover:scale-105'}`}
                                     style={hasRing ? {
                                         background: 'linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888)',
                                     } : {
@@ -94,6 +159,17 @@ const StoriesRow = () => {
                     })}
                 </div>
             </div>
+
+            {/* Context menu */}
+            {menuState !== null && activeGroup && (
+                <StoryContextMenu
+                    group={activeGroup}
+                    anchorRect={menuState.anchorRect}
+                    onViewStory={() => openViewer(menuState.groupIndex)}
+                    onClose={() => setMenuState(null)}
+                    navigate={navigate}
+                />
+            )}
 
             <CreateStoryModal
                 isOpen={createModalOpen}

@@ -503,9 +503,9 @@ class CommunityController extends Controller
                 ->latest()
                 ->paginate(15);
         } else {
+            $postIds = $community->communityPosts()->pluck('post_id');
             $posts = Post::with(['user', 'hashtags', 'likes', 'poll.options'])
-                ->whereIn('user_id', $memberIds)
-                ->where('visibility', 'public')
+                ->whereIn('id', $postIds)
                 ->withCount(['likes', 'allComments as comments_count'])
                 ->latest()
                 ->paginate(15);

@@ -47,6 +47,14 @@ export const useDeleteStory = () => {
     });
 };
 
+export const useArchivedStories = () => {
+    return useQuery({
+        queryKey: ['stories', 'archived'],
+        queryFn: () => storiesAPI.getArchived(),
+        select: (data) => data.data?.stories ?? [],
+    });
+};
+
 export const useUpdateStory = () => {
     const queryClient = useQueryClient();
     return useMutation({

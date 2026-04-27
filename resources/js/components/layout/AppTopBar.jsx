@@ -9,7 +9,7 @@ import { useConversations } from '../../hooks/useConversations';
 import { useQuery } from '@tanstack/react-query';
 import { searchAPI } from '../../services/api';
 import CreatePostModal from '../modal/createPostModal';
-import { Home, Bookmark, UsersGroup, Users, Notification, Email, Search, Menu, Close, Plus } from 'griddy-icons';
+import { Home, Bookmark, Users, Notification, Email, Search, Menu, Close, Plus } from 'griddy-icons';
 
 function notifText(n) {
     const name = n.data?.actor_name || n.data?.sender_name || 'Someone';
@@ -46,12 +46,12 @@ const AppTopBar = ({ onMenuToggle, showMenuButton = false, mobileMenuOpen = fals
     const { data: conversationsData }   = useConversations();
     const { data: notificationsData }   = useNotifications();
     const markAllRead                   = useMarkAllNotificationsAsRead();
-    const [searchQuery, setSearchQuery]           = useState('');
-    const [showSuggestions, setShowSuggestions]   = useState(false);
-    const [showProfileMenu, setShowProfileMenu]   = useState(false);
+    const [searchQuery, setSearchQuery]             = useState('');
+    const [showSuggestions, setShowSuggestions]     = useState(false);
+    const [showProfileMenu, setShowProfileMenu]     = useState(false);
     const [showNotifDropdown, setShowNotifDropdown] = useState(false);
-    const [showMsgDropdown,   setShowMsgDropdown]   = useState(false);
-    const [isCreatePostOpen, setIsCreatePostOpen] = useState(false);
+    const [showMsgDropdown, setShowMsgDropdown]     = useState(false);
+    const [isCreatePostOpen, setIsCreatePostOpen]   = useState(false);
     const menuRef        = useRef(null);
     const suggestionsRef = useRef(null);
     const notifRef       = useRef(null);
@@ -108,10 +108,9 @@ const AppTopBar = ({ onMenuToggle, showMenuButton = false, mobileMenuOpen = fals
             {/* ── Nav icons — absolute center of the full-width header = viewport center ── */}
             <div className="hidden sm:flex absolute left-1/2 -translate-x-1/2 items-center gap-6 z-10">
                 {[
-                    { Icon: Home,       path: '/home',        label: 'Home' },
-                    { Icon: Bookmark,   path: '/bookmarks',   label: 'Bookmarks' },
-                    { Icon: UsersGroup, path: '/communities', label: 'Communities' },
-                    { Icon: Users,      path: '/connections', label: 'Connections' },
+                    { Icon: Home,     path: '/home',        label: 'Home' },
+                    { Icon: Bookmark, path: '/bookmarks',   label: 'Bookmarks' },
+                    { Icon: Users,    path: '/connections', label: 'Connections' },
                 ].map(({ Icon, path, label }) => {
                     const isActive = location.pathname === path;
                     return (
@@ -319,7 +318,7 @@ const AppTopBar = ({ onMenuToggle, showMenuButton = false, mobileMenuOpen = fals
                         <button
                             type="button"
                             onClick={() => { setShowMsgDropdown(v => !v); setShowNotifDropdown(false); }}
-                            className={`relative w-10 h-10 flex items-center justify-center rounded-xl transition-all ${showMsgDropdown ? 'bg-[var(--theme-accent)]/15 text-[var(--theme-accent)]' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--theme-surface-hover)]'}`}
+                            className={`relative w-10 h-10 flex items-center justify-center rounded-xl transition-all ${showMsgDropdown || location.pathname.startsWith('/messages') ? 'bg-[var(--theme-accent)]/15 text-[var(--theme-accent)]' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--theme-surface-hover)]'}`}
                             aria-label="Messages"
                         >
                             <Email size={22} color="currentColor" />
@@ -330,63 +329,70 @@ const AppTopBar = ({ onMenuToggle, showMenuButton = false, mobileMenuOpen = fals
                             )}
                         </button>
 
-                        {showMsgDropdown && (() => {
-                            const convos = conversationsData?.pages?.flatMap(p => p.data?.conversations ?? []) ?? [];
-                            return (
-                                <div className="absolute right-0 mt-2 w-80 rounded-2xl bg-[var(--theme-surface)] border border-[var(--theme-border)] shadow-2xl z-50 overflow-hidden">
-                                    <div className="px-4 py-3 border-b border-[var(--theme-border)]">
-                                        <span className="text-sm font-semibold text-[var(--text-primary)]">Messages</span>
-                                    </div>
-                                    <div className="max-h-80 overflow-y-auto">
-                                        {!convos.length ? (
-                                            <p className="text-sm text-[var(--text-secondary)] text-center py-8">No messages yet.</p>
-                                        ) : (
-                                            convos.slice(0, 6).map((c) => (
+                        {showMsgDropdown && (
+                            <div className="absolute right-0 mt-2 w-80 rounded-2xl bg-[var(--theme-surface)] border border-[var(--theme-border)] shadow-2xl z-50 overflow-hidden">
+                                <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--theme-border)]">
+                                    <span className="text-sm font-semibold text-[var(--text-primary)]">Messages</span>
+                                    <Link
+                                        to="/messages"
+                                        onClick={() => setShowMsgDropdown(false)}
+                                        className="text-xs text-[var(--theme-accent)] hover:underline font-medium"
+                                    >
+                                        Open Messages
+                                    </Link>
+                                </div>
+                                <div className="max-h-80 overflow-y-auto">
+                                    {(() => {
+                                        const convos = conversationsData?.pages?.flatMap((p) => p.data?.conversations ?? []) ?? [];
+                                        if (!convos.length) {
+                                            return <p className="text-sm text-[var(--text-secondary)] text-center py-8">No conversations yet.</p>;
+                                        }
+                                        return convos.slice(0, 6).map((c) => {
+                                            const other = c.other_user;
+                                            const last  = c.last_message;
+                                            const unread = c.unread_count ?? 0;
+                                            return (
                                                 <Link
                                                     key={c.id}
-                                                    to="/messages"
+                                                    to={`/messages/${other?.username}`}
                                                     onClick={() => setShowMsgDropdown(false)}
-                                                    className="flex items-center gap-3 px-4 py-3 hover:bg-[var(--theme-surface-hover)] transition-colors"
+                                                    className={`flex items-center gap-3 px-4 py-3 hover:bg-[var(--theme-surface-hover)] transition-colors ${unread > 0 ? 'bg-[var(--theme-accent)]/5' : ''}`}
                                                 >
                                                     <div className="relative shrink-0">
-                                                        <Avatar
-                                                            src={c.other_user?.profile_picture}
-                                                            alt={c.other_user?.name || ''}
-                                                            size="sm"
-                                                            className="w-9 h-9 rounded-full"
-                                                        />
-                                                        {c.other_user?.is_online && (
-                                                            <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-[var(--theme-surface)]" />
+                                                        <Avatar src={other?.profile_picture} alt={other?.name} size="sm" className="w-9 h-9 rounded-full" />
+                                                        {unread > 0 && (
+                                                            <span className="absolute -top-0.5 -right-0.5 min-w-[14px] h-3.5 px-0.5 bg-red-500 text-white text-[8px] font-bold rounded-full flex items-center justify-center">
+                                                                {unread > 9 ? '9+' : unread}
+                                                            </span>
                                                         )}
                                                     </div>
                                                     <div className="flex-1 min-w-0">
-                                                        <div className="flex items-center justify-between gap-1">
-                                                            <p className="text-sm font-medium text-[var(--text-primary)] truncate">{c.other_user?.name}</p>
-                                                            <p className="text-[11px] text-[var(--text-secondary)] shrink-0">{timeAgo(c.last_message?.created_at)}</p>
-                                                        </div>
-                                                        <p className="text-xs text-[var(--text-secondary)] truncate mt-0.5">{c.last_message?.message || 'No messages yet'}</p>
+                                                        <p className={`text-sm truncate ${unread > 0 ? 'font-semibold text-[var(--text-primary)]' : 'font-medium text-[var(--text-primary)]'}`}>
+                                                            {other?.name}
+                                                        </p>
+                                                        <p className={`text-xs truncate ${unread > 0 ? 'text-[var(--text-primary)]' : 'text-[var(--text-secondary)]'}`}>
+                                                            {last ? (last.sender_id === user?.id ? `You: ${last.body || '📎 Media'}` : (last.body || '📎 Media')) : 'No messages yet'}
+                                                        </p>
                                                     </div>
-                                                    {c.unread_count > 0 && (
-                                                        <span className="shrink-0 min-w-[18px] h-[18px] px-1 bg-[var(--theme-accent)] text-white text-[10px] font-bold rounded-full flex items-center justify-center">
-                                                            {c.unread_count > 9 ? '9+' : c.unread_count}
-                                                        </span>
+                                                    {last?.created_at && (
+                                                        <span className="text-[10px] text-[var(--text-secondary)] shrink-0">{timeAgo(last.created_at)}</span>
                                                     )}
                                                 </Link>
-                                            ))
-                                        )}
-                                    </div>
-                                    <div className="border-t border-[var(--theme-border)]">
-                                        <Link
-                                            to="/messages"
-                                            onClick={() => setShowMsgDropdown(false)}
-                                            className="block text-center text-sm text-[var(--theme-accent)] font-medium py-3 hover:bg-[var(--theme-surface-hover)] transition-colors"
-                                        >
-                                            Open Messages
-                                        </Link>
-                                    </div>
+                                            );
+                                        });
+                                    })()}
                                 </div>
-                            );
-                        })()}
+                                <div className="border-t border-[var(--theme-border)]">
+                                    <Link
+                                        to="/messages"
+                                        onClick={() => setShowMsgDropdown(false)}
+                                        className="block text-center text-sm text-[var(--theme-accent)] font-medium py-3 hover:bg-[var(--theme-surface-hover)] transition-colors"
+                                    >
+                                        See all messages
+                                    </Link>
+                                </div>
+                            </div>
+                        )}
                     </div>
 
                     {/* Divider (desktop) */}

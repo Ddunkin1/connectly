@@ -17,6 +17,32 @@ class StoryController extends Controller
     }
 
     /**
+     * Get the authenticated user's archived stories.
+     */
+    public function archived(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        $stories = Story::where('user_id', $user->id)
+            ->where(function ($q) {
+                $q->where('is_archived', true)->orWhere('expires_at', '<=', now());
+            })
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->map(fn ($s) => [
+                'id'          => $s->id,
+                'media_url'   => $s->media_url,
+                'media_type'  => $s->media_type,
+                'caption'     => $s->caption,
+                'visibility'  => $s->visibility ?? 'public',
+                'is_archived' => true,
+                'expires_at'  => $s->expires_at->toIso8601String(),
+                'created_at'  => $s->created_at->toIso8601String(),
+            ]);
+
+        return response()->json(['stories' => $stories]);
+    }
+
+    /**
      * List stories for feed (grouped by user, only non-expired).
      */
     public function index(Request $request): JsonResponse

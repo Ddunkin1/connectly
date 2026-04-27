@@ -75,6 +75,9 @@ class MessageController extends Controller
 
             $message = $this->messageService->sendMessage($conversation, $sender, $messageText, $options);
 
+            // Unhide conversation for both users when a new message is sent
+            $conversation->update(['hidden_by_user_one' => false, 'hidden_by_user_two' => false]);
+
             return response()->json([
                 'message' => 'Message sent successfully',
                 'data' => new MessageResource($message),

@@ -120,7 +120,7 @@ const CreateStoryModal = ({ isOpen, onClose, onSuccess }) => {
     return (
         <div className="fixed inset-0 z-[200] flex items-center justify-center">
             {/* Backdrop */}
-            <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={handleClose} />
+            <div className="fixed inset-0 bg-black/80 backdrop-blur-sm" onClick={handleClose} />
 
             {/* Panel */}
             <div
@@ -147,7 +147,10 @@ const CreateStoryModal = ({ isOpen, onClose, onSuccess }) => {
                                 </p>
                                 <p className="text-white/40 text-sm mt-1">Drag & drop or click to browse</p>
                             </div>
-                            <div className="px-6 py-2.5 rounded-full bg-white/10 hover:bg-white/20 transition-colors text-white text-sm font-medium border border-white/10">
+                            <div
+                                className="px-6 py-2.5 rounded-full text-white text-sm font-semibold border border-white/20 hover:opacity-90 transition-all"
+                                style={{ background: 'linear-gradient(135deg, #e91e8c, #9c27b0)' }}
+                            >
                                 Select from device
                             </div>
                         </label>
@@ -173,19 +176,15 @@ const CreateStoryModal = ({ isOpen, onClose, onSuccess }) => {
                                     onCropComplete={onCropComplete}
                                     onZoomChange={setZoom}
                                     style={{
-                                        containerStyle: { backgroundColor: 'black', borderRadius: 12 },
+                                        containerStyle: {
+                                            backgroundColor: 'black',
+                                            borderRadius: 12,
+                                            filter: selectedFilter !== 'none' ? filterCss : undefined,
+                                        },
                                         cropAreaStyle: { border: '2px solid rgba(255,255,255,0.4)', borderRadius: 12 },
                                     }}
                                 />
                             ) : null}
-
-                            {/* Filter preview overlay */}
-                            {mediaType === 'image' && selectedFilter !== 'none' && (
-                                <div
-                                    className="absolute inset-0 pointer-events-none"
-                                    style={{ mixBlendMode: 'normal', filter: filterCss, zIndex: 5 }}
-                                />
-                            )}
                         </div>
                     )}
                 </div>
@@ -336,18 +335,6 @@ const CreateStoryModal = ({ isOpen, onClose, onSuccess }) => {
                         </form>
                     )}
 
-                    {/* Step 1 post button (disabled) */}
-                    {step === 1 && (
-                        <div className="px-4 pb-4">
-                            <label
-                                htmlFor="create-story-file"
-                                className="block w-full py-3 rounded-xl text-sm font-semibold text-center text-white cursor-pointer transition-all hover:opacity-90"
-                                style={{ background: 'linear-gradient(135deg, #e91e8c, #9c27b0)' }}
-                            >
-                                Choose media
-                            </label>
-                        </div>
-                    )}
                 </div>
             </div>
 

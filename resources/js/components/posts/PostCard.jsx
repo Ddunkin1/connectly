@@ -460,14 +460,14 @@ const PostCard = ({ post, onDeleted }) => {
                         type="button"
                         onClick={handleLike}
                         disabled={isLikePendingFor(post.id)}
-                        className={`flex items-center gap-2.5 min-w-[44px] min-h-[44px] py-2 px-3 -my-2 -mx-1 rounded-xl transition-colors group/btn cursor-pointer disabled:opacity-60 ${
+                        className={`flex items-center gap-1.5 py-1.5 px-2 -my-1 -mx-1 rounded-lg transition-colors group/btn cursor-pointer disabled:opacity-60 ${
                             isLiked
                                 ? 'text-rose-500 hover:text-rose-500'
                                 : 'text-[var(--text-secondary)] hover:text-rose-500'
                             } hover:bg-[var(--theme-surface-hover)]`}
                         >
                             <span
-                                className={`material-symbols-outlined text-[22px] ${isLiked ? 'text-rose-500' : 'text-[var(--text-secondary)]'}`}
+                                className={`material-symbols-outlined text-[18px] ${isLiked ? 'text-rose-500' : 'text-[var(--text-secondary)]'}`}
                                 style={isLiked ? { fontVariationSettings: "'FILL' 1" } : undefined}
                             >favorite</span>
                             <span className="text-xs font-medium">{displayLikesCount > 999 ? `${(displayLikesCount / 1000).toFixed(1)}k` : displayLikesCount}</span>
@@ -479,9 +479,9 @@ const PostCard = ({ post, onDeleted }) => {
                                 e.preventDefault();
                                 setCommentModalPost(post);
                             }}
-                            className="flex items-center gap-2.5 min-w-[44px] min-h-[44px] py-2 px-3 -my-2 -mx-1 rounded-xl text-[var(--text-secondary)] hover:text-primary hover:bg-[var(--theme-surface-hover)] transition-colors cursor-pointer"
+                            className="flex items-center gap-1.5 py-1.5 px-2 -my-1 -mx-1 rounded-lg text-[var(--text-secondary)] hover:text-primary hover:bg-[var(--theme-surface-hover)] transition-colors cursor-pointer"
                         >
-                            <span className="material-symbols-outlined text-[22px]">chat_bubble</span>
+                            <span className="material-symbols-outlined text-[18px]">chat_bubble</span>
                             <span className="text-xs font-medium">{post.comments_count ?? 0}</span>
                         </button>
 
@@ -492,9 +492,9 @@ const PostCard = ({ post, onDeleted }) => {
                                     e.preventDefault();
                                     setShareModalPost(post);
                                 }}
-                                className="flex items-center gap-2.5 min-w-[44px] min-h-[44px] py-2 px-3 -my-2 -mx-1 rounded-xl text-[var(--text-secondary)] hover:text-sky-500 hover:bg-[var(--theme-surface-hover)] transition-colors cursor-pointer"
+                                className="flex items-center gap-1.5 py-1.5 px-2 -my-1 -mx-1 rounded-lg text-[var(--text-secondary)] hover:text-sky-500 hover:bg-[var(--theme-surface-hover)] transition-colors cursor-pointer"
                             >
-                                <span className="material-symbols-outlined text-[22px]">ios_share</span>
+                                <span className="material-symbols-outlined text-[18px]">ios_share</span>
                                 <span className="text-xs font-medium">{post.shares_count ?? 0}</span>
                             </button>
                         </div>
@@ -504,11 +504,11 @@ const PostCard = ({ post, onDeleted }) => {
                         type="button"
                         onClick={handleBookmark}
                         disabled={isBookmarkPending}
-                        className={`min-w-[44px] min-h-[44px] py-2 px-3 -my-2 -mr-3 rounded-xl transition-colors cursor-pointer disabled:opacity-60 ${
+                        className={`py-1.5 px-2 -my-1 -mr-1 rounded-lg transition-colors cursor-pointer disabled:opacity-60 ${
                             post.is_bookmarked ? 'text-primary' : 'text-[var(--text-secondary)] hover:text-primary hover:bg-[var(--theme-surface-hover)]'
                         }`}
                     >
-                        <span className={`material-symbols-outlined text-[22px] ${post.is_bookmarked ? 'fill-primary' : ''}`}>bookmark</span>
+                        <span className={`material-symbols-outlined text-[18px] ${post.is_bookmarked ? 'fill-primary' : ''}`}>bookmark</span>
                     </button>
                 </div>
 

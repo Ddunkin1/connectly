@@ -1,23 +1,40 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useDeleteConversation } from '../../hooks/useConversations';
+import Modal from '../common/Modal';
 
 const MessageUserPanel = ({
     otherUser,
+    conversationId,
     mediaItems = [],
     pinnedItems = [],
     filesAndLinks = [],
     onViewAllMedia,
     onViewAllPinned,
     onViewAllFiles,
+    onConversationDeleted,
 }) => {
     const [muteNotifications, setMuteNotifications] = useState(false);
     const [stickyContact, setStickyContact] = useState(true);
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const deleteConversationMutation = useDeleteConversation();
 
     if (!otherUser) return null;
 
+    const handleDeleteConversation = async () => {
+        if (!conversationId) return;
+        try {
+            await deleteConversationMutation.mutateAsync(conversationId);
+            setShowDeleteConfirm(false);
+            onConversationDeleted?.();
+        } catch {
+            // toast handled by hook
+        }
+    };
+
     return (
         <section className="flex-1 flex flex-col overflow-y-auto custom-scrollbar bg-[var(--theme-bg-main)]">
-            {/* Header: avatar, name, quick actions */}
+            {/* Header */}
             <div className="p-6 flex flex-col items-center text-center border-b border-[var(--theme-border)] bg-[var(--theme-bg-main)]">
                 <div className="relative mb-4">
                     <img
@@ -38,9 +55,14 @@ const MessageUserPanel = ({
                     </Link>
                     <button
                         type="button"
-                        className="flex-1 py-2.5 px-3 rounded-xl bg-[var(--theme-surface)] text-[var(--text-primary)] text-sm font-medium hover:bg-[var(--theme-surface-hover)] active:scale-[0.98] transition-all border border-[var(--theme-border)]"
+                        onClick={() => setMuteNotifications((v) => !v)}
+                        className={`flex-1 py-2.5 px-3 rounded-xl text-sm font-medium active:scale-[0.98] transition-all border ${
+                            muteNotifications
+                                ? 'bg-[var(--theme-accent)] text-white border-[var(--theme-accent)]'
+                                : 'bg-[var(--theme-surface)] text-[var(--text-primary)] border-[var(--theme-border)] hover:bg-[var(--theme-surface-hover)]'
+                        }`}
                     >
-                        Mute
+                        {muteNotifications ? 'Muted' : 'Mute'}
                     </button>
                 </div>
             </div>
@@ -59,14 +81,8 @@ const MessageUserPanel = ({
                 {/* Pinned items */}
                 <div className="rounded-xl bg-[var(--theme-surface)] border border-[var(--theme-border)] p-5">
                     <div className="flex items-center justify-between mb-3">
-                        <h4 className="text-[10px] font-semibold text-[var(--text-primary)]/60 uppercase tracking-wider">
-                            Pinned items
-                        </h4>
-                        <button
-                            type="button"
-                            onClick={onViewAllPinned}
-                            className="text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors font-medium"
-                        >
+                        <h4 className="text-[10px] font-semibold text-[var(--text-primary)]/60 uppercase tracking-wider">Pinned items</h4>
+                        <button type="button" onClick={onViewAllPinned} className="text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors font-medium">
                             View All
                         </button>
                     </div>
@@ -82,9 +98,7 @@ const MessageUserPanel = ({
                                     onClick={item.onClick}
                                 >
                                     <p className="text-[var(--text-primary)] text-xs line-clamp-2">{item.title}</p>
-                                    {item.meta && (
-                                        <p className="text-[10px] text-[var(--text-secondary)] mt-1">{item.meta}</p>
-                                    )}
+                                    {item.meta && <p className="text-[10px] text-[var(--text-secondary)] mt-1">{item.meta}</p>}
                                 </button>
                             ))}
                         </div>
@@ -94,20 +108,14 @@ const MessageUserPanel = ({
                 {/* Shared media */}
                 <div className="rounded-xl bg-[var(--theme-surface)] border border-[var(--theme-border)] p-5">
                     <div className="flex items-center justify-between mb-4">
-                        <h4 className="text-[10px] font-semibold text-[var(--text-primary)]/60 uppercase tracking-wider">
-                            Shared media
-                        </h4>
+                        <h4 className="text-[10px] font-semibold text-[var(--text-primary)]/60 uppercase tracking-wider">Shared media</h4>
                         <button type="button" onClick={onViewAllMedia} className="text-xs text-[var(--text-primary)]/70 hover:text-primary transition-colors font-medium">
                             See All
                         </button>
                     </div>
                     <div className="grid grid-cols-4 gap-2">
                         {mediaItems.slice(0, 8).map((item) => (
-                            <a
-                                key={item.id}
-                                href={item.attachment_url}
-                                target="_blank"
-                                rel="noopener noreferrer"
+                            <a key={item.id} href={item.attachment_url} target="_blank" rel="noopener noreferrer"
                                 className="aspect-square rounded-lg overflow-hidden bg-[var(--theme-surface-hover)] border border-[var(--theme-border)] hover:border-[var(--theme-border)]/80 transition-colors"
                             >
                                 {item.attachment_type === 'video' ? (
@@ -135,14 +143,8 @@ const MessageUserPanel = ({
                 {/* Files & links */}
                 <div className="rounded-xl bg-[var(--theme-surface)] border border-[var(--theme-border)] p-5">
                     <div className="flex items-center justify-between mb-3">
-                        <h4 className="text-[10px] font-semibold text-[var(--text-primary)]/60 uppercase tracking-wider">
-                            Files & Links
-                        </h4>
-                        <button
-                            type="button"
-                            onClick={onViewAllFiles}
-                            className="text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors font-medium"
-                        >
+                        <h4 className="text-[10px] font-semibold text-[var(--text-primary)]/60 uppercase tracking-wider">Files & Links</h4>
+                        <button type="button" onClick={onViewAllFiles} className="text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors font-medium">
                             View All
                         </button>
                     </div>
@@ -151,11 +153,7 @@ const MessageUserPanel = ({
                     ) : (
                         <div className="space-y-2 text-xs">
                             {filesAndLinks.slice(0, 3).map((item) => (
-                                <a
-                                    key={item.id}
-                                    href={item.url}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
+                                <a key={item.id} href={item.url} target="_blank" rel="noopener noreferrer"
                                     className="flex items-start gap-2 rounded-lg px-3 py-2 hover:bg-[var(--theme-surface-hover)] transition-colors"
                                 >
                                     <span className="material-symbols-outlined text-[var(--text-secondary)] text-base">
@@ -163,11 +161,7 @@ const MessageUserPanel = ({
                                     </span>
                                     <div className="min-w-0">
                                         <p className="text-[var(--text-primary)] truncate">{item.label}</p>
-                                        {item.meta && (
-                                            <p className="text-[10px] text-[var(--text-secondary)] mt-0.5 truncate">
-                                                {item.meta}
-                                            </p>
-                                        )}
+                                        {item.meta && <p className="text-[10px] text-[var(--text-secondary)] mt-0.5 truncate">{item.meta}</p>}
                                     </div>
                                 </a>
                             ))}
@@ -175,7 +169,7 @@ const MessageUserPanel = ({
                     )}
                 </div>
 
-                {/* Conversation settings / safety */}
+                {/* Settings & danger zone */}
                 <div className="rounded-xl bg-[var(--theme-surface)] border border-[var(--theme-border)] p-5">
                     <h4 className="text-[10px] font-semibold text-[var(--text-primary)]/60 uppercase tracking-wider mb-4">Settings</h4>
                     <div className="space-y-4">
@@ -186,7 +180,7 @@ const MessageUserPanel = ({
                                 role="switch"
                                 aria-checked={muteNotifications}
                                 onClick={() => setMuteNotifications((v) => !v)}
-                                className={`relative w-11 h-6 rounded-full transition-all duration-200 ${muteNotifications ? 'bg-primary' : 'bg-[var(--theme-surface-hover)] border border-[var(--theme-border)]'}`}
+                                className={`relative w-11 h-6 rounded-full transition-all duration-200 ${muteNotifications ? 'bg-[var(--theme-accent)]' : 'bg-[var(--theme-surface-hover)] border border-[var(--theme-border)]'}`}
                             >
                                 <span className={`absolute top-0.5 w-5 h-5 rounded-full bg-white transition-all duration-200 ${muteNotifications ? 'left-[22px]' : 'left-0.5'}`} />
                             </button>
@@ -198,21 +192,66 @@ const MessageUserPanel = ({
                                 role="switch"
                                 aria-checked={stickyContact}
                                 onClick={() => setStickyContact((v) => !v)}
-                                className={`relative w-11 h-6 rounded-full transition-all duration-200 ${stickyContact ? 'bg-primary' : 'bg-[var(--theme-surface-hover)] border border-[var(--theme-border)]'}`}
+                                className={`relative w-11 h-6 rounded-full transition-all duration-200 ${stickyContact ? 'bg-[var(--theme-accent)]' : 'bg-[var(--theme-surface-hover)] border border-[var(--theme-border)]'}`}
                             >
                                 <span className={`absolute top-0.5 w-5 h-5 rounded-full bg-white transition-all duration-200 ${stickyContact ? 'left-[22px]' : 'left-0.5'}`} />
                             </button>
                         </div>
                     </div>
-                    <button
-                        type="button"
-                        className="w-full mt-6 py-3 rounded-xl bg-red-600 hover:bg-red-500 text-white text-sm font-medium flex items-center justify-center gap-2 transition-colors active:scale-[0.98]"
-                    >
-                        <span className="material-symbols-outlined text-lg">block</span>
-                        Block {otherUser.name}
-                    </button>
+
+                    <div className="mt-6 space-y-3">
+                        <button
+                            type="button"
+                            onClick={() => setShowDeleteConfirm(true)}
+                            className="w-full py-2.5 rounded-xl bg-[var(--theme-surface-hover)] hover:bg-red-500/10 text-red-500 text-sm font-medium flex items-center justify-center gap-2 transition-colors active:scale-[0.98] border border-red-500/20 hover:border-red-500/40"
+                        >
+                            <span className="material-symbols-outlined text-lg">delete_sweep</span>
+                            Delete Conversation
+                        </button>
+                        <button
+                            type="button"
+                            className="w-full py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white text-sm font-medium flex items-center justify-center gap-2 transition-colors active:scale-[0.98]"
+                        >
+                            <span className="material-symbols-outlined text-lg">block</span>
+                            Block {otherUser.name}
+                        </button>
+                    </div>
                 </div>
             </div>
+
+            {/* Delete conversation confirmation modal */}
+            <Modal
+                isOpen={showDeleteConfirm}
+                onClose={() => setShowDeleteConfirm(false)}
+                title="Delete conversation?"
+                size="sm"
+            >
+                <p className="text-sm text-[var(--text-primary)]/80 mb-6">
+                    This will remove the conversation from your inbox. <strong>{otherUser.name}</strong> will not be notified and their copy will remain intact.
+                </p>
+                <div className="flex justify-end gap-3">
+                    <button
+                        type="button"
+                        onClick={() => setShowDeleteConfirm(false)}
+                        className="px-4 py-2 rounded-xl text-sm font-medium bg-[var(--theme-surface)] text-[var(--text-primary)] hover:bg-[var(--theme-surface-hover)] transition-colors"
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        type="button"
+                        onClick={handleDeleteConversation}
+                        disabled={deleteConversationMutation.isPending}
+                        className="px-4 py-2 rounded-xl text-sm font-medium bg-red-600 text-white hover:bg-red-500 disabled:opacity-50 flex items-center gap-2 transition-colors"
+                    >
+                        {deleteConversationMutation.isPending ? (
+                            <span className="material-symbols-outlined text-lg animate-spin">progress_activity</span>
+                        ) : (
+                            <span className="material-symbols-outlined text-lg">delete</span>
+                        )}
+                        Delete for me
+                    </button>
+                </div>
+            </Modal>
         </section>
     );
 };

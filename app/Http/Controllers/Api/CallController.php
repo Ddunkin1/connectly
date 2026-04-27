@@ -63,6 +63,10 @@ class CallController extends Controller
         $recipient    = $conversation->getOtherUser($caller);
         $callType     = $request->input('call_type', 'video');
 
+        if ($caller->id === $recipient->id) {
+            return response()->json(['message' => 'You cannot call yourself'], 400);
+        }
+
         // Remember who initiated so end() can label the message correctly
         Cache::put("call_initiator_{$conversation->id}", $caller->id, now()->addHour());
         Cache::put("call_type_{$conversation->id}", $callType, now()->addHour());

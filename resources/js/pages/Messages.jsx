@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { useConversation, useConversationByUsername, useConversations } from '../hooks/useConversations';
 import ConversationList from '../components/messages/ConversationList';
 import MessageThread from '../components/messages/MessageThread';
@@ -22,6 +23,7 @@ import { useConnections } from '../hooks/useConnections';
 const Messages = () => {
     const { username } = useParams();
     const navigate = useNavigate();
+    const queryClient = useQueryClient();
     const user = useAuthStore((state) => state.user);
     const [activeTab, setActiveTab] = useState('direct');
     const [mobileView, setMobileView] = useState('list');
@@ -53,8 +55,10 @@ const Messages = () => {
         if (username && conversationByUsernameData?.conversation) {
             setSelectedConversation(conversationByUsernameData.conversation);
             setMobileView('chat');
+            // Sync sidebar — the server may have un-hidden this conversation
+            queryClient.invalidateQueries({ queryKey: ['conversations'] });
         }
-    }, [username, conversationByUsernameData]);
+    }, [username, conversationByUsernameData, queryClient]);
 
     // When URL has username, show Direct tab
     useEffect(() => {
@@ -238,7 +242,7 @@ const Messages = () => {
                             ) : displayConversation ? (
                                 <>
                                     <div className="shrink-0">
-                                        <MessageChatHeader otherUser={displayConversation.other_user} conversationId={displayConversation.id} onBack={() => setMobileView('list')} />
+                                        <MessageChatHeader otherUser={displayConversation.other_user} conversationId={displayConversation.id} onBack={() => setMobileView('list')} isSelf={displayConversation.other_user?.id === user?.id} />
                                     </div>
                                     <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
                                         <MessageThread
@@ -297,9 +301,14 @@ const Messages = () => {
                         <section className="hidden lg:flex w-[280px] shrink-0 border-l border-[var(--theme-border)] flex-col bg-[var(--theme-bg-main)] overflow-hidden">
                             <MessageUserPanel
                                 otherUser={displayConversation.other_user}
+                                conversationId={displayConversation.id}
                                 mediaItems={conversationMedia}
                                 pinnedItems={conversationPinned}
                                 onViewAllMedia={() => setSharedMediaModalOpen(true)}
+                                onConversationDeleted={() => {
+                                    setSelectedConversation(null);
+                                    navigate('/messages', { replace: true });
+                                }}
                             />
                         </section>
                         <SharedMediaModal

@@ -249,6 +249,7 @@ export const conversationsAPI = {
     getConversations: (page = 1) => api.get('/conversations', { params: { page } }),
     getConversation: (conversationId) => api.get(`/conversations/${conversationId}`),
     getConversationByUsername: (username) => api.get(`/conversations/by-username/${username}`),
+    deleteConversation: (conversationId) => api.delete(`/conversations/${conversationId}`),
 };
 
 // Messages API (longer timeout for file uploads so Supabase upload can complete)
@@ -296,6 +297,7 @@ export const storiesAPI = {
         const config = formData instanceof FormData ? { headers: { 'Content-Type': undefined } } : {};
         return api.post('/stories', formData, config);
     },
+    getArchived: () => api.get('/stories/archived'),
     getOne: (storyId) => api.get(`/stories/${storyId}`),
     view: (storyId) => api.post(`/stories/${storyId}/view`),
     update: (storyId, data) => api.patch(`/stories/${storyId}`, data),

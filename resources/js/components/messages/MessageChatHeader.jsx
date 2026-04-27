@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { callAPI } from '../../services/api';
 import toast from 'react-hot-toast';
 
-const MessageChatHeader = ({ otherUser, conversationId, onBack }) => {
+const MessageChatHeader = ({ otherUser, conversationId, onBack, isSelf = false }) => {
     const [showMenu, setShowMenu]   = useState(false);
     const [calling, setCalling]     = useState(false);
 
@@ -53,8 +53,15 @@ const MessageChatHeader = ({ otherUser, conversationId, onBack }) => {
                     <div className={`absolute bottom-0 right-0 w-3 h-3 border-2 border-[var(--theme-bg-main)] rounded-full ${otherUser.is_online ? 'bg-green-500' : 'bg-gray-400'}`} />
                 </div>
                 <div className="min-w-0">
-                    <h2 className="font-semibold text-sm text-[var(--text-primary)] truncate">{otherUser.name}</h2>
-                    {otherUser.is_online ? (
+                    <div className="flex items-center gap-1.5">
+                        <h2 className="font-semibold text-sm text-[var(--text-primary)] truncate">{otherUser.name}</h2>
+                        {isSelf && (
+                            <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-[var(--theme-accent)]/15 text-[var(--theme-accent)] shrink-0">You</span>
+                        )}
+                    </div>
+                    {isSelf ? (
+                        <p className="text-[10px] text-[var(--text-secondary)]">Your personal notes & saved files</p>
+                    ) : otherUser.is_online ? (
                         <p className="text-[10px] text-green-500 font-medium flex items-center gap-1">
                             <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse shrink-0" />
                             Online
@@ -65,31 +72,33 @@ const MessageChatHeader = ({ otherUser, conversationId, onBack }) => {
                 </div>
             </div>
             <div className="flex items-center gap-2 shrink-0">
-                {/* Audio call button */}
-                <button
-                    type="button"
-                    onClick={handleAudioCall}
-                    disabled={calling || !conversationId}
-                    className="w-9 h-9 rounded-full flex items-center justify-center text-[var(--text-primary)]/80 hover:bg-[var(--theme-surface-hover)] hover:text-[var(--text-primary)] transition-all disabled:opacity-50"
-                    aria-label="Voice call"
-                >
-                    <span className="material-symbols-outlined text-xl">call</span>
-                </button>
-
-                {/* Video call button */}
-                <button
-                    type="button"
-                    onClick={handleVideoCall}
-                    disabled={calling || !conversationId}
-                    className="w-9 h-9 rounded-full flex items-center justify-center text-[var(--text-primary)]/80 hover:bg-[var(--theme-surface-hover)] hover:text-[var(--text-primary)] transition-all disabled:opacity-50"
-                    aria-label="Video call"
-                >
-                    {calling ? (
-                        <div className="w-4 h-4 border-2 border-current/40 border-t-current rounded-full animate-spin" />
-                    ) : (
-                        <span className="material-symbols-outlined text-xl">videocam</span>
-                    )}
-                </button>
+                {/* Call buttons — hidden for self-conversations */}
+                {!isSelf && (
+                    <>
+                        <button
+                            type="button"
+                            onClick={handleAudioCall}
+                            disabled={calling || !conversationId}
+                            className="w-9 h-9 rounded-full flex items-center justify-center text-[var(--text-primary)]/80 hover:bg-[var(--theme-surface-hover)] hover:text-[var(--text-primary)] transition-all disabled:opacity-50"
+                            aria-label="Voice call"
+                        >
+                            <span className="material-symbols-outlined text-xl">call</span>
+                        </button>
+                        <button
+                            type="button"
+                            onClick={handleVideoCall}
+                            disabled={calling || !conversationId}
+                            className="w-9 h-9 rounded-full flex items-center justify-center text-[var(--text-primary)]/80 hover:bg-[var(--theme-surface-hover)] hover:text-[var(--text-primary)] transition-all disabled:opacity-50"
+                            aria-label="Video call"
+                        >
+                            {calling ? (
+                                <div className="w-4 h-4 border-2 border-current/40 border-t-current rounded-full animate-spin" />
+                            ) : (
+                                <span className="material-symbols-outlined text-xl">videocam</span>
+                            )}
+                        </button>
+                    </>
+                )}
 
                 <div className="relative">
                     <button type="button" onClick={() => setShowMenu(!showMenu)} className="w-9 h-9 rounded-full flex items-center justify-center text-[var(--text-primary)]/80 hover:bg-[var(--theme-surface-hover)] hover:text-[var(--text-primary)] transition-all" aria-label="Info">

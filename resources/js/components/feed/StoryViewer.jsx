@@ -23,6 +23,17 @@ const formatTimeAgo = (dateStr) => {
     return `${Math.floor(diff / 86400)}d ago`;
 };
 
+const formatTimeLeft = (expiresAtStr) => {
+    if (!expiresAtStr) return '';
+    const msLeft = new Date(expiresAtStr).getTime() - Date.now();
+    if (msLeft <= 0) return 'Expired';
+    const totalMins = Math.floor(msLeft / 60000);
+    if (totalMins < 60) return `${totalMins}m left`;
+    const hours = Math.floor(totalMins / 60);
+    const mins = totalMins % 60;
+    return mins > 0 ? `${hours}h ${mins}m left` : `${hours}h left`;
+};
+
 const StoryViewer = ({ storiesGrouped, initialUserIndex = 0, onClose }) => {
     const queryClient = useQueryClient();
     const currentUser = useAuthStore((s) => s.user);
@@ -225,7 +236,12 @@ const StoryViewer = ({ storiesGrouped, initialUserIndex = 0, onClose }) => {
                     <Avatar src={storyUser?.profile_picture} alt={storyUser?.name} size="sm" className="ring-2 ring-white/70 shrink-0" />
                     <div className="flex-1 min-w-0">
                         <p className="text-white text-sm font-semibold leading-tight truncate">{storyUser?.name}</p>
-                        <p className="text-white/60 text-xs">{formatTimeAgo(currentStory.created_at)}</p>
+                        <p className="text-white/60 text-xs">
+                            {formatTimeAgo(currentStory.created_at)}
+                            {currentStory.expires_at && !currentStory.is_archived && (
+                                <span className="ml-1.5 opacity-70">· {formatTimeLeft(currentStory.expires_at)}</span>
+                            )}
+                        </p>
                     </div>
 
                     {/* Pause/play */}

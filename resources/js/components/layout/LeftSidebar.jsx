@@ -1,32 +1,32 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Explore, Notification, Email, ChartBar, Settings } from 'griddy-icons';
+import { Explore, UsersGroup, ChartBar, Settings } from 'griddy-icons';
 import useAuthStore from '../../store/authStore';
 import { useLogout } from '../../hooks/useAuth';
+import { useStories } from '../../hooks/useStories';
 import Avatar from '../common/Avatar';
-import { useUnreadNotificationsCount } from '../../hooks/useNotifications';
-import { useConversations } from '../../hooks/useConversations';
 import CreatePostModal from '../modal/createPostModal';
+import StoryViewer from '../feed/StoryViewer';
 
 const LeftSidebar = ({ className = '', onNavigate, positionBelowNav = false }) => {
     const location = useLocation();
     const navigate = useNavigate();
     const user = useAuthStore((state) => state.user);
-    const { data: unreadNotifications } = useUnreadNotificationsCount();
-    const { data: conversationsData } = useConversations();
     const [isCreatePostOpen, setIsCreatePostOpen] = useState(false);
+    const [showAvatarMenu, setShowAvatarMenu] = useState(false);
+    const [storyViewerOpen, setStoryViewerOpen] = useState(false);
+    const avatarBtnRef = useRef(null);
 
-    const notificationsBadge = unreadNotifications ?? 0;
-    const messagesBadge = conversationsData?.pages
-        ?.flatMap((p) => p.data?.conversations ?? [])
-        ?.reduce((sum, c) => sum + (c.unread_count ?? 0), 0) ?? 0;
+    const { data: storiesGrouped = [] } = useStories();
+    const ownStoryGroup = storiesGrouped.find((g) => g.user?.id === user?.id);
+    const hasActiveStory = !!ownStoryGroup;
+    const ownStoryIndex = hasActiveStory ? storiesGrouped.indexOf(ownStoryGroup) : -1;
 
     const navItems = [
-        { Icon: Explore,      label: 'Explore',       path: '/explore' },
-        { Icon: Notification, label: 'Notifications', path: '/notifications', badge: notificationsBadge },
-        { Icon: Email,        label: 'Messages',      path: '/messages', badge: messagesBadge },
-        { Icon: ChartBar,     label: 'Analytics',     path: '/analytics' },
-        { Icon: Settings,     label: 'Settings',      path: '/settings' },
+        { Icon: Explore,    label: 'Explore',     path: '/explore' },
+        { Icon: UsersGroup, label: 'Communities',  path: '/communities' },
+        { Icon: ChartBar,   label: 'Analytics',    path: '/analytics' },
+        { Icon: Settings,   label: 'Settings',     path: '/settings' },
     ];
 
     const logoutMutation = useLogout();
@@ -39,34 +39,80 @@ const LeftSidebar = ({ className = '', onNavigate, positionBelowNav = false }) =
 
     const handleNavClick = () => { onNavigate?.(); };
 
+    const handleAvatarClick = (e) => {
+        if (hasActiveStory) {
+            e.preventDefault();
+            setShowAvatarMenu((v) => !v);
+        }
+        // if no story, the Link handles navigation normally
+    };
+
     const wrapperClass = `w-64 flex flex-col px-4 pt-4 pb-4 bg-transparent z-30 overflow-y-auto h-full ${className}`.trim();
 
     return (
         <aside className={wrapperClass}>
             {/* User row */}
             {user && (
-                <Link
-                    to={`/profile/${user.username}`}
-                    onClick={handleNavClick}
-                    className="flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-[var(--theme-surface-hover)] transition-colors mb-5"
-                >
-                    <Avatar
-                        src={user.profile_picture}
-                        alt={user.name}
-                        size="sm"
-                        className="w-8 h-8 rounded-full shrink-0"
-                    />
-                    <div className="min-w-0">
-                        <p className="text-sm font-medium text-[var(--text-primary)] truncate">{user.name}</p>
-                        <p className="text-xs text-[var(--text-secondary)] truncate">@{user.username}</p>
-                    </div>
-                </Link>
+                <div className="relative mb-5">
+                    <Link
+                        ref={avatarBtnRef}
+                        to={`/profile/${user.username}`}
+                        onClick={handleAvatarClick}
+                        className="flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-[var(--theme-surface-hover)] transition-colors"
+                    >
+                        {/* Avatar with optional story ring */}
+                        <div
+                            className="rounded-full shrink-0 p-[2px]"
+                            style={hasActiveStory ? {
+                                background: 'linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888)',
+                            } : {}}
+                        >
+                            <div className={`rounded-full ${hasActiveStory ? 'p-[1.5px] bg-[var(--theme-bg-main,#0d1210)]' : ''}`}>
+                                <Avatar
+                                    src={user.profile_picture}
+                                    alt={user.name}
+                                    size="sm"
+                                    className="w-8 h-8 rounded-full"
+                                />
+                            </div>
+                        </div>
+                        <div className="min-w-0">
+                            <p className="text-sm font-medium text-[var(--text-primary)] truncate">{user.name}</p>
+                            <p className="text-xs text-[var(--text-secondary)] truncate">@{user.username}</p>
+                        </div>
+                    </Link>
+
+                    {/* Story / Profile context menu */}
+                    {showAvatarMenu && (
+                        <>
+                            <div className="fixed inset-0 z-40" onClick={() => setShowAvatarMenu(false)} />
+                            <div className="absolute left-0 top-full mt-1 w-44 rounded-xl bg-[var(--theme-surface)] border border-[var(--theme-border)] shadow-2xl z-50 overflow-hidden py-1">
+                                <button
+                                    type="button"
+                                    onClick={() => { setStoryViewerOpen(true); setShowAvatarMenu(false); }}
+                                    className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm text-[var(--text-primary)] hover:bg-[var(--theme-surface-hover)] transition-colors"
+                                >
+                                    <span className="material-symbols-outlined text-[18px] text-[var(--theme-accent)]">auto_stories</span>
+                                    View story
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => { navigate(`/profile/${user.username}`); setShowAvatarMenu(false); handleNavClick(); }}
+                                    className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm text-[var(--text-primary)] hover:bg-[var(--theme-surface-hover)] transition-colors"
+                                >
+                                    <span className="material-symbols-outlined text-[18px] text-[var(--text-secondary)]">person</span>
+                                    View profile
+                                </button>
+                            </div>
+                        </>
+                    )}
+                </div>
             )}
 
             {/* Nav */}
             <nav className="flex-1 space-y-1" aria-label="Main navigation">
                 {navItems.map((item) => {
-                    const isActive = location.pathname === item.path;
+                    const isActive = location.pathname === item.path || location.pathname.startsWith(item.path + '/');
                     return (
                         <Link
                             key={item.path}
@@ -80,11 +126,6 @@ const LeftSidebar = ({ className = '', onNavigate, positionBelowNav = false }) =
                         >
                             <item.Icon size={22} color="currentColor" filled={isActive} />
                             <span className="text-[15px]">{item.label}</span>
-                            {item.badge > 0 && (
-                                <span className="absolute right-3 top-1/2 -translate-y-1/2 min-w-[18px] h-[18px] px-1 bg-red-500 text-[10px] flex items-center justify-center text-white rounded-full font-bold">
-                                    {item.badge > 99 ? '99+' : item.badge}
-                                </span>
-                            )}
                         </Link>
                     );
                 })}
@@ -113,6 +154,15 @@ const LeftSidebar = ({ className = '', onNavigate, positionBelowNav = false }) =
                 isOpen={isCreatePostOpen}
                 onClose={() => setIsCreatePostOpen(false)}
             />
+
+            {/* Story viewer launched from sidebar */}
+            {storyViewerOpen && storiesGrouped.length > 0 && ownStoryIndex >= 0 && (
+                <StoryViewer
+                    storiesGrouped={storiesGrouped}
+                    initialUserIndex={ownStoryIndex}
+                    onClose={() => setStoryViewerOpen(false)}
+                />
+            )}
         </aside>
     );
 };

@@ -36,33 +36,44 @@ export const useConversationByUsername = (username) => {
     });
 };
 
+const removeConversationFromCache = (old, conversationId) => {
+    if (!old) return old;
+    return {
+        ...old,
+        pages: old.pages.map((page) => ({
+            ...page,
+            data: {
+                ...page.data,
+                conversations: (page.data?.conversations ?? []).filter(
+                    (c) => Number(c.id) !== Number(conversationId)
+                ),
+            },
+        })),
+    };
+};
+
 export const useDeleteConversation = () => {
     const queryClient = useQueryClient();
 
     return useMutation({
         mutationFn: (conversationId) => conversationsAPI.deleteConversation(conversationId),
-        onSuccess: (_, conversationId) => {
-            // Remove immediately from cache so it disappears without waiting for refetch
-            queryClient.setQueryData(['conversations'], (old) => {
-                if (!old) return old;
-                return {
-                    ...old,
-                    pages: old.pages.map((page) => ({
-                        ...page,
-                        data: {
-                            ...page.data,
-                            conversations: (page.data?.conversations ?? []).filter(
-                                (c) => c.id !== conversationId
-                            ),
-                        },
-                    })),
-                };
-            });
-            queryClient.invalidateQueries({ queryKey: ['conversations'] });
+        onMutate: async (conversationId) => {
+            await queryClient.cancelQueries({ queryKey: ['conversations'] });
+            const snapshot = queryClient.getQueryData(['conversations']);
+            queryClient.setQueryData(['conversations'], (old) => removeConversationFromCache(old, conversationId));
+            return { snapshot };
+        },
+        onSuccess: () => {
             toast.success('Conversation deleted');
         },
-        onError: () => {
+        onError: (_, __, context) => {
+            if (context?.snapshot) {
+                queryClient.setQueryData(['conversations'], context.snapshot);
+            }
             toast.error('Failed to delete conversation');
+        },
+        onSettled: () => {
+            queryClient.invalidateQueries({ queryKey: ['conversations'] });
         },
     });
 };

@@ -15,6 +15,8 @@ class Conversation extends Model
         'user_one_id',
         'user_two_id',
         'last_message_at',
+        'hidden_by_user_one',
+        'hidden_by_user_two',
     ];
 
     protected function casts(): array
@@ -23,6 +25,8 @@ class Conversation extends Model
             'last_message_at' => 'datetime',
             'created_at' => 'datetime',
             'updated_at' => 'datetime',
+            'hidden_by_user_one' => 'boolean',
+            'hidden_by_user_two' => 'boolean',
         ];
     }
 

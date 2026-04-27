@@ -18,7 +18,8 @@ import {
     SkeletonBlock,
 } from '../components/common/skeletons';
 import { formatDate } from '../utils/formatDate';
-import { useStories } from '../hooks/useStories';
+import { useStories, useArchivedStories } from '../hooks/useStories';
+import StoryViewer from '../components/feed/StoryViewer';
 import { useProfileComments, useCreateProfileComment, useUpdateProfileComment, useHideProfileComment, useUnhideProfileComment, useDeleteProfileComment } from '../hooks/useProfileComments';
 import { useComments, useCreateComment } from '../hooks/useComments';
 import { useLikePost, useUnlikePost } from '../hooks/usePosts';
@@ -685,6 +686,9 @@ const Profile = () => {
     const navigate = useNavigate();
     const currentUser = useAuthStore((state) => state.user);
     const [activeTab, setActiveTab] = useState('posts');
+    const [showArchiveMenu, setShowArchiveMenu] = useState(false);
+    const [showStoryMenu, setShowStoryMenu] = useState(false);
+    const [profileStoryViewerOpen, setProfileStoryViewerOpen] = useState(false);
     const [reportModalOpen, setReportModalOpen] = useState(false);
     const [editModalOpen, setEditModalOpen] = useState(false);
     const [profilePictureModalOpen, setProfilePictureModalOpen] = useState(false);
@@ -718,6 +722,8 @@ const Profile = () => {
     const fetchMediaHistory = isOwnProfile && activeTab === 'media';
     const { data: profilePictureHistoryItems = [], isLoading: profilePictureHistoryLoading } = useProfilePictureHistory(fetchMediaHistory);
     const { data: coverImageHistoryItems = [], isLoading: coverImageHistoryLoading } = useCoverImageHistory(fetchMediaHistory);
+    const { data: archivedStories = [], isLoading: archivedLoading } = useArchivedStories();
+    const [archiveViewerIndex, setArchiveViewerIndex] = useState(null);
 
     const hasActiveStory = profile
         ? storiesGrouped.some(
@@ -857,6 +863,7 @@ const Profile = () => {
     const extraCount = Math.max(0, (profile.followers_count ?? 0) - followersPreview.length);
 
     return (
+        <>
         <div className="w-full max-w-[720px] mx-auto min-w-0 px-0 py-4 md:py-6">
             {/* Profile Banner Section */}
             <div className="theme-surface rounded-2xl overflow-visible mb-6 border border-[var(--theme-border)] shadow-post-card relative min-w-0 w-full">
@@ -928,7 +935,7 @@ const Profile = () => {
                     <div className="relative shrink-0 group/avatar">
                         <button
                             type="button"
-                            onClick={() => setProfilePictureModalOpen(true)}
+                            onClick={() => hasActiveStory ? setShowStoryMenu((v) => !v) : setProfilePictureModalOpen(true)}
                             className="relative drop-shadow-lg rounded-full focus:outline-none focus:ring-2 focus:ring-[var(--theme-accent)] focus:ring-offset-2 focus:ring-offset-[var(--theme-surface)] cursor-pointer"
                             aria-label="View profile picture"
                         >
@@ -964,6 +971,34 @@ const Profile = () => {
                             aria-hidden
                         />
                         </button>
+
+                        {/* Story / photo context menu */}
+                        {showStoryMenu && hasActiveStory && (
+                            <>
+                                <div className="fixed inset-0 z-40" onClick={() => setShowStoryMenu(false)} />
+                                <div className="absolute left-0 top-full mt-2 w-48 rounded-xl bg-[var(--theme-surface)] border border-[var(--theme-border)] shadow-2xl z-50 overflow-hidden py-1">
+                                    <button
+                                        type="button"
+                                        onClick={() => { setProfileStoryViewerOpen(true); setShowStoryMenu(false); }}
+                                        className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-[var(--text-primary)] hover:bg-[var(--theme-surface-hover)] transition-colors"
+                                    >
+                                        <span className="material-symbols-outlined text-[18px] text-[var(--theme-accent)]">auto_stories</span>
+                                        View story
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => { setProfilePictureModalOpen(true); setShowStoryMenu(false); }}
+                                        className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-[var(--text-primary)] hover:bg-[var(--theme-surface-hover)] transition-colors"
+                                    >
+                                        <span className="material-symbols-outlined text-[18px] text-[var(--text-secondary)]">
+                                            {isOwnProfile ? 'edit' : 'photo_camera'}
+                                        </span>
+                                        {isOwnProfile ? 'Edit photo' : 'View photo'}
+                                    </button>
+                                </div>
+                            </>
+                        )}
+
                         {isOwnProfile && (
                             <button
                                 type="button"
@@ -1304,6 +1339,48 @@ const Profile = () => {
                         >
                             More
                         </button>
+                        {isOwnProfile && (
+                            <div className="relative flex items-center ml-auto">
+                                <button
+                                    type="button"
+                                    onClick={() => setShowArchiveMenu((v) => !v)}
+                                    className={`py-4 px-2 border-b-2 transition-all duration-200 flex items-center ${
+                                        ['archive', 'post_archive', 'memories'].includes(activeTab)
+                                            ? 'text-[var(--theme-accent)] border-[var(--theme-accent)]'
+                                            : 'text-gray-400 border-transparent hover:text-white'
+                                    }`}
+                                    aria-label="More options"
+                                >
+                                    <span className="material-symbols-outlined text-xl">more_horiz</span>
+                                </button>
+                                {showArchiveMenu && (
+                                    <>
+                                        <div className="fixed inset-0 z-40" onClick={() => setShowArchiveMenu(false)} />
+                                        <div className="absolute right-0 top-full mt-1 w-48 rounded-xl bg-[var(--theme-surface)] border border-[var(--theme-border)] shadow-2xl z-50 overflow-hidden py-1">
+                                            {[
+                                                { icon: 'inventory_2',   label: 'Story Archive', tab: 'archive' },
+                                                { icon: 'archive',       label: 'Post Archive',  tab: 'post_archive' },
+                                                { icon: 'auto_awesome',  label: 'Memories',      tab: 'memories' },
+                                            ].map(({ icon, label, tab }) => (
+                                                <button
+                                                    key={tab}
+                                                    type="button"
+                                                    onClick={() => { setActiveTab(tab); setShowArchiveMenu(false); }}
+                                                    className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-colors ${
+                                                        activeTab === tab
+                                                            ? 'text-[var(--theme-accent)] bg-[var(--theme-accent)]/10'
+                                                            : 'text-[var(--text-primary)] hover:bg-[var(--theme-surface-hover)]'
+                                                    }`}
+                                                >
+                                                    <span className="material-symbols-outlined text-base">{icon}</span>
+                                                    {label}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </>
+                                )}
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
@@ -1600,9 +1677,116 @@ const Profile = () => {
                             </div>
                         </div>
                     )}
+
+                    {/* Post Archive tab - own profile only */}
+                    {activeTab === 'post_archive' && isOwnProfile && (
+                        <div className="theme-surface rounded-2xl border border-[var(--theme-border)] p-6 card-shadow">
+                            <div className="flex items-center gap-2 mb-5">
+                                <span className="material-symbols-outlined text-[var(--theme-accent)]">archive</span>
+                                <h2 className="text-lg font-bold text-[var(--text-primary)]">Post Archive</h2>
+                            </div>
+                            <div className="py-12 text-center">
+                                <span className="material-symbols-outlined text-5xl text-[var(--text-secondary)]/30 block mb-4">archive</span>
+                                <p className="text-[var(--text-primary)] font-semibold mb-1">Coming soon</p>
+                                <p className="text-[var(--text-secondary)] text-sm">Posts you archive will be stored here privately.</p>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Memories tab - own profile only */}
+                    {activeTab === 'memories' && isOwnProfile && (
+                        <div className="theme-surface rounded-2xl border border-[var(--theme-border)] p-6 card-shadow">
+                            <div className="flex items-center gap-2 mb-5">
+                                <span className="material-symbols-outlined text-[var(--theme-accent)]">auto_awesome</span>
+                                <h2 className="text-lg font-bold text-[var(--text-primary)]">Memories</h2>
+                            </div>
+                            <div className="py-12 text-center">
+                                <span className="material-symbols-outlined text-5xl text-[var(--text-secondary)]/30 block mb-4">auto_awesome</span>
+                                <p className="text-[var(--text-primary)] font-semibold mb-1">Coming soon</p>
+                                <p className="text-[var(--text-secondary)] text-sm">Relive your posts and stories from this day in past years.</p>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Story Archive tab - own profile only */}
+                    {activeTab === 'archive' && isOwnProfile && (
+                        <div className="theme-surface rounded-2xl border border-[var(--theme-border)] p-6 card-shadow">
+                            <div className="flex items-center gap-2 mb-5">
+                                <span className="material-symbols-outlined text-[var(--theme-accent)]">inventory_2</span>
+                                <h2 className="text-lg font-bold text-[var(--text-primary)]">Story Archive</h2>
+                            </div>
+                            {archivedLoading ? (
+                                <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                                    {Array.from({ length: 6 }).map((_, i) => (
+                                        <div key={i} className="aspect-[9/16] rounded-xl bg-[var(--theme-surface-hover)] animate-pulse" />
+                                    ))}
+                                </div>
+                            ) : archivedStories.length === 0 ? (
+                                <div className="py-12 text-center">
+                                    <span className="material-symbols-outlined text-4xl text-[var(--text-secondary)]/40 block mb-3">inventory_2</span>
+                                    <p className="text-[var(--text-primary)] font-medium mb-1">No archived stories</p>
+                                    <p className="text-[var(--text-secondary)] text-sm">Stories you archive will appear here.</p>
+                                </div>
+                            ) : (
+                                <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                                    {archivedStories.map((story, idx) => (
+                                        <button
+                                            key={story.id}
+                                            type="button"
+                                            onClick={() => setArchiveViewerIndex(idx)}
+                                            className="relative aspect-[9/16] rounded-xl overflow-hidden bg-black group focus:outline-none"
+                                        >
+                                            {story.media_type === 'video' ? (
+                                                <video src={story.media_url} className="w-full h-full object-cover" muted playsInline />
+                                            ) : (
+                                                <img src={story.media_url} alt="Archived story" className="w-full h-full object-cover" />
+                                            )}
+                                            <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                                <span className="material-symbols-outlined text-white text-3xl">
+                                                    {story.media_type === 'video' ? 'play_circle' : 'fullscreen'}
+                                                </span>
+                                            </div>
+                                            {story.media_type === 'video' && (
+                                                <div className="absolute top-2 right-2">
+                                                    <span className="material-symbols-outlined text-white text-base drop-shadow">videocam</span>
+                                                </div>
+                                            )}
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    )}
                 </div>
             </div>
         </div>
+
+        {/* Profile picture story viewer */}
+        {profileStoryViewerOpen && (() => {
+            const idx = storiesGrouped.findIndex((g) => g.user?.id === profile?.id);
+            if (idx < 0) return null;
+            return (
+                <StoryViewer
+                    storiesGrouped={storiesGrouped}
+                    initialUserIndex={idx}
+                    onClose={() => setProfileStoryViewerOpen(false)}
+                />
+            );
+        })()}
+
+        {/* Story archive viewer */}
+        {archiveViewerIndex !== null && archivedStories.length > 0 && (
+            <StoryViewer
+                storiesGrouped={[{
+                    user: currentUser,
+                    stories: archivedStories.slice(archiveViewerIndex),
+                    has_unviewed: false,
+                }]}
+                initialUserIndex={0}
+                onClose={() => setArchiveViewerIndex(null)}
+            />
+        )}
+        </>
     );
 };
 
