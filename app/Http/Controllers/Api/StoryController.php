@@ -86,4 +86,37 @@ class StoryController extends Controller
 
         return response()->json(['story' => $story]);
     }
+
+    /**
+     * Update story visibility or archive status.
+     */
+    public function update(Request $request, Story $story): JsonResponse
+    {
+        if ($story->user_id !== $request->user()->id) {
+            return response()->json(['message' => 'Forbidden'], 403);
+        }
+
+        $data = $request->validate([
+            'visibility'  => ['sometimes', 'in:public,friends,private'],
+            'is_archived' => ['sometimes', 'boolean'],
+        ]);
+
+        $story->update($data);
+
+        return response()->json(['message' => 'Story updated', 'story' => $story]);
+    }
+
+    /**
+     * Delete a story.
+     */
+    public function destroy(Request $request, Story $story): JsonResponse
+    {
+        if ($story->user_id !== $request->user()->id) {
+            return response()->json(['message' => 'Forbidden'], 403);
+        }
+
+        $story->delete();
+
+        return response()->json(['message' => 'Story deleted']);
+    }
 }

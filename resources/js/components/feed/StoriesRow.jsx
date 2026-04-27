@@ -67,19 +67,25 @@ const StoriesRow = () => {
                                 key={group.user?.id}
                                 type="button"
                                 onClick={() => openViewer(index)}
-                                className="flex flex-col items-center flex-shrink-0 cursor-pointer"
+                                className="flex flex-col items-center flex-shrink-0 cursor-pointer group"
                                 aria-label={`View ${group.user?.name}'s story`}
                             >
-                                <div className={`rounded-full shrink-0 overflow-hidden ${
-                                    hasRing
-                                        ? 'ring-2 ring-[var(--theme-accent)] ring-offset-2 ring-offset-white dark:ring-offset-[var(--theme-surface)]'
-                                        : 'ring-2 ring-gray-200 dark:ring-white/10 ring-offset-2'
-                                }`}>
-                                    <Avatar
-                                        src={group.user?.profile_picture}
-                                        alt={group.user?.name}
-                                        className="w-14 h-14 rounded-full object-cover"
-                                    />
+                                <div className="p-[2px] rounded-full"
+                                    style={hasRing ? {
+                                        background: 'linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888)',
+                                    } : {
+                                        background: 'transparent',
+                                        padding: 0,
+                                    }}
+                                >
+                                    <div className={`rounded-full p-[2px] ${hasRing ? 'bg-white dark:bg-[var(--theme-surface)]' : 'ring-2 ring-gray-200 dark:ring-white/10'}`}>
+                                        <Avatar
+                                            src={group.user?.profile_picture}
+                                            alt={group.user?.name}
+                                            className="w-13 h-13 rounded-full object-cover"
+                                            style={{ width: 52, height: 52 }}
+                                        />
+                                    </div>
                                 </div>
                                 <span className="text-[11px] text-[var(--text-primary)] truncate max-w-[56px] mt-1.5 text-center">
                                     {group.user?.name}

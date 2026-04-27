@@ -149,6 +149,8 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function () {
     Route::post('/stories', [StoryController::class, 'store']);
     Route::post('/stories/{story}/view', [StoryController::class, 'view']);
     Route::get('/stories/{story}', [StoryController::class, 'show']);
+    Route::patch('/stories/{story}', [StoryController::class, 'update']);
+    Route::delete('/stories/{story}', [StoryController::class, 'destroy']);
 
     // Bookmarks
     Route::get('/bookmarks', [BookmarkController::class, 'index']);

@@ -34,3 +34,27 @@ export const useStory = (storyId) => {
         select: (data) => data.data?.story,
     });
 };
+
+export const useDeleteStory = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: (storyId) => storiesAPI.delete(storyId),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['stories'] });
+            toast.success('Story deleted');
+        },
+        onError: () => toast.error('Failed to delete story'),
+    });
+};
+
+export const useUpdateStory = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: ({ storyId, data }) => storiesAPI.update(storyId, data),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['stories'] });
+            toast.success('Story updated');
+        },
+        onError: () => toast.error('Failed to update story'),
+    });
+};

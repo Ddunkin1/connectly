@@ -298,6 +298,8 @@ export const storiesAPI = {
     },
     getOne: (storyId) => api.get(`/stories/${storyId}`),
     view: (storyId) => api.post(`/stories/${storyId}/view`),
+    update: (storyId, data) => api.patch(`/stories/${storyId}`, data),
+    delete: (storyId) => api.delete(`/stories/${storyId}`),
 };
 
 // Notifications API

@@ -15,6 +15,8 @@ class Story extends Model
         'media_type',
         'caption',
         'expires_at',
+        'visibility',
+        'is_archived',
     ];
 
     protected function casts(): array
@@ -23,6 +25,7 @@ class Story extends Model
             'expires_at' => 'datetime',
             'created_at' => 'datetime',
             'updated_at' => 'datetime',
+            'is_archived' => 'boolean',
         ];
     }
 
@@ -38,6 +41,6 @@ class Story extends Model
 
     public function scopeActive(Builder $query): Builder
     {
-        return $query->where('expires_at', '>', now());
+        return $query->where('expires_at', '>', now())->where('is_archived', false);
     }
 }
