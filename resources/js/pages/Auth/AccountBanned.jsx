@@ -150,73 +150,64 @@ const AccountBanned = () => {
                     >
                         Back to login
                     </Link>
-                    {appealToken ? (
-                        <div className="text-left">
-                            {!appealSubmitted ? (
-                                <>
-                                    <button
-                                        type="button"
-                                        onClick={() => setAppealFormOpen((v) => !v)}
-                                        className="w-full inline-flex items-center justify-center py-2.5 px-4 rounded-xl text-sm font-medium border border-[var(--theme-border)] text-[var(--text-primary)] hover:bg-[var(--theme-surface-hover)] transition"
-                                    >
-                                        Appeal this decision
-                                    </button>
+                    <div className="text-left">
+                        {!appealSubmitted ? (
+                            <>
+                                <button
+                                    type="button"
+                                    onClick={() => setAppealFormOpen((v) => !v)}
+                                    className="w-full inline-flex items-center justify-center py-2.5 px-4 rounded-xl text-sm font-medium border border-[var(--theme-border)] text-[var(--text-primary)] hover:bg-[var(--theme-surface-hover)] transition"
+                                >
+                                    Appeal this decision
+                                </button>
 
-                                    {appealFormOpen && (
-                                        <form onSubmit={submitBanAppeal} className="mt-3 space-y-3">
-                                            <div>
-                                                <label className="block text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wide mb-2">
-                                                    Your appeal
-                                                </label>
-                                                <textarea
-                                                    value={appealText}
-                                                    onChange={(e) => setAppealText(e.target.value)}
-                                                    rows={5}
-                                                    className="w-full rounded-xl border border-[var(--theme-border)] bg-[var(--bg-primary)] text-[var(--text-primary)] text-sm p-3"
-                                                    placeholder="Explain why you think this decision is a mistake…"
-                                                />
-                                            </div>
+                                {appealFormOpen && (
+                                    <form onSubmit={submitBanAppeal} className="mt-3 space-y-3">
+                                        <div>
+                                            <label className="block text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wide mb-2">
+                                                Your appeal
+                                            </label>
+                                            <textarea
+                                                value={appealText}
+                                                onChange={(e) => setAppealText(e.target.value)}
+                                                rows={5}
+                                                className="w-full rounded-xl border border-[var(--theme-border)] bg-[var(--bg-primary)] text-[var(--text-primary)] text-sm p-3"
+                                                placeholder="Explain why you think this decision is a mistake…"
+                                            />
+                                        </div>
 
-                                            {appealError && (
-                                                <p className="text-sm text-red-500 leading-snug">{appealError}</p>
-                                            )}
+                                        {appealError && (
+                                            <p className="text-sm text-red-500 leading-snug">{appealError}</p>
+                                        )}
 
-                                            <div className="flex flex-wrap justify-end gap-2 pt-1">
-                                                <button
-                                                    type="button"
-                                                    onClick={() => {
-                                                        setAppealFormOpen(false);
-                                                        setAppealError(null);
-                                                    }}
-                                                    className="px-4 py-2 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] text-sm font-medium text-[var(--text-primary)] hover:bg-[var(--theme-surface-hover)] transition-colors"
-                                                >
-                                                    Cancel
-                                                </button>
-                                                <button
-                                                    type="submit"
-                                                    disabled={isSubmittingAppeal}
-                                                    className="px-4 py-2 rounded-xl bg-[var(--theme-accent)] text-white text-sm font-semibold disabled:opacity-50 shadow-md hover:opacity-95 transition-opacity"
-                                                >
-                                                    {isSubmittingAppeal ? 'Submitting…' : 'Submit appeal'}
-                                                </button>
-                                            </div>
-                                        </form>
-                                    )}
-                                </>
-                            ) : (
-                                <div className="text-sm text-[var(--text-primary)] bg-[var(--theme-accent)]/10 border border-[var(--theme-accent)]/30 rounded-xl px-4 py-3 mt-1">
-                                    Your appeal was submitted. You can try signing in again after our team reviews it.
-                                </div>
-                            )}
-                        </div>
-                    ) : (
-                        <a
-                            href="mailto:support@connectly.com?subject=Ban%20appeal%20-%20Connectly%20account"
-                            className="w-full inline-flex items-center justify-center py-2.5 px-4 rounded-xl text-sm font-medium border border-[var(--theme-border)] text-[var(--text-primary)] hover:bg-[var(--theme-surface-hover)] transition"
-                        >
-                            Appeal this decision
-                        </a>
-                    )}
+                                        <div className="flex flex-wrap justify-end gap-2 pt-1">
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    setAppealFormOpen(false);
+                                                    setAppealError(null);
+                                                }}
+                                                className="px-4 py-2 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] text-sm font-medium text-[var(--text-primary)] hover:bg-[var(--theme-surface-hover)] transition-colors"
+                                            >
+                                                Cancel
+                                            </button>
+                                            <button
+                                                type="submit"
+                                                disabled={isSubmittingAppeal}
+                                                className="px-4 py-2 rounded-xl bg-[var(--theme-accent)] text-white text-sm font-semibold disabled:opacity-50 shadow-md hover:opacity-95 transition-opacity"
+                                            >
+                                                {isSubmittingAppeal ? 'Submitting…' : 'Submit appeal'}
+                                            </button>
+                                        </div>
+                                    </form>
+                                )}
+                            </>
+                        ) : (
+                            <div className="text-sm text-[var(--text-primary)] bg-[var(--theme-accent)]/10 border border-[var(--theme-accent)]/30 rounded-xl px-4 py-3 mt-1">
+                                Your appeal was submitted. You can try signing in again after our team reviews it.
+                            </div>
+                        )}
+                    </div>
                     <Link to="/" className="text-sm text-[var(--theme-accent)] hover:underline">
                         Home
                     </Link>
