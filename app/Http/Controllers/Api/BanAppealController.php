@@ -16,6 +16,7 @@ class BanAppealController extends Controller
 {
     /**
      * Submit an account-ban appeal while the user is blocked (no auth required).
+     * Accepts either an appeal_token (from the login 403 flow) or an email address.
      */
     public function store(Request $request): JsonResponse
     {
@@ -24,34 +25,58 @@ class BanAppealController extends Controller
         }
 
         $validated = $request->validate([
-            'appeal_token' => ['required', 'string'],
-            'message' => ['required', 'string', 'min:20', 'max:5000'],
+            'appeal_token' => ['nullable', 'string'],
+            'email'        => ['nullable', 'string', 'email'],
+            'message'      => ['required', 'string', 'min:20', 'max:5000'],
         ]);
 
-        try {
-            $payload = json_decode(Crypt::decryptString($validated['appeal_token']), true, 512, JSON_THROW_ON_ERROR);
-        } catch (\Throwable $e) {
-            return response()->json(['message' => 'Invalid or expired appeal token'], 422);
+        // Resolve the ban event either via encrypted token or email lookup
+        if (! empty($validated['appeal_token'])) {
+            try {
+                $payload = json_decode(Crypt::decryptString($validated['appeal_token']), true, 512, JSON_THROW_ON_ERROR);
+            } catch (\Throwable $e) {
+                return response()->json(['message' => 'Invalid or expired appeal token'], 422);
+            }
+
+            $moderationEventId = (int) ($payload['moderation_event_id'] ?? 0);
+            $userId            = (int) ($payload['user_id'] ?? 0);
+
+            if ($moderationEventId <= 0 || $userId <= 0) {
+                return response()->json(['message' => 'Invalid appeal token payload'], 422);
+            }
+
+            $event = ModerationEvent::query()->findOrFail($moderationEventId);
+
+            if ($event->action !== ModerationEvent::ACTION_BAN) {
+                return response()->json(['message' => 'This is not a ban event'], 422);
+            }
+
+            if ((int) $event->user_id !== $userId) {
+                return response()->json(['message' => 'Forbidden'], 403);
+            }
+
+            $user = $event->user;
+        } elseif (! empty($validated['email'])) {
+            $user = User::query()->where('email', $validated['email'])->first();
+
+            if (! $user || $user->banned_at === null) {
+                // Return a generic message to avoid email enumeration
+                return response()->json(['message' => 'No active ban was found for that email address.'], 422);
+            }
+
+            $event = ModerationEvent::query()
+                ->where('user_id', $user->id)
+                ->where('action', ModerationEvent::ACTION_BAN)
+                ->orderByDesc('id')
+                ->first();
+
+            if (! $event) {
+                return response()->json(['message' => 'No ban record found for this account.'], 422);
+            }
+        } else {
+            return response()->json(['message' => 'Please provide your email address to submit an appeal.'], 422);
         }
 
-        $moderationEventId = (int) ($payload['moderation_event_id'] ?? 0);
-        $userId = (int) ($payload['user_id'] ?? 0);
-
-        if ($moderationEventId <= 0 || $userId <= 0) {
-            return response()->json(['message' => 'Invalid appeal token payload'], 422);
-        }
-
-        $event = ModerationEvent::query()->findOrFail($moderationEventId);
-
-        if ($event->action !== ModerationEvent::ACTION_BAN) {
-            return response()->json(['message' => 'This is not a ban event'], 422);
-        }
-
-        if ((int) $event->user_id !== (int) $userId) {
-            return response()->json(['message' => 'Forbidden'], 403);
-        }
-
-        $user = $event->user;
         if ($user === null || $user->banned_at === null) {
             return response()->json(['message' => 'This account is not currently banned'], 422);
         }
@@ -62,9 +87,9 @@ class BanAppealController extends Controller
 
         $appeal = BanAppeal::create([
             'moderation_event_id' => $event->id,
-            'user_id' => $user->id,
-            'message' => $validated['message'],
-            'status' => BanAppeal::STATUS_PENDING,
+            'user_id'             => $user->id,
+            'message'             => $validated['message'],
+            'status'              => BanAppeal::STATUS_PENDING,
         ]);
 
         $appeal->load(['user', 'moderationEvent']);
@@ -76,11 +101,10 @@ class BanAppealController extends Controller
 
         return response()->json([
             'message' => 'Your appeal was submitted. Our team will review it as soon as possible.',
-            'appeal' => [
-                'id' => $appeal->id,
+            'appeal'  => [
+                'id'     => $appeal->id,
                 'status' => $appeal->status,
             ],
         ], 201);
     }
 }
-
