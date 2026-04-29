@@ -17,7 +17,8 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->statefulApi();
         $middleware->append(\App\Http\Middleware\SecurityHeaders::class);
         $middleware->alias([
-            'admin' => \App\Http\Middleware\EnsureUserIsAdmin::class,
+            'admin'          => \App\Http\Middleware\EnsureUserIsAdmin::class,
+            'check.not.banned' => \App\Http\Middleware\CheckNotBanned::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

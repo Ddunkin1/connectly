@@ -69,8 +69,8 @@ const NotificationItem = ({
             case 'warning_appeal_submitted':       return data.appeal_id ? `/admin/warning-appeals?appeal=${data.appeal_id}` : '/admin/warning-appeals';
             case 'ban_appeal_submitted':           return data.appeal_id ? `/admin/ban-appeals?appeal=${data.appeal_id}` : '/admin/ban-appeals';
             case 'moderation_content_removed':
-            case 'account_suspended':
-            case 'account_banned':
+            case 'account_suspended':              return '/safety';
+            case 'account_banned':                 return '/account-banned';
             case 'ban_appeal_answered':            return '/safety';
             case 'friend_request':                 return `/profile/${data.sender_username}`;
             case 'friend_request_accepted':        return `/profile/${data.actor_username}`;

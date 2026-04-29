@@ -7,11 +7,6 @@ import { useConversations } from '../../hooks/useConversations';
 import { useSendMessage } from '../../hooks/useMessages';
 import toast from 'react-hot-toast';
 
-const postUrl = (postId) => {
-    if (typeof window === 'undefined') return '';
-    return `${window.location.origin}/post/${postId}`;
-};
-
 const ShareViaMessageModal = ({ post, onClose, onSent, initialReceiver }) => {
     const [selectedUser, setSelectedUser] = useState(initialReceiver ?? null);
     useEffect(() => {
@@ -30,9 +25,8 @@ const ShareViaMessageModal = ({ post, onClose, onSent, initialReceiver }) => {
             toast.error('Select a user to send to');
             return;
         }
-        const text = [data.message?.trim(), postUrl(post.id)].filter(Boolean).join('\n');
         sendMessageMutation.mutate(
-            { receiver_id: selectedUser.id, message: text },
+            { receiver_id: selectedUser.id, message: data.message?.trim() || null, post_id: post.id },
             {
                 onSuccess: () => {
                     toast.success(`Sent to ${selectedUser.name}`);
@@ -121,7 +115,7 @@ const ShareViaMessageModal = ({ post, onClose, onSent, initialReceiver }) => {
                                 className="w-full px-3 py-2 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface-hover)] text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] focus:ring-2 focus:ring-[var(--theme-accent)]/40 resize-none text-sm"
                                 maxLength={500}
                             />
-                            <p className="text-xs text-[var(--text-secondary)] mt-1">The post link will be included automatically.</p>
+                            <p className="text-xs text-[var(--text-secondary)] mt-1">The post preview will be included automatically.</p>
                         </div>
                     </div>
 

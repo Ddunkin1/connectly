@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { useDeleteMessage, useMessages, useUpdateMessage, useSendMessage, usePinMessage, useUnpinMessage } from '../../hooks/useMessages';
 import { useConversations } from '../../hooks/useConversations';
@@ -7,7 +8,36 @@ import LoadingSpinner from '../common/LoadingSpinner';
 import Modal from '../common/Modal';
 import { formatDate } from '../../utils/formatDate';
 import useAuthStore from '../../store/authStore';
+import Avatar from '../common/Avatar';
 import toast from 'react-hot-toast';
+
+function SharedPostCard({ post }) {
+    if (!post) return null;
+    return (
+        <Link
+            to={`/post/${post.id}`}
+            className="block mx-2 mb-2 mt-1 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-bg)] overflow-hidden hover:bg-[var(--theme-surface-hover)] transition-colors"
+        >
+            <div className="flex items-center gap-2 px-3 pt-3 pb-2">
+                <Avatar src={post.user?.profile_picture} alt={post.user?.name} size="xs" className="w-7 h-7 shrink-0" />
+                <div className="min-w-0">
+                    <p className="text-xs font-semibold text-[var(--text-primary)] truncate">{post.user?.name}</p>
+                    <p className="text-[10px] text-[var(--text-secondary)] truncate">@{post.user?.username}</p>
+                </div>
+            </div>
+            {post.media_url && post.media_type === 'image' && (
+                <img src={post.media_url} alt="" className="w-full max-h-48 object-cover" />
+            )}
+            {post.content ? (
+                <p className="px-3 pb-3 text-xs text-[var(--text-primary)]/90 line-clamp-3 leading-relaxed">
+                    {post.content}
+                </p>
+            ) : (
+                <div className="pb-1" />
+            )}
+        </Link>
+    );
+}
 
 const formatDateSeparator = (dateStr) => {
     const d = new Date(dateStr);
@@ -651,7 +681,17 @@ const MessageThread = ({ conversationId, onMediaFromMessages, onPinnedFromMessag
                                                         )}
                                                     </>
                                                 )}
-                                                {!isDeleted && !message.attachment_url && message.message && (
+                                                {!isDeleted && message.shared_post && (
+                                                    <>
+                                                        <SharedPostCard post={message.shared_post} />
+                                                        {message.message && (
+                                                            <div className="px-4 pb-3 min-w-0 max-w-full">
+                                                                <p className="text-sm text-[var(--text-primary)] leading-relaxed whitespace-pre-wrap break-words">{message.message}</p>
+                                                            </div>
+                                                        )}
+                                                    </>
+                                                )}
+                                                {!isDeleted && !message.attachment_url && !message.shared_post && message.message && (
                                                     <div className="px-4 py-3 min-w-0 max-w-full">
                                                         <p className="text-sm text-[var(--text-primary)] leading-relaxed whitespace-pre-wrap break-words">{message.message}</p>
                                                     </div>

@@ -88,7 +88,7 @@ Route::post('/broadcasting/auth', [BroadcastController::class, 'authenticate'])
     ->middleware(['auth:sanctum']);
 
 // Protected routes (with rate limiting)
-Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function () {
+Route::middleware(['auth:sanctum', 'check.not.banned', 'throttle:120,1'])->group(function () {
     // Authentication
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/user', [AuthController::class, 'user']);

@@ -73,6 +73,10 @@ class MessageController extends Controller
                 }
             }
 
+            if (!empty($data['post_id'])) {
+                $options['post_id'] = (int) $data['post_id'];
+            }
+
             $message = $this->messageService->sendMessage($conversation, $sender, $messageText, $options);
 
             // Unhide conversation for both users when a new message is sent

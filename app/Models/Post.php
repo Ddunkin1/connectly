@@ -60,6 +60,14 @@ class Post extends Model
     }
 
     /**
+     * Get community post records for this post.
+     */
+    public function communityPosts(): HasMany
+    {
+        return $this->hasMany(CommunityPost::class);
+    }
+
+    /**
      * Get all comments for the post.
      */
     public function comments(): HasMany

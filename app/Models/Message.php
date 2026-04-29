@@ -25,6 +25,7 @@ class Message extends Model
         'is_pinned',
         'pinned_at',
         'type',
+        'post_id',
     ];
 
     protected function casts(): array
@@ -63,6 +64,14 @@ class Message extends Model
     public function receiver(): BelongsTo
     {
         return $this->belongsTo(User::class, 'receiver_id');
+    }
+
+    /**
+     * Get the shared post attached to this message.
+     */
+    public function post(): BelongsTo
+    {
+        return $this->belongsTo(Post::class);
     }
 
     /**

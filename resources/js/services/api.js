@@ -52,7 +52,23 @@ api.interceptors.response.use(
             useAuthStore.getState().logout();
             const path = typeof window !== 'undefined' ? window.location.pathname || '' : '';
             window.location.href = path.startsWith('/admin') ? '/admin/login' : '/login';
+            return Promise.reject(error);
         }
+
+        if (error.response?.status === 403 && error.response?.data?.code === 'account_banned') {
+            const data = error.response.data;
+            try {
+                localStorage.setItem('connectly_account_banned', JSON.stringify({
+                    reasonCode: data.reason_code ?? null,
+                    banMessage: data.ban_message ?? null,
+                    moderationEventId: data.moderation_event_id ?? null,
+                    appealToken: data.appeal_token ?? null,
+                }));
+            } catch { /* ignore */ }
+            useAuthStore.getState().logout();
+            window.location.href = '/account-banned';
+        }
+
         return Promise.reject(error);
     }
 );

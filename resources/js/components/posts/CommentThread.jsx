@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { useQueryClient } from '@tanstack/react-query';
-import { useCreateComment, usePinComment, useUnpinComment, useLikeComment, useUnlikeComment } from '../../hooks/useComments';
+import { useCreateComment, useDeleteComment, usePinComment, useUnpinComment, useLikeComment, useUnlikeComment } from '../../hooks/useComments';
 import Avatar from '../common/Avatar';
 import Button from '../common/Button';
 import { formatDate } from '../../utils/formatDate';
@@ -17,12 +17,14 @@ const CommentThread = ({ postId, comment, level = 0, postAuthorId }) => {
     const queryClient = useQueryClient();
     const { register, handleSubmit, reset } = useForm();
     const createCommentMutation = useCreateComment();
+    const deleteCommentMutation = useDeleteComment();
     const pinMutation = usePinComment();
     const unpinMutation = useUnpinComment();
     const likeCommentMutation = useLikeComment();
     const unlikeCommentMutation = useUnlikeComment();
     const isPostAuthor = user && postAuthorId && user.id === postAuthorId;
     const isCommentAuthor = comment.user?.id === postAuthorId;
+    const isOwnComment = user && user.id === comment.user?.id;
     const isTopLevel = level === 0;
     const isPinned = !!(comment.is_pinned || comment.pinned_at);
     const isLiked = optimisticLike !== null ? optimisticLike.is_liked : (comment.is_liked ?? false);
@@ -169,6 +171,18 @@ const CommentThread = ({ postId, comment, level = 0, postAuthorId }) => {
                                 className="text-xs text-[var(--text-secondary)] hover:text-[var(--theme-accent)]"
                             >
                                 {showReplies ? 'Hide' : 'Show'} {Math.max(comment.replies_count ?? 0, replies.length)} replies
+                            </button>
+                        )}
+                        {isOwnComment && (
+                            <button
+                                type="button"
+                                onClick={() => deleteCommentMutation.mutate(comment.id)}
+                                disabled={deleteCommentMutation.isPending}
+                                className="text-xs text-[var(--text-secondary)] hover:text-rose-500 disabled:opacity-60 inline-flex items-center gap-1"
+                                title="Delete comment"
+                            >
+                                <span className="material-symbols-outlined text-sm">delete</span>
+                                Delete
                             </button>
                         )}
                     </div>

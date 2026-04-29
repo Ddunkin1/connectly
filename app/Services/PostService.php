@@ -108,7 +108,8 @@ class PostService
 
         $query = Post::with(['user', 'hashtags', 'likes', 'poll.options'])
             ->where('user_id', $user->id)
-            ->where('is_archived', false);
+            ->where('is_archived', false)
+            ->whereDoesntHave('communityPosts');
 
         // If viewer is not the owner and profile is private, check if viewer follows
         if ($viewer && $viewer->id !== $user->id && $user->privacy_settings === 'private') {

@@ -40,6 +40,10 @@ class MessageService
             $data['attachment_type'] = $options['attachment_type'] ?? 'image';
         }
 
+        if (! empty($options['post_id'])) {
+            $data['post_id'] = $options['post_id'];
+        }
+
         $messageModel = Message::create($data);
 
         // Update conversation's last_message_at
@@ -47,7 +51,7 @@ class MessageService
             'last_message_at' => now(),
         ]);
 
-        $messageModel->load(['sender', 'receiver']);
+        $messageModel->load(['sender', 'receiver', 'post.user']);
         try {
             broadcast(new MessageSent($messageModel))->toOthers();
             broadcast(new MessageReceived($messageModel));
@@ -65,7 +69,7 @@ class MessageService
     {
         return Message::where('conversation_id', $conversation->id)
             ->withTrashed()
-            ->with(['sender', 'receiver'])
+            ->with(['sender', 'receiver', 'post.user'])
             ->orderBy('created_at', 'desc')
             ->paginate($perPage);
     }

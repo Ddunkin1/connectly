@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Http\Resources\PostResource;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -37,6 +38,12 @@ class MessageResource extends JsonResource
             'pinned_at' => $this->pinned_at,
             'can_edit' => $isOwner && ! $isDeleted,
             'can_delete' => $isOwner && ! $isDeleted,
+            'shared_post' => $this->when(
+                ! $isDeleted && $this->post_id,
+                fn () => $this->relationLoaded('post') && $this->post
+                    ? new PostResource($this->post)
+                    : null
+            ),
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
         ];
