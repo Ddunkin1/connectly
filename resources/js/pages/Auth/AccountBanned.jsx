@@ -77,6 +77,10 @@ const AccountBanned = () => {
         setAppealError(null);
 
         const trimmed = appealText.trim();
+        if (!appealToken) {
+            setAppealError('To submit an appeal, please go back to login and sign in with your banned account — you\'ll be brought back here automatically.');
+            return;
+        }
         if (trimmed.length < 20) {
             setAppealError('Please explain your appeal (at least 20 characters).');
             return;
@@ -85,7 +89,7 @@ const AccountBanned = () => {
         setIsSubmittingAppeal(true);
         try {
             await api.post('/ban-appeals', {
-                appeal_token: appealToken ?? undefined,
+                appeal_token: appealToken,
                 moderation_event_id: moderationEventId ? Number(moderationEventId) : undefined,
                 message: trimmed,
             });
