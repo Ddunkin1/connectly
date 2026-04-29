@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
 import Avatar from '../common/Avatar';
 import { UilHeart, UilHeartAlt, UilComment, UilShare, UilBookmark, UilBookmarkFull, UilEllipsisH, UilTrash, UilMegaphone, UilArchive, UilGlobe, UilUsersAlt, UilLock } from '../common/Icons';
@@ -31,6 +32,7 @@ const PostCard = ({ post, onDeleted }) => {
     const [shareViaMessageInitialReceiver, setShareViaMessageInitialReceiver] = useState(null);
     const [commentModalPost, setCommentModalPost] = useState(null);
     const [moreOpen, setMoreOpen] = useState(false);
+    const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
     const [reportModalOpen, setReportModalOpen] = useState(false);
     const [analyticsOpen, setAnalyticsOpen] = useState(false);
     const cardRef = useRef(null);
@@ -62,7 +64,11 @@ const PostCard = ({ post, onDeleted }) => {
 
     const handleDeleteClick = () => {
         setMoreOpen(false);
-        if (!window.confirm('Delete this post? This cannot be undone.')) return;
+        setDeleteConfirmOpen(true);
+    };
+
+    const confirmDelete = () => {
+        setDeleteConfirmOpen(false);
         deleteMutation.mutate(post.id, {
             onSuccess: () => {
                 onDeleted?.();
@@ -143,6 +149,7 @@ const PostCard = ({ post, onDeleted }) => {
     };
 
     return (
+        <>
         <article ref={cardRef} className="bg-white dark:bg-[var(--theme-surface)] overflow-visible group mb-3 last:mb-0 p-5 rounded-2xl shadow-sm shadow-black/[0.06] border border-black/[0.07] dark:border-white/[0.06] min-w-0 w-full">
             {/* Post Header - Stitch: avatar ring-2 ring-primary/20, 1 HOUR AGO, public icon */}
             <div className="flex items-center justify-between mb-3">
@@ -609,6 +616,42 @@ const PostCard = ({ post, onDeleted }) => {
                 onClose={() => setAnalyticsOpen(false)}
             />
         </article>
+
+        {deleteConfirmOpen && createPortal(
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true">
+                <div
+                    className="fixed inset-0 bg-black/60 backdrop-blur-[2px]"
+                    aria-hidden="true"
+                    onClick={() => setDeleteConfirmOpen(false)}
+                />
+                <div className="relative z-10 w-full max-w-sm bg-[var(--theme-surface)] rounded-2xl border border-[var(--theme-border)] shadow-2xl p-6 flex flex-col items-center text-center">
+                    <div className="w-12 h-12 rounded-full bg-red-500/15 flex items-center justify-center mb-4">
+                        <UilTrash size={22} color="#ef4444" />
+                    </div>
+                    <h2 className="text-base font-bold text-[var(--text-primary)] mb-1">Delete post?</h2>
+                    <p className="text-sm text-[var(--text-secondary)] mb-6">This can&apos;t be undone. The post will be permanently removed.</p>
+                    <div className="flex gap-3 w-full">
+                        <button
+                            type="button"
+                            onClick={() => setDeleteConfirmOpen(false)}
+                            className="flex-1 py-2.5 rounded-xl border border-[var(--theme-border)] text-sm font-medium text-[var(--text-primary)] hover:bg-[var(--theme-surface-hover)] transition-colors"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            type="button"
+                            onClick={confirmDelete}
+                            disabled={deleteMutation.isPending}
+                            className="flex-1 py-2.5 rounded-xl bg-red-500 text-white text-sm font-semibold hover:bg-red-600 disabled:opacity-50 transition-colors"
+                        >
+                            {deleteMutation.isPending ? 'Removing…' : 'Remove'}
+                        </button>
+                    </div>
+                </div>
+            </div>,
+            document.body
+        )}
+        </>
     );
 };
 
