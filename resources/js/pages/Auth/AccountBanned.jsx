@@ -23,6 +23,7 @@ const AccountBanned = () => {
     const [isSubmittingAppeal, setIsSubmittingAppeal] = useState(false);
     const [appealError, setAppealError] = useState(null);
     const [appealSubmitted, setAppealSubmitted] = useState(false);
+    const [alreadyAppealed, setAlreadyAppealed] = useState(false);
 
     const readStored = () => {
         try {
@@ -71,28 +72,38 @@ const AccountBanned = () => {
 
         const trimmed = appealText.trim();
         if (!appealToken) {
-            setAppealError('Appeals are not available for this account right now. Please contact support.');
+            setAppealError('Your appeal link has expired. Please go back to login and sign in again to get a fresh appeal link.');
             return;
         }
         if (trimmed.length < 20) {
-            setAppealError('Please explain your appeal (min. 20 characters).');
+            setAppealError('Please explain your appeal (at least 20 characters).');
             return;
         }
 
         setIsSubmittingAppeal(true);
         try {
             await api.post('/ban-appeals', {
-                    appeal_token: appealToken,
-                    moderation_event_id: moderationEventId ? Number(moderationEventId) : undefined,
-                    message: trimmed,
+                appeal_token: appealToken,
+                moderation_event_id: moderationEventId ? Number(moderationEventId) : undefined,
+                message: trimmed,
             });
 
             setAppealSubmitted(true);
+            setAlreadyAppealed(false);
             setAppealFormOpen(false);
             setAppealText('');
         } catch (err) {
             const msg = err?.response?.data?.message || err?.message || 'Failed to submit appeal.';
-            setAppealError(msg);
+            if (
+                err?.response?.status === 422 &&
+                msg.toLowerCase().includes('already submitted')
+            ) {
+                setAlreadyAppealed(true);
+                setAppealSubmitted(true);
+                setAppealFormOpen(false);
+            } else {
+                setAppealError(msg);
+            }
         } finally {
             setIsSubmittingAppeal(false);
         }
@@ -202,9 +213,29 @@ const AccountBanned = () => {
                                     </form>
                                 )}
                             </>
+                        ) : alreadyAppealed ? (
+                            <div className="rounded-xl border border-yellow-500/30 bg-yellow-500/10 px-4 py-4 mt-1 text-left">
+                                <div className="flex items-start gap-3">
+                                    <span className="material-symbols-outlined text-yellow-500 text-xl mt-0.5 shrink-0">info</span>
+                                    <div>
+                                        <p className="text-sm font-semibold text-[var(--text-primary)] mb-1">Appeal already submitted</p>
+                                        <p className="text-sm text-[var(--text-secondary)] leading-relaxed">
+                                            You&apos;ve already submitted an appeal for this ban. Our moderation team is reviewing it and will get back to you as soon as possible. Please be patient.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
                         ) : (
-                            <div className="text-sm text-[var(--text-primary)] bg-[var(--theme-accent)]/10 border border-[var(--theme-accent)]/30 rounded-xl px-4 py-3 mt-1">
-                                Your appeal was submitted. You can try signing in again after our team reviews it.
+                            <div className="rounded-xl border border-green-500/30 bg-green-500/10 px-4 py-4 mt-1 text-left">
+                                <div className="flex items-start gap-3">
+                                    <span className="material-symbols-outlined text-green-500 text-xl mt-0.5 shrink-0">check_circle</span>
+                                    <div>
+                                        <p className="text-sm font-semibold text-[var(--text-primary)] mb-1">Appeal submitted</p>
+                                        <p className="text-sm text-[var(--text-secondary)] leading-relaxed">
+                                            Your appeal has been received and is now being reviewed by our moderation team. You&apos;ll be notified once a decision has been made. Thank you for your patience.
+                                        </p>
+                                    </div>
+                                </div>
                             </div>
                         )}
                     </div>
