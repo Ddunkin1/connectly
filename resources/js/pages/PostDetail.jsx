@@ -38,7 +38,7 @@ const PostDetail = () => {
 
     if (isLoading) {
         return (
-            <div className="max-w-3xl mx-auto">
+            <div className="max-w-2xl mx-auto w-full px-4 py-6">
                 <PostDetailSkeleton />
             </div>
         );
@@ -55,14 +55,14 @@ const PostDetail = () => {
     const topLevelComments = commentsData?.filter((comment) => !comment.parent_comment_id) || [];
 
     return (
-        <div className="max-w-3xl mx-auto">
+        <div className="max-w-2xl mx-auto w-full px-4 py-6 space-y-4">
             <PostCard
                 post={post}
                 onDeleted={() => navigate('/home', { replace: true })}
             />
 
             {/* Comment Input */}
-            <div id="comment-section" className="bg-[var(--theme-surface)] rounded-lg border border-[var(--theme-border)] p-4 mt-4">
+            <div id="comment-section" className="bg-[var(--theme-surface)] rounded-lg border border-[var(--theme-border)] p-5">
                 <form onSubmit={handleSubmit(onSubmit)}>
                     <div className="flex items-start space-x-3">
                         <Avatar src={user?.profile_picture} alt={user?.name} size="md" />
@@ -89,7 +89,7 @@ const PostDetail = () => {
             </div>
 
             {/* Comments */}
-            <div className="mt-4 space-y-4">
+            <div className="space-y-4">
                 <h3 className="text-lg font-semibold text-[var(--text-primary)]">
                     Comments ({Math.max(post.comments_count ?? 0, commentsData?.length ?? 0)})
                 </h3>
