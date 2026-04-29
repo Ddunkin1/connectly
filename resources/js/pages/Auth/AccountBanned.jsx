@@ -21,7 +21,6 @@ const AccountBanned = () => {
 
     const [appealFormOpen, setAppealFormOpen] = useState(false);
     const [appealText, setAppealText] = useState('');
-    const [appealEmail, setAppealEmail] = useState('');
     const [isSubmittingAppeal, setIsSubmittingAppeal] = useState(false);
     const [appealError, setAppealError] = useState(null);
 
@@ -78,10 +77,6 @@ const AccountBanned = () => {
         setAppealError(null);
 
         const trimmed = appealText.trim();
-        if (!appealToken && !appealEmail.trim()) {
-            setAppealError('Please enter your email address.');
-            return;
-        }
         if (trimmed.length < 20) {
             setAppealError('Please explain your appeal (at least 20 characters).');
             return;
@@ -90,9 +85,8 @@ const AccountBanned = () => {
         setIsSubmittingAppeal(true);
         try {
             await api.post('/ban-appeals', {
-                ...(appealToken
-                    ? { appeal_token: appealToken, moderation_event_id: moderationEventId ? Number(moderationEventId) : undefined }
-                    : { email: appealEmail.trim() }),
+                appeal_token: appealToken ?? undefined,
+                moderation_event_id: moderationEventId ? Number(moderationEventId) : undefined,
                 message: trimmed,
             });
 
@@ -185,21 +179,6 @@ const AccountBanned = () => {
 
                                 {appealFormOpen && (
                                     <form onSubmit={submitBanAppeal} className="mt-3 space-y-3">
-                                        {!appealToken && (
-                                            <div>
-                                                <label className="block text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wide mb-2">
-                                                    Your account email
-                                                </label>
-                                                <input
-                                                    type="email"
-                                                    value={appealEmail}
-                                                    onChange={(e) => setAppealEmail(e.target.value)}
-                                                    className="w-full rounded-xl border border-[var(--theme-border)] bg-[var(--bg-primary)] text-[var(--text-primary)] text-sm p-3"
-                                                    placeholder="Enter the email linked to your banned account"
-                                                    required
-                                                />
-                                            </div>
-                                        )}
                                         <div>
                                             <label className="block text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wide mb-2">
                                                 Your appeal
