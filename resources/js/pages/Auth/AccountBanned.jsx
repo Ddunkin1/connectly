@@ -4,6 +4,7 @@ import { getReasonLabel } from '../../hooks/useReports';
 import api from '../../services/api';
 
 const STORAGE_KEY = 'connectly_account_banned';
+const APPEAL_DONE_KEY = 'connectly_ban_appeal_done';
 
 /**
  * Shown when login API returns 403 account_banned — user cannot access the app.
@@ -22,12 +23,17 @@ const AccountBanned = () => {
     const [appealText, setAppealText] = useState('');
     const [isSubmittingAppeal, setIsSubmittingAppeal] = useState(false);
     const [appealError, setAppealError] = useState(null);
-    const [appealSubmitted, setAppealSubmitted] = useState(false);
-    const [alreadyAppealed, setAlreadyAppealed] = useState(false);
+
+    const readAppealDone = () => {
+        try { return JSON.parse(localStorage.getItem(APPEAL_DONE_KEY)) ?? null; } catch { return null; }
+    };
+    const savedDone = readAppealDone();
+    const [appealSubmitted, setAppealSubmitted] = useState(savedDone?.submitted ?? false);
+    const [alreadyAppealed, setAlreadyAppealed] = useState(savedDone?.already ?? false);
 
     const readStored = () => {
         try {
-            const raw = sessionStorage.getItem(STORAGE_KEY);
+            const raw = localStorage.getItem(STORAGE_KEY);
             if (!raw) return null;
             const parsed = JSON.parse(raw);
             return parsed && typeof parsed === 'object' ? parsed : null;
@@ -44,7 +50,7 @@ const AccountBanned = () => {
             fromNav?.moderationEventId != null
         ) {
             try {
-                sessionStorage.setItem(
+                localStorage.setItem(
                     STORAGE_KEY,
                     JSON.stringify({
                         reasonCode: fromNav.reasonCode ?? null,
@@ -92,6 +98,7 @@ const AccountBanned = () => {
             setAlreadyAppealed(false);
             setAppealFormOpen(false);
             setAppealText('');
+            try { localStorage.setItem(APPEAL_DONE_KEY, JSON.stringify({ submitted: true, already: false })); } catch { /* ignore */ }
         } catch (err) {
             const msg = err?.response?.data?.message || err?.message || 'Failed to submit appeal.';
             if (
@@ -101,6 +108,7 @@ const AccountBanned = () => {
                 setAlreadyAppealed(true);
                 setAppealSubmitted(true);
                 setAppealFormOpen(false);
+                try { localStorage.setItem(APPEAL_DONE_KEY, JSON.stringify({ submitted: true, already: true })); } catch { /* ignore */ }
             } else {
                 setAppealError(msg);
             }
@@ -153,7 +161,8 @@ const AccountBanned = () => {
                         className="w-full inline-flex items-center justify-center py-2.5 px-4 rounded-xl text-sm font-semibold bg-[var(--theme-accent)] text-white hover:brightness-105 transition"
                         onClick={() => {
                             try {
-                                sessionStorage.removeItem(STORAGE_KEY);
+                                localStorage.removeItem(STORAGE_KEY);
+                                localStorage.removeItem(APPEAL_DONE_KEY);
                             } catch {
                                 /* ignore */
                             }
